@@ -61,91 +61,143 @@ export default function DiscoverSection() {
   const visibleDestinations = showMore ? destinations : destinations.slice(0, 4)
 
   return (
-    <section className="min-h-screen bg-white py-16 px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Title */}
+    <section className="w-full h-full bg-white py-4 md:py-12 px-4 md:px-8 flex flex-col justify-center overflow-hidden">
+      <div className="max-w-7xl mx-auto h-full flex flex-col justify-center">
+        {/* Title - Más compacto en móvil */}
         <motion.div
-          className="mb-12"
+          className="text-center mb-4 md:mb-8"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           viewport={{ once: true }}
         >
-          <h2 className="text-4xl md:text-5xl lg:text-6xl text-peru-dark leading-tight max-w-2xl brand-text">
-            DESCUBRE LAS <em className="italic">MARAVILLAS</em>
-            <br />
-            DEL PERÚ
+          <h2 className="text-xl md:text-4xl lg:text-5xl xl:text-6xl text-peru-dark leading-tight brand-text">
+            DESCUBRE LAS <em className="italic text-peru-orange">MARAVILLAS</em>
+            <br className="hidden md:block" />
+            <span className="md:hidden"> </span>DEL PERÚ
           </h2>
         </motion.div>
 
         {/* Destinations Grid */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+          className="flex-1 flex flex-col justify-center"
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
           viewport={{ once: true }}
         >
-          {visibleDestinations.map((destination, index) => (
+          {/* Desktop Grid - 4 columns con mejor proporción */}
+          <div className="hidden md:grid md:grid-cols-4 gap-3 lg:gap-4 mb-6">
+            {visibleDestinations.map((destination, index) => (
+              <motion.div
+                key={destination.id}
+                className="relative h-64 lg:h-72 xl:h-80 overflow-hidden group cursor-pointer bg-gray-100"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.6,
+                  ease: [0.16, 1, 0.3, 1],
+                  delay: 0.4 + index * 0.1,
+                }}
+                viewport={{ once: true }}
+                whileHover={{ scale: 1.02 }}
+              >
+                {/* Image */}
+                <div className="absolute inset-0">
+                  <Image
+                    src={destination.image || "/placeholder.svg"}
+                    alt={destination.title}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                </div>
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300" />
+
+                {/* Text Content */}
+                <div className="absolute inset-0 flex flex-col justify-between p-4 lg:p-5">
+                  {/* Empty space for top */}
+                  <div></div>
+
+                  {/* Bottom content */}
+                  <div className="text-white">
+                    <h3 className="text-lg lg:text-xl font-bold tracking-wide brand-text mb-1">{destination.title}</h3>
+                    <p className="text-xs lg:text-sm opacity-90 body-text">{destination.subtitle}</p>
+                  </div>
+                </div>
+
+                {/* Hover effect border */}
+                <div className="absolute inset-0 border-2 border-transparent group-hover:border-white/20 transition-colors duration-300"></div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Mobile Grid - 2 columns más compacto */}
+          <div className="md:hidden grid grid-cols-2 gap-2 mb-4">
+            {visibleDestinations.map((destination, index) => (
+              <motion.div
+                key={destination.id}
+                className="relative h-36 overflow-hidden group cursor-pointer bg-gray-100"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.6,
+                  ease: [0.16, 1, 0.3, 1],
+                  delay: 0.4 + index * 0.1,
+                }}
+                viewport={{ once: true }}
+                whileHover={{ scale: 1.02 }}
+              >
+                {/* Image */}
+                <div className="absolute inset-0">
+                  <Image
+                    src={destination.image || "/placeholder.svg"}
+                    alt={destination.title}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                </div>
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300" />
+
+                {/* Text Content */}
+                <div className="absolute inset-0 flex flex-col justify-between p-3">
+                  {/* Empty space for top */}
+                  <div></div>
+
+                  {/* Bottom content */}
+                  <div className="text-white">
+                    <h3 className="text-sm font-bold tracking-wide brand-text mb-1">{destination.title}</h3>
+                    <p className="text-xs opacity-90 body-text leading-tight">{destination.subtitle}</p>
+                  </div>
+                </div>
+
+                {/* Hover effect border */}
+                <div className="absolute inset-0 border border-transparent group-hover:border-white/20 transition-colors duration-300"></div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Load More Button - Más compacto */}
+          {!showMore && (
             <motion.div
-              key={destination.id}
-              className="relative h-80 overflow-hidden group cursor-pointer"
-              initial={{ opacity: 0, y: 30 }}
+              className="flex justify-center"
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.6,
-                ease: [0.16, 1, 0.3, 1],
-                delay: 0.4 + index * 0.1,
-              }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.8 }}
               viewport={{ once: true }}
-              whileHover={{ scale: 1.02 }}
             >
-              {/* Image */}
-              <div className="absolute inset-0">
-                <Image
-                  src={destination.image || "/placeholder.svg"}
-                  alt={destination.title}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-              </div>
-
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
-
-              {/* Text Content */}
-              <div className="absolute inset-0 flex flex-col justify-between p-6">
-                {/* Title */}
-                <div>
-                  <h3 className="text-white text-xl tracking-wide brand-text">{destination.title}</h3>
-                </div>
-
-                {/* Subtitle */}
-                <div>
-                  <p className="text-white text-sm opacity-90 body-text">{destination.subtitle}</p>
-                </div>
-              </div>
+              <button
+                onClick={() => setShowMore(true)}
+                className="bg-peru-dark text-white px-6 md:px-12 py-2 md:py-3 text-xs md:text-sm font-medium uppercase tracking-wider hover:bg-peru-orange transition-colors duration-300 brand-text"
+              >
+                VER MÁS
+              </button>
             </motion.div>
-          ))}
+          )}
         </motion.div>
-
-        {/* Load More Button */}
-        {!showMore && (
-          <motion.div
-            className="flex justify-center"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.8 }}
-            viewport={{ once: true }}
-          >
-            <button
-              onClick={() => setShowMore(true)}
-              className="bg-peru-dark text-white px-12 py-4 text-sm font-medium uppercase tracking-wider hover:bg-peru-orange transition-colors duration-300 brand-text"
-            >
-              VER MÁS
-            </button>
-          </motion.div>
-        )}
       </div>
     </section>
   )

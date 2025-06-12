@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 
 export default function OurServiceSection() {
-  const [activeTab, setActiveTab] = useState("CHARITY COMMITMENT")
+  const [activeTab, setActiveTab] = useState("TAILOR-MADE")
 
   const tabs = [
     "TAILOR-MADE",
@@ -18,81 +18,84 @@ export default function OurServiceSection() {
 
   const tabContent = {
     "TAILOR-MADE": {
-      title: "Tailor-Made",
+      title: "Viajes a Medida",
       description:
-        "Every journey is uniquely crafted to match your personal preferences, interests, and travel style. Our expert team designs bespoke itineraries that create unforgettable experiences tailored just for you.",
+        "Cada viaje está diseñado únicamente para ti, adaptándose a tus preferencias personales, intereses y estilo de viaje. Nuestro equipo experto crea itinerarios personalizados que generan experiencias inolvidables.",
       image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=1000&auto=format&fit=crop",
-      buttonText: "PLAN YOUR JOURNEY",
+      buttonText: "PLANIFICA TU VIAJE",
     },
     "EXPERT GUIDES": {
-      title: "Expert Guides",
+      title: "Guías Expertos",
       description:
-        "Our carefully selected local guides bring destinations to life with their deep knowledge, passion, and insider access. Experience authentic cultural connections and hidden gems only locals know.",
+        "Nuestros guías locales cuidadosamente seleccionados dan vida a los destinos con su profundo conocimiento, pasión y acceso exclusivo. Experimenta conexiones culturales auténticas y gemas ocultas que solo los locales conocen.",
       image: "https://images.unsplash.com/photo-1539650116574-75c0c6d73c6e?q=80&w=1000&auto=format&fit=crop",
-      buttonText: "MEET OUR GUIDES",
+      buttonText: "CONOCE NUESTROS GUÍAS",
     },
     "PRICE PROMISE": {
-      title: "Price Promise",
+      title: "Garantía de Precio",
       description:
-        "We guarantee transparent pricing with no hidden costs. If you find a comparable trip at a lower price, we'll match it. Your investment goes directly into creating exceptional travel experiences.",
+        "Garantizamos precios transparentes sin costos ocultos. Si encuentras un viaje comparable a un precio menor, lo igualamos. Tu inversión va directamente a crear experiencias de viaje excepcionales.",
       image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1000&auto=format&fit=crop",
-      buttonText: "VIEW PRICING",
+      buttonText: "VER PRECIOS",
     },
     "FAMILY OPERATED": {
-      title: "Family Operated",
+      title: "Empresa Familiar",
       description:
-        "As a family-run business, we bring personal care and attention to every detail of your journey. Our commitment to excellence spans generations, ensuring authentic and heartfelt service.",
+        "Como empresa familiar, brindamos cuidado personal y atención a cada detalle de tu viaje. Nuestro compromiso con la excelencia abarca generaciones, asegurando un servicio auténtico y cordial.",
       image: "https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=1000&auto=format&fit=crop",
-      buttonText: "OUR STORY",
+      buttonText: "NUESTRA HISTORIA",
     },
     "CARBON OFFSET": {
-      title: "Carbon Offset",
+      title: "Compensación de Carbono",
       description:
-        "We're committed to responsible travel. Every trip includes carbon offsetting initiatives, supporting reforestation projects and renewable energy programs to minimize environmental impact.",
+        "Estamos comprometidos con el turismo responsable. Cada viaje incluye iniciativas de compensación de carbono, apoyando proyectos de reforestación y programas de energía renovable para minimizar el impacto ambiental.",
       image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1000&auto=format&fit=crop",
-      buttonText: "SUSTAINABILITY",
+      buttonText: "SOSTENIBILIDAD",
     },
     "CHARITY COMMITMENT": {
-      title: "Charity Commitment",
+      title: "Compromiso Benéfico",
       description:
-        "We are proud to be the official travel partner for the ForRangers Foundation, supporting their critical conservation efforts and protecting endangered wildlife.",
+        "Nos enorgullece ser el socio oficial de viajes de la Fundación ForRangers, apoyando sus esfuerzos críticos de conservación y protegiendo la vida silvestre en peligro de extinción.",
       image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop",
-      buttonText: "FIND OUT MORE",
+      buttonText: "CONOCE MÁS",
     },
   }
 
   const currentContent = tabContent[activeTab as keyof typeof tabContent]
 
   return (
-    <section className="min-h-screen bg-[#1a1f3a] text-white py-16 px-8">
-      <div className="max-w-7xl mx-auto">
+    <section className="w-full h-full bg-peru-dark text-white py-4 md:py-8 px-4 md:px-8 flex flex-col justify-center overflow-hidden">
+      <div className="max-w-7xl mx-auto h-full flex flex-col justify-center">
         {/* Header */}
         <motion.div
-          className="text-center mb-16"
+          className="text-center mb-4 md:mb-8"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           viewport={{ once: true }}
         >
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-light mb-6">
-            <span className="text-2xl">→</span> Our Service <span className="text-2xl">←</span>
+          <h2 className="text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-light mb-2 md:mb-6 brand-text">
+            <span className="text-lg md:text-2xl">→</span> NUESTROS SERVICIOS{" "}
+            <span className="text-lg md:text-2xl">←</span>
           </h2>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto">Tailor-made itineraries, crafted by our experts</p>
+          <p className="text-sm md:text-lg text-gray-300 max-w-2xl mx-auto body-text">
+            Itinerarios a medida, creados por nuestros expertos
+          </p>
         </motion.div>
 
         {/* Tabs Navigation */}
         <motion.div
-          className="mb-16"
+          className="mb-4 md:mb-8"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
           viewport={{ once: true }}
         >
-          <div className="flex flex-wrap justify-center gap-8 md:gap-12 border-b border-gray-600 pb-4">
+          <div className="flex flex-wrap justify-center gap-2 md:gap-8 lg:gap-12 border-b border-gray-600 pb-2 md:pb-4">
             {tabs.map((tab, index) => (
               <motion.button
                 key={tab}
-                className={`text-sm md:text-base font-medium tracking-wider transition-all duration-300 pb-4 relative ${
+                className={`text-xs md:text-sm lg:text-base font-medium tracking-wider transition-all duration-300 pb-1 md:pb-4 relative px-1 md:px-2 ${
                   activeTab === tab ? "text-white" : "text-gray-400 hover:text-gray-200"
                 }`}
                 onClick={() => setActiveTab(tab)}
@@ -122,7 +125,7 @@ export default function OurServiceSection() {
 
         {/* Content */}
         <motion.div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 lg:gap-12 items-center flex-1"
           key={activeTab}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -130,7 +133,7 @@ export default function OurServiceSection() {
         >
           {/* Image */}
           <motion.div
-            className="relative h-80 lg:h-96 overflow-hidden"
+            className="relative h-48 md:h-80 lg:h-96 overflow-hidden order-2 lg:order-1"
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
@@ -146,17 +149,17 @@ export default function OurServiceSection() {
 
           {/* Text Content */}
           <motion.div
-            className="space-y-6"
+            className="space-y-2 md:space-y-4 lg:space-y-6 order-1 lg:order-2"
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
           >
-            <h3 className="text-3xl md:text-4xl font-light">{currentContent.title}</h3>
+            <h3 className="text-xl md:text-3xl lg:text-4xl font-light brand-text">{currentContent.title}</h3>
 
-            <p className="text-lg text-gray-300 leading-relaxed">{currentContent.description}</p>
+            <p className="text-sm md:text-lg text-gray-300 leading-relaxed body-text">{currentContent.description}</p>
 
             <motion.button
-              className="border border-white px-8 py-3 text-sm font-medium tracking-wider hover:bg-white hover:text-[#1a1f3a] transition-all duration-300"
+              className="border border-white px-4 md:px-8 py-2 md:py-3 text-xs md:text-sm font-medium tracking-wider hover:bg-white hover:text-peru-dark transition-all duration-300 brand-text"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.2 }}
