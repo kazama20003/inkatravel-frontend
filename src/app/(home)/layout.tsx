@@ -1,11 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import AnimatedHeader from "@/components/home/AnimatedHeader"
 import Footer from "@/components/home/Footer"
-import Home from "./page"
 
 export default function HomeLayout({
   children,
@@ -18,11 +17,22 @@ export default function HomeLayout({
   const [customScrollPosition, setCustomScrollPosition] = useState(0)
   const [customIsScrollingDown, setCustomIsScrollingDown] = useState(false)
 
-  // Handle custom scroll updates from home page
-  const handleScrollChange = useCallback((scrollPosition: number, isScrollingDown: boolean) => {
-    setCustomScrollPosition(scrollPosition)
-    setCustomIsScrollingDown(isScrollingDown)
-  }, [])
+  // Listen for scroll changes from home page
+  useEffect(() => {
+    if (!isHomePage) return
+
+    const handleScrollChange = (event: CustomEvent) => {
+      const { scrollPosition, isScrollingDown } = event.detail
+      setCustomScrollPosition(scrollPosition)
+      setCustomIsScrollingDown(isScrollingDown)
+    }
+
+    window.addEventListener("homeScrollChange", handleScrollChange as EventListener)
+
+    return () => {
+      window.removeEventListener("homeScrollChange", handleScrollChange as EventListener)
+    }
+  }, [isHomePage])
 
   // For home page, render with custom scroll handling and no native scroll
   if (isHomePage) {
@@ -33,9 +43,7 @@ export default function HomeLayout({
           customIsScrollingDown={customIsScrollingDown}
           useCustomScroll={true}
         />
-        <main className="h-full">
-          <Home onScrollChange={handleScrollChange} />
-        </main>
+        <main className="h-full">{children}</main>
         {/* Footer is included in the home page sections, not here */}
       </div>
     )

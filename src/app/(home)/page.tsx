@@ -9,13 +9,9 @@ import OurServiceSection from "@/components/home/OurServiceSection"
 import TestimonialsSection from "@/components/home/TestimonialsSection"
 import Footer from "@/components/home/Footer"
 
-interface HomePageProps {
-  onScrollChange?: (scrollPosition: number, isScrollingDown: boolean) => void
-}
-
-export default function Home({ onScrollChange }: HomePageProps) {
+export default function HomePage() {
   const [scrollPosition, setScrollPosition] = useState(0)
-  const [, setIsScrollingDown] = useState(false)
+  const [isScrollingDown, setIsScrollingDown] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastScrollTime = useRef<number>(0)
   const scrolling = useRef<boolean>(false)
@@ -60,28 +56,18 @@ export default function Home({ onScrollChange }: HomePageProps) {
         setIsScrollingDown(newIsScrollingDown)
         lastScrollPosition.current = newPosition
 
-        // Notify parent component about scroll changes
-        if (onScrollChange) {
-          onScrollChange(newPosition, newIsScrollingDown)
-        }
-
         if (timeElapsed < duration) {
           requestAnimationFrame(animation)
         } else {
           setScrollPosition(targetPosition)
           scrolling.current = false
           lastScrollTime.current = Date.now()
-
-          // Final notification
-          if (onScrollChange) {
-            onScrollChange(targetPosition, newIsScrollingDown)
-          }
         }
       }
 
       requestAnimationFrame(animation)
     },
-    [scrollPosition, onScrollChange],
+    [scrollPosition],
   )
 
   // Handle wheel events with improved throttling
@@ -203,6 +189,14 @@ export default function Home({ onScrollChange }: HomePageProps) {
       }
     }
   }, [getCurrentSection, smoothScroll])
+
+  // Expose scroll data to parent via custom event
+  useEffect(() => {
+    const event = new CustomEvent("homeScrollChange", {
+      detail: { scrollPosition, isScrollingDown },
+    })
+    window.dispatchEvent(event)
+  }, [scrollPosition, isScrollingDown])
 
   return (
     <div ref={scrollRef} className="h-full w-full overflow-hidden relative">
