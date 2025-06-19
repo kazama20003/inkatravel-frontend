@@ -35,7 +35,7 @@ import {
   MoreHorizontal,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
+import Image from "next/image"
 // Tipos basados en el DTO del backend
 type TourType = "Premium" | "Clásico" | "Básico"
 type Difficulty = "Fácil" | "Moderado" | "Difícil"
@@ -880,11 +880,14 @@ export default function ReservasPage() {
                     {/* Información del tour */}
                     <div className="space-y-4">
                       <div className="relative">
-                        <img
-                          src={selectedReserva.tour.image || "/placeholder.svg"}
-                          alt={selectedReserva.tour.title}
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
+                        <div className="relative w-full h-32 rounded-lg overflow-hidden">
+  <Image
+    src={selectedReserva.tour.image || "/placeholder.svg"}
+    alt={selectedReserva.tour.title}
+    fill
+    className="object-cover"
+  />
+</div>
                         <div
                           className={cn(
                             "absolute top-2 left-2 px-2 py-1 rounded text-xs font-medium text-white",

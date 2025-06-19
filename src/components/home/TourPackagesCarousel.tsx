@@ -26,14 +26,6 @@ export enum TransportType {
   Básico = "Básico",
 }
 
-// Cambiar estas clases por interfaces
-interface RoutePointDto {
-  location: string
-  description?: string
-  imageId?: string
-  imageUrl?: string
-}
-
 interface TransportOptionDto {
   type: TransportType
   vehicle: string
