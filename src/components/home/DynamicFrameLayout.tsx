@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { useMobile } from "@/hooks/use-mobile"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface Frame {
   id: number
   video: string
   defaultPos: { x: number; y: number; w: number; h: number }
-  corner: string
-  edgeHorizontal: string
-  edgeVertical: string
   mediaSize: number
   borderThickness: number
   borderSize: number
@@ -19,15 +16,12 @@ interface Frame {
   projectId?: string
 }
 
-// Reduced to just 3 frames
+// Simplified frames without unused border assets
 const initialFrames: Frame[] = [
   {
     id: 1,
     video: "https://static.cdn-luma.com/files/981e483f71aa764b/Company%20Thing%20Exported.mp4",
     defaultPos: { x: 0, y: 0, w: 4, h: 12 },
-    corner: "https://static.cdn-luma.com/files/bcf576df9c38b05f/1_corner_update.png",
-    edgeHorizontal: "https://static.cdn-luma.com/files/bcf576df9c38b05f/1_vert_update.png",
-    edgeVertical: "https://static.cdn-luma.com/files/bcf576df9c38b05f/1_hori_update.png",
     mediaSize: 1,
     borderThickness: 0,
     borderSize: 80,
@@ -38,9 +32,6 @@ const initialFrames: Frame[] = [
     id: 2,
     video: "https://static.cdn-luma.com/files/58ab7363888153e3/WebGL%20Exported%20(1).mp4",
     defaultPos: { x: 4, y: 0, w: 4, h: 12 },
-    corner: "https://static.cdn-luma.com/files/bcf576df9c38b05f/2_corner_update.png",
-    edgeHorizontal: "https://static.cdn-luma.com/files/bcf576df9c38b05f/2_vert_update.png",
-    edgeVertical: "https://static.cdn-luma.com/files/bcf576df9c38b05f/2_hori_update.png",
     mediaSize: 1,
     borderThickness: 0,
     borderSize: 80,
@@ -51,9 +42,6 @@ const initialFrames: Frame[] = [
     id: 3,
     video: "https://static.cdn-luma.com/files/58ab7363888153e3/Jitter%20Exported%20Poster.mp4",
     defaultPos: { x: 8, y: 0, w: 4, h: 12 },
-    corner: "https://static.cdn-luma.com/files/3d36d1e0dba2476c/3_Corner_update.png",
-    edgeHorizontal: "https://static.cdn-luma.com/files/3d36d1e0dba2476c/3_hori_update.png",
-    edgeVertical: "https://static.cdn-luma.com/files/3d36d1e0dba2476c/3_Vert_update.png",
     mediaSize: 1,
     borderThickness: 0,
     borderSize: 80,
@@ -65,12 +53,11 @@ const initialFrames: Frame[] = [
 export default function DynamicFrameLayout() {
   const [frames] = useState<Frame[]>(initialFrames)
   const [hovered, setHovered] = useState<number | null>(null)
-  const [showFrames] = useState(false)
   const [autoplayAll] = useState(true)
   const [activeFrame, setActiveFrame] = useState<number | null>(null)
 
   // Detectar si es móvil
-  const isMobile = useMobile()
+  const isMobile = useIsMobile()
 
   // Handle video playback to prevent errors
   useEffect(() => {
@@ -123,7 +110,7 @@ export default function DynamicFrameLayout() {
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative w-full h-screen overflow-hidden bg-black">
       {/* Desktop Layout - Horizontal */}
       {!isMobile && (
         <div className="w-full h-full flex">
@@ -133,7 +120,7 @@ export default function DynamicFrameLayout() {
             return (
               <motion.div
                 key={frame.id}
-                className="relative h-full"
+                className="relative h-full cursor-pointer"
                 style={{
                   flex: isActive ? 2 : 1,
                   transition: "flex 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -150,27 +137,44 @@ export default function DynamicFrameLayout() {
                     muted
                     playsInline
                     preload="auto"
+                    autoPlay
                   />
 
+                  {/* Dark overlay for better text visibility */}
+                  <div className="absolute inset-0 bg-black/30" />
+
                   {/* Content overlay */}
-                  <div className="absolute inset-0 flex flex-col justify-between p-8">
+                  <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-8 z-10">
                     {/* Top content - empty for header space */}
                     <div className="h-24"></div>
 
                     {/* Middle content */}
-                    <div className="flex flex-col items-center justify-center">
+                    <div className="flex flex-col items-center justify-center flex-1">
                       {isActive && (
-                        <div className="text-peru-gold font-bold text-xl brand-text">
-                          {frame.label}
-                          {frame.sublabel && <div className="text-peru-gold brand-text">{frame.sublabel}</div>}
-                        </div>
+                        <motion.div
+                          className="text-center"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <div className="text-peru-gold font-bold text-2xl md:text-3xl lg:text-4xl brand-text mb-2">
+                            {frame.label}
+                          </div>
+                          {frame.sublabel && (
+                            <div className="text-peru-gold/80 text-lg md:text-xl brand-text">{frame.sublabel}</div>
+                          )}
+                        </motion.div>
                       )}
                     </div>
 
                     {/* Bottom content */}
                     <div className="text-peru-gold text-sm">
                       {isActive && (
-                        <>
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, delay: 0.2 }}
+                        >
                           {frame.projectId && (
                             <div className="mb-2">
                               <span className="mr-2 brand-text">→DESCUBRE PERÚ</span>
@@ -183,69 +187,10 @@ export default function DynamicFrameLayout() {
                               <span className="opacity-70 body-text">[ver destino]</span>
                             </div>
                           )}
-                        </>
+                        </motion.div>
                       )}
                     </div>
                   </div>
-
-                  {/* Frame borders (conditionally shown) */}
-                  {showFrames && (
-                    <div className="absolute inset-0 pointer-events-none">
-                      {/* Corners */}
-                      <div
-                        className="absolute top-0 left-0 w-16 h-16 bg-contain bg-no-repeat"
-                        style={{ backgroundImage: `url(${frame.corner})` }}
-                      />
-                      <div
-                        className="absolute top-0 right-0 w-16 h-16 bg-contain bg-no-repeat"
-                        style={{ backgroundImage: `url(${frame.corner})`, transform: "scaleX(-1)" }}
-                      />
-                      <div
-                        className="absolute bottom-0 left-0 w-16 h-16 bg-contain bg-no-repeat"
-                        style={{ backgroundImage: `url(${frame.corner})`, transform: "scaleY(-1)" }}
-                      />
-                      <div
-                        className="absolute bottom-0 right-0 w-16 h-16 bg-contain bg-no-repeat"
-                        style={{ backgroundImage: `url(${frame.corner})`, transform: "scale(-1, -1)" }}
-                      />
-
-                      {/* Edges */}
-                      <div
-                        className="absolute top-0 left-16 right-16 h-16"
-                        style={{
-                          backgroundImage: `url(${frame.edgeHorizontal})`,
-                          backgroundSize: "auto 64px",
-                          backgroundRepeat: "repeat-x",
-                        }}
-                      />
-                      <div
-                        className="absolute bottom-0 left-16 right-16 h-16"
-                        style={{
-                          backgroundImage: `url(${frame.edgeHorizontal})`,
-                          backgroundSize: "auto 64px",
-                          backgroundRepeat: "repeat-x",
-                          transform: "rotate(180deg)",
-                        }}
-                      />
-                      <div
-                        className="absolute left-0 top-16 bottom-16 w-16"
-                        style={{
-                          backgroundImage: `url(${frame.edgeVertical})`,
-                          backgroundSize: "64px auto",
-                          backgroundRepeat: "repeat-y",
-                        }}
-                      />
-                      <div
-                        className="absolute right-0 top-16 bottom-16 w-16"
-                        style={{
-                          backgroundImage: `url(${frame.edgeVertical})`,
-                          backgroundSize: "64px auto",
-                          backgroundRepeat: "repeat-y",
-                          transform: "scaleX(-1)",
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
               </motion.div>
             )
@@ -256,17 +201,17 @@ export default function DynamicFrameLayout() {
       {/* Mobile Layout - Vertical */}
       {isMobile && (
         <div className="w-full h-full flex flex-col">
-          {frames.map((frame) => {
+          {frames.map((frame, ) => {
             const isActive = activeFrame === frame.id
 
             return (
               <motion.div
                 key={frame.id}
-                className="relative w-full"
+                className="relative w-full cursor-pointer"
                 style={{
                   flex: isActive ? 2 : 1,
                   transition: "flex 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
-                  height: isActive ? "60%" : "20%",
+                  minHeight: isActive ? "60%" : "20%",
                 }}
                 onClick={() => handleMobileClick(frame.id)}
               >
@@ -279,13 +224,17 @@ export default function DynamicFrameLayout() {
                     muted
                     playsInline
                     preload="auto"
+                    autoPlay
                   />
+
+                  {/* Dark overlay for better text visibility */}
+                  <div className="absolute inset-0 bg-black/30" />
                 </div>
 
                 {/* Content overlay */}
-                <div className="absolute inset-0 flex flex-col justify-between p-4">
+                <div className="absolute inset-0 flex flex-col justify-between p-4 z-10">
                   {/* Top content - Empty space for header */}
-                  <div className="h-6"></div>
+                  <div className="h-16"></div>
 
                   {/* Middle content - Empty space */}
                   <div className="flex-1"></div>
@@ -293,8 +242,8 @@ export default function DynamicFrameLayout() {
                   {/* Bottom content - Label positioned in middle-bottom */}
                   <div className="flex flex-col items-center justify-end pb-8">
                     <div className="text-peru-gold text-center">
-                      <div className="text-xl brand-text">{frame.label}</div>
-                      {frame.sublabel && <div className="text-sm brand-text">{frame.sublabel}</div>}
+                      <div className="text-xl md:text-2xl brand-text">{frame.label}</div>
+                      {frame.sublabel && <div className="text-sm md:text-base brand-text">{frame.sublabel}</div>}
                       {isActive && <div className="text-sm body-text mt-2">Toca para explorar</div>}
                     </div>
 
@@ -307,65 +256,6 @@ export default function DynamicFrameLayout() {
                     )}
                   </div>
                 </div>
-
-                {/* Frame borders (conditionally shown) */}
-                {showFrames && (
-                  <div className="absolute inset-0 pointer-events-none">
-                    {/* Corners */}
-                    <div
-                      className="absolute top-0 left-0 w-12 h-12 bg-contain bg-no-repeat"
-                      style={{ backgroundImage: `url(${frame.corner})` }}
-                    />
-                    <div
-                      className="absolute top-0 right-0 w-12 h-12 bg-contain bg-no-repeat"
-                      style={{ backgroundImage: `url(${frame.corner})`, transform: "scaleX(-1)" }}
-                    />
-                    <div
-                      className="absolute bottom-0 left-0 w-12 h-12 bg-contain bg-no-repeat"
-                      style={{ backgroundImage: `url(${frame.corner})`, transform: "scaleY(-1)" }}
-                    />
-                    <div
-                      className="absolute bottom-0 right-0 w-12 h-12 bg-contain bg-no-repeat"
-                      style={{ backgroundImage: `url(${frame.corner})`, transform: "scale(-1, -1)" }}
-                    />
-
-                    {/* Edges */}
-                    <div
-                      className="absolute top-0 left-12 right-12 h-12"
-                      style={{
-                        backgroundImage: `url(${frame.edgeHorizontal})`,
-                        backgroundSize: "auto 48px",
-                        backgroundRepeat: "repeat-x",
-                      }}
-                    />
-                    <div
-                      className="absolute bottom-0 left-12 right-12 h-12"
-                      style={{
-                        backgroundImage: `url(${frame.edgeHorizontal})`,
-                        backgroundSize: "auto 48px",
-                        backgroundRepeat: "repeat-x",
-                        transform: "rotate(180deg)",
-                      }}
-                    />
-                    <div
-                      className="absolute left-0 top-12 bottom-12 w-12"
-                      style={{
-                        backgroundImage: `url(${frame.edgeVertical})`,
-                        backgroundSize: "48px auto",
-                        backgroundRepeat: "repeat-y",
-                      }}
-                    />
-                    <div
-                      className="absolute right-0 top-12 bottom-12 w-12"
-                      style={{
-                        backgroundImage: `url(${frame.edgeVertical})`,
-                        backgroundSize: "48px auto",
-                        backgroundRepeat: "repeat-y",
-                        transform: "scaleX(-1)",
-                      }}
-                    />
-                  </div>
-                )}
 
                 {/* Overlay semi-transparente para indicar que es interactivo */}
                 {!isActive && <div className="absolute inset-0 bg-black/20"></div>}

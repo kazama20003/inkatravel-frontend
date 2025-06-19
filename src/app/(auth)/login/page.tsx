@@ -1,24 +1,131 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { Eye, EyeOff, ArrowLeft } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { toast } from "sonner"
+import { api } from "@/lib/axiosInstance"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     rememberMe: false,
   })
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const urlError = searchParams.get("error")
+    if (urlError) {
+      toast.error("Error de autenticación", {
+        description: decodeURIComponent(urlError),
+      })
+    }
+  }, [searchParams])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login logic here
-    console.log("Login attempt:", formData)
+    e.stopPropagation()
+
+    setIsLoading(true)
+
+    try {
+      console.log("Enviando datos de login:", { email: formData.email })
+
+      const response = await api.post("/auth/login", {
+        email: formData.email,
+        password: formData.password,
+      })
+
+      console.log("Respuesta del login:", response.data)
+
+      // Verificar si la respuesta tiene el token
+      if (response.data && response.data.access_token) {
+        // Store token in cookies
+        const maxAge = formData.rememberMe ? 2592000 : 86400 // 30 días o 1 día
+        document.cookie = `token=${response.data.access_token}; path=/; max-age=${maxAge}; secure; samesite=strict`
+
+        // Mostrar notificación de éxito
+        toast.success("¡Bienvenido de vuelta!", {
+          description: `Hola ${response.data.user?.fullName || response.data.user?.email || ""}`,
+        })
+
+        console.log("Access token guardado, redirigiendo al dashboard...")
+
+        // Pequeño delay para que se vea la notificación
+        setTimeout(() => {
+          router.push("/dashboard")
+        }, 1000)
+      } else if (response.data && response.data.token) {
+        // En caso de que el backend use 'token' en lugar de 'access_token'
+        const maxAge = formData.rememberMe ? 2592000 : 86400
+        document.cookie = `token=${response.data.token}; path=/; max-age=${maxAge}; secure; samesite=strict`
+
+        toast.success("¡Bienvenido de vuelta!", {
+          description: `Hola ${response.data.user?.fullName || response.data.user?.email || ""}`,
+        })
+
+        setTimeout(() => {
+          router.push("/dashboard")
+        }, 1000)
+      } else {
+        console.error("No se encontró token en la respuesta:", response.data)
+        toast.error("Error de autenticación", {
+          description: "No se recibió token de autenticación del servidor",
+        })
+      }
+    } catch (error: unknown) {
+      console.error("Error completo de login:", error)
+
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: {
+            data?: { message?: string; error?: string }
+            status?: number
+          }
+        }
+
+        console.error("Respuesta de error:", axiosError.response)
+
+        if (axiosError.response?.status === 401) {
+          toast.error("Credenciales incorrectas", {
+            description: "Verifica tu email y contraseña e intenta nuevamente",
+          })
+        } else if (axiosError.response?.status === 400) {
+          toast.error("Datos inválidos", {
+            description: axiosError.response?.data?.message || "Verifica los datos ingresados",
+          })
+        } else if (axiosError.response?.status === 429) {
+          toast.error("Demasiados intentos", {
+            description: "Has excedido el límite de intentos. Intenta más tarde",
+          })
+        } else if (axiosError.response?.data?.message) {
+          toast.error("Error de autenticación", {
+            description: axiosError.response.data.message,
+          })
+        } else if (axiosError.response?.data?.error) {
+          toast.error("Error de autenticación", {
+            description: axiosError.response.data.error,
+          })
+        } else {
+          toast.error("Error del servidor", {
+            description: "Hubo un problema con el servidor. Intenta nuevamente",
+          })
+        }
+      } else {
+        toast.error("Error de conexión", {
+          description: "Verifica tu conexión a internet e intenta nuevamente",
+        })
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,6 +134,36 @@ export default function LoginPage() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }))
+  }
+
+  const handleGoogleLogin = async () => {
+    try {
+      toast.loading("Redirigiendo a Google...", {
+        description: "Te estamos llevando a la página de Google",
+      })
+      // This will redirect to Google OAuth
+      window.location.href = `${api.defaults.baseURL}/auth/google`
+    } catch (error) {
+      console.error("Google login error:", error)
+      toast.error("Error con Google", {
+        description: "No se pudo iniciar sesión con Google. Intenta nuevamente",
+      })
+    }
+  }
+
+  const handleFacebookLogin = async () => {
+    try {
+      toast.loading("Redirigiendo a Facebook...", {
+        description: "Te estamos llevando a la página de Facebook",
+      })
+      // This will redirect to Facebook OAuth
+      window.location.href = `${api.defaults.baseURL}/auth/facebook`
+    } catch (error) {
+      console.error("Facebook login error:", error)
+      toast.error("Error con Facebook", {
+        description: "No se pudo iniciar sesión con Facebook. Intenta nuevamente",
+      })
+    }
   }
 
   return (
@@ -135,11 +272,12 @@ export default function LoginPage() {
           {/* Submit Button */}
           <motion.button
             type="submit"
-            className="w-full bg-peru-orange text-white py-3 px-6 hover:bg-peru-orange/90 transition-colors brand-text text-lg"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            disabled={isLoading}
+            className="w-full bg-peru-orange text-white py-3 px-6 hover:bg-peru-orange/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors brand-text text-lg"
+            whileHover={{ scale: isLoading ? 1 : 1.02 }}
+            whileTap={{ scale: isLoading ? 1 : 0.98 }}
           >
-            INICIAR SESIÓN
+            {isLoading ? "INICIANDO SESIÓN..." : "INICIAR SESIÓN"}
           </motion.button>
 
           {/* Divider */}
@@ -156,7 +294,9 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-4">
             <button
               type="button"
-              className="flex items-center justify-center px-4 py-3 border border-gray-300 hover:border-peru-orange transition-colors group"
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+              className="flex items-center justify-center px-4 py-3 border border-gray-300 hover:border-peru-orange disabled:opacity-50 transition-colors group"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
@@ -180,7 +320,9 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              className="flex items-center justify-center px-4 py-3 border border-gray-300 hover:border-peru-orange transition-colors group"
+              onClick={handleFacebookLogin}
+              disabled={isLoading}
+              className="flex items-center justify-center px-4 py-3 border border-gray-300 hover:border-peru-orange disabled:opacity-50 transition-colors group"
             >
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -209,8 +351,7 @@ export default function LoginPage() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1587595431973-160d0d94add1?q=80&w=1000&auto=format&fit=crop')",
+            backgroundImage: "url('https://res.cloudinary.com/dwvikvjrq/image/upload/v1748624876/banner_waz5ov.jpg')",
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-peru-dark/80 via-peru-dark/20 to-transparent" />

@@ -64,38 +64,38 @@ export default function OurServiceSection() {
   const currentContent = tabContent[activeTab as keyof typeof tabContent]
 
   return (
-    <section className="w-full h-full bg-peru-dark text-white py-4 md:py-8 px-4 md:px-8 flex flex-col justify-center overflow-hidden">
-      <div className="max-w-7xl mx-auto h-full flex flex-col justify-center">
+    <section className="w-full min-h-screen bg-peru-dark text-white py-8 md:py-16 px-4 md:px-8 flex flex-col justify-center">
+      <div className="max-w-7xl mx-auto w-full h-full flex flex-col justify-center">
         {/* Header */}
         <motion.div
-          className="text-center mb-4 md:mb-8"
+          className="text-center mb-8 md:mb-12"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           viewport={{ once: true }}
         >
-          <h2 className="text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-light mb-2 md:mb-6 brand-text">
-            <span className="text-lg md:text-2xl">→</span> NUESTROS SERVICIOS{" "}
-            <span className="text-lg md:text-2xl">←</span>
+          <h2 className="text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-light mb-4 md:mb-8 brand-text">
+            <span className="text-xl md:text-3xl">→</span> NUESTROS SERVICIOS{" "}
+            <span className="text-xl md:text-3xl">←</span>
           </h2>
-          <p className="text-sm md:text-lg text-gray-300 max-w-2xl mx-auto body-text">
+          <p className="text-base md:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto body-text">
             Itinerarios a medida, creados por nuestros expertos
           </p>
         </motion.div>
 
         {/* Tabs Navigation */}
         <motion.div
-          className="mb-4 md:mb-8"
+          className="mb-8 md:mb-12"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
           viewport={{ once: true }}
         >
-          <div className="flex flex-wrap justify-center gap-2 md:gap-8 lg:gap-12 border-b border-gray-600 pb-2 md:pb-4">
+          <div className="flex flex-wrap justify-center gap-3 md:gap-6 lg:gap-8 xl:gap-12 border-b border-gray-600 pb-4 md:pb-6">
             {tabs.map((tab, index) => (
               <motion.button
                 key={tab}
-                className={`text-xs md:text-sm lg:text-base font-medium tracking-wider transition-all duration-300 pb-1 md:pb-4 relative px-1 md:px-2 ${
+                className={`text-sm md:text-base lg:text-lg font-medium tracking-wider transition-all duration-300 pb-2 md:pb-4 relative px-2 md:px-3 ${
                   activeTab === tab ? "text-white" : "text-gray-400 hover:text-gray-200"
                 }`}
                 onClick={() => setActiveTab(tab)}
@@ -125,7 +125,7 @@ export default function OurServiceSection() {
 
         {/* Content */}
         <motion.div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 lg:gap-12 items-center flex-1"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center flex-1"
           key={activeTab}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -133,7 +133,7 @@ export default function OurServiceSection() {
         >
           {/* Image */}
           <motion.div
-            className="relative h-48 md:h-80 lg:h-96 overflow-hidden order-2 lg:order-1"
+            className="relative h-64 md:h-96 lg:h-[500px] xl:h-[600px] overflow-hidden order-2 lg:order-1"
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
@@ -149,17 +149,21 @@ export default function OurServiceSection() {
 
           {/* Text Content */}
           <motion.div
-            className="space-y-2 md:space-y-4 lg:space-y-6 order-1 lg:order-2"
+            className="space-y-4 md:space-y-6 lg:space-y-8 order-1 lg:order-2"
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
           >
-            <h3 className="text-xl md:text-3xl lg:text-4xl font-light brand-text">{currentContent.title}</h3>
+            <h3 className="text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-light brand-text">
+              {currentContent.title}
+            </h3>
 
-            <p className="text-sm md:text-lg text-gray-300 leading-relaxed body-text">{currentContent.description}</p>
+            <p className="text-base md:text-lg lg:text-xl xl:text-2xl text-gray-300 leading-relaxed body-text">
+              {currentContent.description}
+            </p>
 
             <motion.button
-              className="border border-white px-4 md:px-8 py-2 md:py-3 text-xs md:text-sm font-medium tracking-wider hover:bg-white hover:text-peru-dark transition-all duration-300 brand-text"
+              className="border border-white px-6 md:px-10 lg:px-12 py-3 md:py-4 lg:py-5 text-sm md:text-base lg:text-lg font-medium tracking-wider hover:bg-white hover:text-peru-dark transition-all duration-300 brand-text"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.2 }}

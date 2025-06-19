@@ -101,7 +101,7 @@ export default function AboutSection() {
 
         {/* Statistics Circles */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 md:gap-12"
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
@@ -122,25 +122,21 @@ export default function AboutSection() {
             >
               {/* Circle with dotted border */}
               <div className="relative mb-4 md:mb-6">
-                <div className="w-32 h-32 md:w-40 lg:w-48 md:h-40 lg:h-48 border-2 border-dotted border-gray-300 flex flex-col items-center justify-center relative">
+                <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-48 lg:h-48 border-2 border-dotted border-gray-300 rounded-full flex flex-col items-center justify-center relative">
                   {/* Icon */}
-                  <div className="absolute top-4 md:top-6 lg:top-8 left-1/2 transform -translate-x-1/2">
+                  <div className="absolute top-3 sm:top-4 md:top-5 lg:top-6 left-1/2 transform -translate-x-1/2">
                     {stat.icon}
                   </div>
 
                   {/* Main text */}
-                  <div className="text-center mt-2 md:mt-4">
-                    <h3 className="text-2xl md:text-3xl lg:text-4xl text-peru-dark mb-1 md:mb-2 brand-text">
+                  <div className="text-center mt-4 sm:mt-5 md:mt-6">
+                    <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-peru-dark mb-1 md:mb-2 brand-text">
                       {stat.title}
                     </h3>
+                    <p className="text-xs sm:text-sm md:text-sm text-gray-600 body-text">{stat.subtitle}</p>
                   </div>
                 </div>
               </div>
-
-              {/* Subtitle */}
-              <p className="text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider body-text text-center px-2">
-                {stat.subtitle}
-              </p>
             </motion.div>
           ))}
         </motion.div>

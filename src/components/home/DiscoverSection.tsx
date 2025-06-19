@@ -1,203 +1,122 @@
 "use client"
 
-import { useState } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 
 export default function DiscoverSection() {
-  const [showMore, setShowMore] = useState(false)
-
-  const destinations = [
+  const steps = [
     {
-      id: 1,
-      title: "CUSCO",
-      subtitle: "Ciudad Imperial, Perú",
-      image: "https://images.unsplash.com/photo-1526392060635-9d6019884377?q=80&w=1000&auto=format&fit=crop",
+      letter: "a",
+      title: "Planifica",
+      description: "Completa el formulario de consulta y comparte tu historia de viaje soñada.",
     },
     {
-      id: 2,
-      title: "AREQUIPA",
-      subtitle: "Ciudad Blanca, Perú",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop",
+      letter: "b",
+      title: "Personaliza",
+      description: "Obtén itinerarios personalizados y comienza a planificar tu aventura perfecta.",
     },
     {
-      id: 3,
-      title: "HUACACHINA",
-      subtitle: "Oasis del Desierto, Perú",
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      id: 4,
-      title: "PARACAS",
-      subtitle: "Reserva Nacional, Perú",
-      image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      id: 5,
-      title: "CHACHAPOYAS",
-      subtitle: "Fortaleza de Kuelap, Perú",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      id: 6,
-      title: "HUANCAYO",
-      subtitle: "Valle del Mantaro, Perú",
-      image: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      id: 7,
-      title: "TRUJILLO",
-      subtitle: "Ciudad de la Eterna Primavera, Perú",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      id: 8,
-      title: "CAJAMARCA",
-      subtitle: "Tierra del Carnaval, Perú",
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1000&auto=format&fit=crop",
+      letter: "c",
+      title: "Disfruta",
+      description: "Vive experiencias únicas del 100% de los destinos más increíbles del Perú.",
     },
   ]
 
-  const visibleDestinations = showMore ? destinations : destinations.slice(0, 4)
-
   return (
-    <section className="w-full h-full bg-white py-4 md:py-12 px-4 md:px-8 flex flex-col justify-center overflow-hidden">
-      <div className="max-w-7xl mx-auto h-full flex flex-col justify-center">
-        {/* Title - Más compacto en móvil */}
-        <motion.div
-          className="text-center mb-4 md:mb-8"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          viewport={{ once: true }}
-        >
-          <h2 className="text-xl md:text-4xl lg:text-5xl xl:text-6xl text-peru-dark leading-tight brand-text">
-            DESCUBRE LAS <em className="italic text-peru-orange">MARAVILLAS</em>
-            <br className="hidden md:block" />
-            <span className="md:hidden"> </span>DEL PERÚ
-          </h2>
-        </motion.div>
+    <section className="w-full bg-white overflow-hidden">
+      <div className="w-full">
+        {/* Two Column Layout - Full Width */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen lg:min-h-[100vh]">
+          {/* Left Column - Content */}
+          <motion.div
+            className="h-full flex flex-col justify-center px-6 md:px-12 lg:px-16 xl:px-20 py-12 md:py-16 lg:py-20 order-2 lg:order-1"
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true }}
+          >
+            <div className="space-y-6 md:space-y-8 lg:space-y-10 max-w-xl">
+              {/* Main Title */}
+              <div className="space-y-3 md:space-y-4">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black  leading-none tracking-tight">
+                  Cómo <em>Funciona</em>
+                </h2>
+                <p className="text-base md:text-lg lg:text-xl ">
+                  Tres simples pasos para comenzar tu aventura
+                </p>
+              </div>
 
-        {/* Destinations Grid */}
-        <motion.div
-          className="flex-1 flex flex-col justify-center"
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-          viewport={{ once: true }}
-        >
-          {/* Desktop Grid - 4 columns con mejor proporción */}
-          <div className="hidden md:grid md:grid-cols-4 gap-3 lg:gap-4 mb-6">
-            {visibleDestinations.map((destination, index) => (
+              {/* Steps List */}
+              <div className="space-y-0">
+                {steps.map((step, index) => (
+                  <motion.div
+                    key={step.letter}
+                    className="py-4 md:py-5 border-b border-black"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.6,
+                      ease: [0.16, 1, 0.3, 1],
+                      delay: 0.2 + index * 0.1,
+                    }}
+                    viewport={{ once: true }}
+                  >
+                    <div className="flex items-start space-x-4">
+                      <div className="flex-shrink-0">
+                        <span className="font-bold text-base md:text-lg">({step.letter})</span>
+                      </div>
+                      <div className="flex-1">
+                        <span className="font-bold text-base md:text-lg mr-2">{step.title}</span>
+                        <span className="text-base md:text-lg">{step.description}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Bottom Section */}
               <motion.div
-                key={destination.id}
-                className="relative h-64 lg:h-72 xl:h-80 overflow-hidden group cursor-pointer bg-gray-100"
+                className="space-y-6 md:space-y-8 pt-4 md:pt-6"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.6,
-                  ease: [0.16, 1, 0.3, 1],
-                  delay: 0.4 + index * 0.1,
-                }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
                 viewport={{ once: true }}
-                whileHover={{ scale: 1.02 }}
               >
-                {/* Image */}
-                <div className="absolute inset-0">
-                  <Image
-                    src={destination.image || "/placeholder.svg"}
-                    alt={destination.title}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
+                <div className="space-y-2 md:space-y-3">
+                  <p className="text-xl md:text-2xl lg:text-3xl xl:text-4xlleading-tight">
+                    No <em>esperes</em>—comienza tu aventura como
+                  </p>
+                  <p className="text-xl md:text-2xl lg:text-3xl xl:text-4xlleading-tight">
+                    viajero de próximo nivel hoy. Tu experiencia
+                  </p>
+                  <p className="text-xl md:text-2xl lg:text-3xl xl:text-4xlleading-tight">
+                    merece lo mejor, y tú mereces <em>crecer</em> con nosotros.
+                  </p>
                 </div>
 
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300" />
-
-                {/* Text Content */}
-                <div className="absolute inset-0 flex flex-col justify-between p-4 lg:p-5">
-                  {/* Empty space for top */}
-                  <div></div>
-
-                  {/* Bottom content */}
-                  <div className="text-white">
-                    <h3 className="text-lg lg:text-xl font-bold tracking-wide brand-text mb-1">{destination.title}</h3>
-                    <p className="text-xs lg:text-sm opacity-90 body-text">{destination.subtitle}</p>
-                  </div>
-                </div>
-
-                {/* Hover effect border */}
-                <div className="absolute inset-0 border-2 border-transparent group-hover:border-white/20 transition-colors duration-300"></div>
+                <button className="bg-black text-white px-6 md:px-8 py-3 md:py-4 text-sm md:text-base font-medium uppercase tracking-wider hover:bg-peru-dark transition-colors duration-300">
+                  Comenzar Aventura
+                </button>
               </motion.div>
-            ))}
-          </div>
+            </div>
+          </motion.div>
 
-          {/* Mobile Grid - 2 columns más compacto */}
-          <div className="md:hidden grid grid-cols-2 gap-2 mb-4">
-            {visibleDestinations.map((destination, index) => (
-              <motion.div
-                key={destination.id}
-                className="relative h-36 overflow-hidden group cursor-pointer bg-gray-100"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.6,
-                  ease: [0.16, 1, 0.3, 1],
-                  delay: 0.4 + index * 0.1,
-                }}
-                viewport={{ once: true }}
-                whileHover={{ scale: 1.02 }}
-              >
-                {/* Image */}
-                <div className="absolute inset-0">
-                  <Image
-                    src={destination.image || "/placeholder.svg"}
-                    alt={destination.title}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                </div>
-
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300" />
-
-                {/* Text Content */}
-                <div className="absolute inset-0 flex flex-col justify-between p-3">
-                  {/* Empty space for top */}
-                  <div></div>
-
-                  {/* Bottom content */}
-                  <div className="text-white">
-                    <h3 className="text-sm font-bold tracking-wide brand-text mb-1">{destination.title}</h3>
-                    <p className="text-xs opacity-90 body-text leading-tight">{destination.subtitle}</p>
-                  </div>
-                </div>
-
-                {/* Hover effect border */}
-                <div className="absolute inset-0 border border-transparent group-hover:border-white/20 transition-colors duration-300"></div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Load More Button - Más compacto */}
-          {!showMore && (
-            <motion.div
-              className="flex justify-center"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.8 }}
-              viewport={{ once: true }}
-            >
-              <button
-                onClick={() => setShowMore(true)}
-                className="bg-peru-dark text-white px-6 md:px-12 py-2 md:py-3 text-xs md:text-sm font-medium uppercase tracking-wider hover:bg-peru-orange transition-colors duration-300 brand-text"
-              >
-                VER MÁS
-              </button>
-            </motion.div>
-          )}
-        </motion.div>
+          {/* Right Column - Image */}
+          <motion.div
+            className="relative h-screen lg:h-full min-h-[60vh] lg:min-h-screen overflow-hidden order-1 lg:order-2"
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+            viewport={{ once: true }}
+          >
+            <Image
+              src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?q=80&w=1000&auto=format&fit=crop"
+              alt="Aventurero contemplando cascada en la selva peruana"
+              fill
+              className="object-cover"
+            />
+          </motion.div>
+        </div>
       </div>
     </section>
   )

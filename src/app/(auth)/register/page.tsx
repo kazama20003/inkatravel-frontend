@@ -54,7 +54,7 @@ export default function RegisterPage() {
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage:
-              "url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop')",
+              "url('https://res.cloudinary.com/dwvikvjrq/image/upload/v1748624876/banner_waz5ov.jpg')",
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-peru-dark/80 via-peru-dark/20 to-transparent" />

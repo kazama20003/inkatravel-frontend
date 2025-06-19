@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Globe } from "lucide-react"
+import Link from "next/link"
 
 interface AnimatedHeaderProps {
   customScrollPosition?: number
@@ -23,8 +24,14 @@ export default function AnimatedHeader({
   const [currentLanguage, setCurrentLanguage] = useState("ES")
   const [currentSection, setCurrentSection] = useState<
     "video" | "explore" | "about" | "discover" | "service" | "testimonials"
-  >("video")
+  >("explore")
   const lastScrollPosition = useRef<number>(0)
+  const [mounted, setMounted] = useState(false)
+
+  // Add this useEffect at the beginning of the component, after all useState declarations
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Track browser scroll position for non-home pages
   useEffect(() => {
@@ -81,18 +88,18 @@ export default function AnimatedHeader({
       secondary: "var(--peru-orange)",
     },
     explore: {
-      text: "var(--peru-dark)",
-      border: "var(--peru-dark)",
+      text: "#e67e22",
+      border: "#e67e22",
       secondary: "var(--peru-orange)",
     },
     about: {
-      text: "var(--peru-dark)",
-      border: "var(--peru-dark)",
+      text: "#e67e22",
+      border: "#e67e22",
       secondary: "var(--peru-orange)",
     },
     discover: {
-      text: "var(--peru-dark)",
-      border: "var(--peru-dark)",
+      text: "#e67e22",
+      border: "#e67e22",
       secondary: "var(--peru-orange)",
     },
     service: {
@@ -101,8 +108,8 @@ export default function AnimatedHeader({
       secondary: "var(--peru-gold)",
     },
     testimonials: {
-      text: "var(--peru-dark)",
-      border: "var(--peru-dark)",
+      text: "#e67e22",
+      border: "#e67e22",
       secondary: "var(--peru-orange)",
     },
   }
@@ -153,6 +160,73 @@ export default function AnimatedHeader({
     }
   }, [isMenuOpen, isLanguageMenuOpen])
 
+  if (!mounted) {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-50 h-[120px]">
+        <div className="hidden md:block">
+          <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div className="w-12 h-12 rounded-full border-2 border-dotted border-peru-dark"></div>
+            <div className="absolute left-1/2 transform -translate-x-1/2">
+              <Link href="/" className="flex items-center space-x-2">
+                <span className="text-lg body-text text-peru-dark">→</span>
+                <span className="text-3xl brand-text text-peru-dark">PERU TRAVEL</span>
+                <span className="text-lg body-text text-peru-dark">←</span>
+              </Link>
+            </div>
+            <div className="flex items-center space-x-3">
+              <button className="px-3 py-2 rounded-full border border-peru-dark text-peru-dark">ES</button>
+              <button className="w-12 h-12 rounded-full border border-peru-dark text-peru-dark"></button>
+              <a href="/login" className="px-4 py-2 rounded-full border border-peru-dark text-peru-dark">
+                INICIAR SESIÓN
+              </a>
+              <button className="px-6 py-3 rounded-full border border-peru-dark text-peru-dark">RESERVAR</button>
+            </div>
+          </div>
+          <div className="h-[60px]">
+            <nav className="max-w-7xl mx-auto px-6 h-15 flex items-center justify-center">
+              <div className="flex items-center">
+                <Link href="/" className="text-base font-medium px-6 py-3 brand-text text-peru-dark">
+                  DESTINOS
+                </Link>
+                <div className="w-px h-6 bg-peru-dark/30"></div>
+                <Link href="/tours" className="text-base font-medium px-6 py-3 brand-text text-peru-dark">
+                  TOURS
+                </Link>
+                <div className="w-px h-6 bg-peru-dark/30"></div>
+                <Link href="/itineraries" className="text-base font-medium px-6 py-3 brand-text text-peru-dark">
+                  ITINERARIOS
+                </Link>
+                <div className="w-px h-6 bg-peru-dark/30"></div>
+                <Link href="/when-to-go" className="text-base font-medium px-6 py-3 brand-text text-peru-dark">
+                  CUÁNDO IR
+                </Link>
+                <div className="w-px h-6 bg-peru-dark/30"></div>
+                <Link href="/about-us" className="text-base font-medium px-6 py-3 brand-text text-peru-dark">
+                  NOSOTROS
+                </Link>
+              </div>
+            </nav>
+          </div>
+        </div>
+        <div className="md:hidden">
+          <div className="px-4 flex items-center justify-between h-[60px]">
+            <div className="w-12 h-12 rounded-full border-2 border-dotted border-peru-dark"></div>
+            <Link href="/" className="flex items-center">
+              <span className="text-sm body-text mr-2 text-peru-dark">→</span>
+              <span className="text-lg brand-text text-peru-dark">PERU TRAVEL</span>
+              <span className="text-sm body-text ml-2 text-peru-dark">←</span>
+            </Link>
+            <div className="flex items-center space-x-1">
+              <button className="px-2 py-2 rounded-full border border-peru-dark text-peru-dark">ES</button>
+              <a href="/login" className="w-10 h-10 rounded-full border-2 border-dotted border-peru-dark"></a>
+              <button className="w-10 h-10 rounded-full border-2 border-dotted border-peru-dark"></button>
+            </div>
+          </div>
+        </div>
+      </header>
+    )
+  }
+
   return (
     <>
       <motion.header
@@ -200,59 +274,61 @@ export default function AnimatedHeader({
 
             {/* Center - Logo/Brand */}
             <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center">
-              <motion.div
-                className="relative"
-                animate={{
-                  scale: isCompact ? 0.9 : 1,
-                }}
-                transition={{
-                  duration: 0.5,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-              >
-                {/* Full "Peru Travel" */}
+              <Link href="/">
                 <motion.div
-                  className="flex items-center space-x-2 whitespace-nowrap"
+                  className="relative"
                   animate={{
-                    opacity: isCompact ? 0 : 1,
-                    scale: isCompact ? 0.8 : 1,
+                    scale: isCompact ? 0.9 : 1,
                   }}
                   transition={{
-                    duration: 0.4,
+                    duration: 0.5,
                     ease: [0.16, 1, 0.3, 1],
                   }}
-                  style={{
-                    color: currentColors.text,
-                    visibility: isCompact ? "hidden" : "visible",
-                  }}
                 >
-                  <span className="text-lg body-text">→</span>
-                  <span className="text-3xl brand-text">PERU TRAVEL</span>
-                  <span className="text-lg body-text">←</span>
-                </motion.div>
+                  {/* Full "Peru Travel" */}
+                  <motion.div
+                    className="flex items-center space-x-2 whitespace-nowrap"
+                    animate={{
+                      opacity: isCompact ? 0 : 1,
+                      scale: isCompact ? 0.8 : 1,
+                    }}
+                    transition={{
+                      duration: 0.4,
+                      ease: [0.16, 1, 0.3, 1],
+                    }}
+                    style={{
+                      color: currentColors.text,
+                      visibility: isCompact ? "hidden" : "visible",
+                    }}
+                  >
+                    <span className="text-lg body-text">→</span>
+                    <span className="text-3xl brand-text">PERU TRAVEL</span>
+                    <span className="text-lg body-text">←</span>
+                  </motion.div>
 
-                {/* Compact "P" */}
-                <motion.div
-                  className="flex items-center justify-center space-x-2 absolute top-0 left-0 right-0"
-                  animate={{
-                    opacity: isCompact ? 1 : 0,
-                    scale: isCompact ? 1 : 0.8,
-                  }}
-                  transition={{
-                    duration: 0.4,
-                    ease: [0.16, 1, 0.3, 1],
-                    delay: isCompact ? 0.1 : 0,
-                  }}
-                  style={{
-                    color: currentColors.text,
-                    visibility: isCompact ? "visible" : "hidden",
-                  }}
-                >
-                  <span className="text-lg body-text">→</span>
-                  <span className="text-4xl brand-text">P</span>
-                  <span className="text-lg body-text">←</span>
+                  {/* Compact "P" */}
+                  <motion.div
+                    className="flex items-center justify-center space-x-2 absolute top-0 left-0 right-0"
+                    animate={{
+                      opacity: isCompact ? 1 : 0,
+                      scale: isCompact ? 1 : 0.8,
+                    }}
+                    transition={{
+                      duration: 0.4,
+                      ease: [0.16, 1, 0.3, 1],
+                      delay: isCompact ? 0.1 : 0,
+                    }}
+                    style={{
+                      color: currentColors.text,
+                      visibility: isCompact ? "visible" : "hidden",
+                    }}
+                  >
+                    <span className="text-lg body-text">→</span>
+                    <span className="text-4xl brand-text">P</span>
+                    <span className="text-lg body-text">←</span>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
+              </Link>
             </div>
 
             {/* Right - Language, Search and Reservar */}
@@ -335,13 +411,7 @@ export default function AnimatedHeader({
               </motion.button>
 
               {/* Login Button */}
-              <motion.a
-                href="/login"
-                className="px-4 py-2 rounded-full border flex items-center space-x-2 transition-all duration-300"
-                style={{
-                  borderColor: currentColors.border,
-                  color: currentColors.text,
-                }}
+              <motion.div
                 whileHover={{
                   scale: 1.05,
                   backgroundColor: currentColors.text,
@@ -353,26 +423,35 @@ export default function AnimatedHeader({
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <circle
-                    cx="12"
-                    cy="7"
-                    r="4"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span className="text-sm font-medium brand-text">INICIAR SESIÓN</span>
-              </motion.a>
+                <Link
+                  href="/login"
+                  className="px-4 py-2 rounded-full border flex items-center space-x-2 transition-all duration-300"
+                  style={{
+                    borderColor: currentColors.border,
+                    color: currentColors.text,
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle
+                      cx="12"
+                      cy="7"
+                      r="4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span className="text-sm font-medium brand-text">INICIAR SESIÓN</span>
+                </Link>
+              </motion.div>
 
               {/* Reservar Button */}
               <motion.button
@@ -434,10 +513,7 @@ export default function AnimatedHeader({
                 <div className="flex items-center">
                   {["DESTINOS", "TOURS", "ITINERARIOS", "CUÁNDO IR", "NOSOTROS"].map((item, index) => (
                     <div key={item} className="flex items-center">
-                      <motion.a
-                        href={item === "TOURS" ? "/tours" : item === "DESTINOS" ? "/" : "#"}
-                        className="text-base font-medium hover:opacity-70 transition-colors px-6 py-3 brand-text"
-                        style={{ color: currentColors.text }}
+                      <motion.div
                         initial={{ y: -20, opacity: 0 }}
                         animate={{
                           y: isCompact ? -20 : 0,
@@ -450,8 +526,26 @@ export default function AnimatedHeader({
                         }}
                         whileHover={{ scale: 1.05 }}
                       >
-                        {item}
-                      </motion.a>
+                        <Link
+                          href={
+                            item === "TOURS"
+                              ? "/tours"
+                              : item === "DESTINOS"
+                                ? "/"
+                                : item === "ITINERARIOS"
+                                  ? "/itineraries"
+                                  : item === "CUÁNDO IR"
+                                    ? "/when-to-go"
+                                    : item === "NOSOTROS"
+                                      ? "/about-us"
+                                      : "#"
+                          }
+                          className="text-base font-medium hover:opacity-70 transition-colors px-6 py-3 brand-text"
+                          style={{ color: currentColors.text }}
+                        >
+                          {item}
+                        </Link>
+                      </motion.div>
 
                       {index < 4 && (
                         <motion.div
@@ -478,134 +572,11 @@ export default function AnimatedHeader({
         </div>
 
         {/* Mobile Header */}
-        <div className="md:hidden px-4 h-16 flex items-center justify-between">
-          {/* Left - Hamburger Menu */}
-          <motion.button
-            className="w-12 h-12 rounded-full border-2 border-dotted flex items-center justify-center"
-            style={{
-              borderColor: currentColors.border,
-              color: currentColors.text,
-            }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => setIsMenuOpen(true)}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </motion.button>
-
-          {/* Center - Logo/Brand */}
-          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center">
-            <motion.div
-              className="relative"
-              animate={{
-                scale: isCompact ? 0.9 : 1,
-              }}
-              transition={{
-                duration: 0.5,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-            >
-              {/* Full "Peru Travel" */}
-              <motion.div
-                className="flex items-center whitespace-nowrap"
-                animate={{
-                  opacity: isCompact ? 0 : 1,
-                  scale: isCompact ? 0.8 : 1,
-                }}
-                transition={{
-                  duration: 0.4,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                style={{
-                  color: currentColors.text,
-                  visibility: isCompact ? "hidden" : "visible",
-                }}
-              >
-                <span className="text-sm body-text mr-1">→</span>
-                <span className="text-lg brand-text">PERU TRAVEL</span>
-                <span className="text-sm body-text ml-1">←</span>
-              </motion.div>
-
-              {/* Compact "P" */}
-              <motion.div
-                className="flex items-center justify-center absolute top-0 left-0 right-0"
-                animate={{
-                  opacity: isCompact ? 1 : 0,
-                  scale: isCompact ? 1 : 0.8,
-                }}
-                transition={{
-                  duration: 0.4,
-                  ease: [0.16, 1, 0.3, 1],
-                  delay: isCompact ? 0.1 : 0,
-                }}
-                style={{
-                  color: currentColors.text,
-                  visibility: isCompact ? "visible" : "hidden",
-                }}
-              >
-                <span className="text-sm body-text mr-1">→</span>
-                <span className="text-2xl brand-text">P</span>
-                <span className="text-sm body-text ml-1">←</span>
-              </motion.div>
-            </motion.div>
-          </div>
-
-          {/* Right - Language Selector */}
-          <div className="flex items-center space-x-2">
-            <div className="relative language-selector">
-              <motion.button
-                className="px-2 py-1 rounded-full border flex items-center space-x-1"
-                style={{
-                  borderColor: currentColors.border,
-                  color: currentColors.text,
-                }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-                onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
-              >
-                <span className="text-sm brand-text">{currentLanguage}</span>
-                <Globe size={12} />
-              </motion.button>
-
-              {/* Language Dropdown - Mobile */}
-              <AnimatePresence>
-                {isLanguageMenuOpen && (
-                  <motion.div
-                    className="absolute top-full right-0 mt-2 bg-white shadow-lg rounded-md overflow-hidden z-50 w-20"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {languages.map((lang) => (
-                      <button
-                        key={lang.code}
-                        className={`w-full text-center px-2 py-2 text-sm hover:bg-gray-100 transition-colors brand-text ${
-                          currentLanguage === lang.code ? "font-medium bg-gray-50" : ""
-                        }`}
-                        onClick={() => {
-                          setCurrentLanguage(lang.code)
-                          setIsLanguageMenuOpen(false)
-                        }}
-                      >
-                        {lang.code}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Login Button - Mobile */}
-            <motion.a
-              href="/login"
-              className="w-10 h-10 rounded-full border-2 border-dotted flex items-center justify-center"
+        <div className="md:hidden">
+          <div className="px-4 flex items-center justify-between" style={{ height: "60px" }}>
+            {/* Left - Hamburger Menu */}
+            <motion.button
+              className="w-12 h-12 rounded-full border-2 border-dotted flex items-center justify-center flex-shrink-0"
               style={{
                 borderColor: currentColors.border,
                 color: currentColors.text,
@@ -613,54 +584,176 @@ export default function AnimatedHeader({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.2 }}
+              onClick={() => setIsMenuOpen(true)}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <circle
-                  cx="12"
-                  cy="7"
-                  r="4"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </motion.a>
-
-            <motion.button
-              className="w-10 h-10 rounded-full border-2 border-dotted flex items-center justify-center"
-              style={{
-                borderColor: currentColors.border,
-                color: currentColors.secondary,
-              }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <polyline
-                  points="22,6 12,13 2,6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </motion.button>
+
+            {/* Center - Logo/Brand */}
+            <div className="flex-1 flex items-center justify-center px-6 min-w-0">
+              <Link href="/" className="relative flex items-center justify-center">
+                {/* Full "Peru Travel" */}
+                <motion.div
+                  className="flex items-center whitespace-nowrap"
+                  initial={{ opacity: 1, scale: 1 }}
+                  animate={{
+                    opacity: isCompact ? 0 : 1,
+                    scale: isCompact ? 0.8 : 1,
+                  }}
+                  transition={{
+                    duration: 0.3,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                  style={{
+                    color: currentColors.text,
+                    position: isCompact ? "absolute" : "static",
+                    visibility: isCompact ? "hidden" : "visible",
+                  }}
+                >
+                  <span className="text-sm body-text mr-2">→</span>
+                  <span className="text-lg brand-text">PERU TRAVEL</span>
+                  <span className="text-sm body-text ml-2">←</span>
+                </motion.div>
+
+                {/* Compact "P" */}
+                <motion.div
+                  className="flex items-center justify-center"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{
+                    opacity: isCompact ? 1 : 0,
+                    scale: isCompact ? 1 : 0.8,
+                  }}
+                  transition={{
+                    duration: 0.3,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                  style={{
+                    color: currentColors.text,
+                    position: isCompact ? "static" : "absolute",
+                    visibility: isCompact ? "visible" : "hidden",
+                    top: isCompact ? "auto" : 0,
+                    left: isCompact ? "auto" : 0,
+                    right: isCompact ? "auto" : 0,
+                  }}
+                >
+                  <span className="text-sm body-text mr-2">→</span>
+                  <span className="text-xl brand-text">P</span>
+                  <span className="text-sm body-text ml-2">←</span>
+                </motion.div>
+              </Link>
+            </div>
+
+            {/* Right - Actions */}
+            <div className="flex items-center space-x-1 flex-shrink-0">
+              {/* Language Selector */}
+              <div className="relative language-selector">
+                <motion.button
+                  className="px-2 py-2 rounded-full border flex items-center space-x-1 min-w-[45px] justify-center"
+                  style={{
+                    borderColor: currentColors.border,
+                    color: currentColors.text,
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
+                >
+                  <span className="text-xs brand-text">{currentLanguage}</span>
+                  <Globe size={10} />
+                </motion.button>
+
+                {/* Language Dropdown - Mobile */}
+                <AnimatePresence>
+                  {isLanguageMenuOpen && (
+                    <motion.div
+                      className="absolute top-full right-0 mt-1 bg-white shadow-lg rounded-md overflow-hidden z-50 w-16"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {languages.map((lang) => (
+                        <button
+                          key={lang.code}
+                          className={`w-full text-center px-1 py-1.5 text-xs hover:bg-gray-100 transition-colors brand-text ${
+                            currentLanguage === lang.code ? "font-medium bg-gray-50" : ""
+                          }`}
+                          onClick={() => {
+                            setCurrentLanguage(lang.code)
+                            setIsLanguageMenuOpen(false)
+                          }}
+                        >
+                          {lang.code}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Login Button - Mobile */}
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.2 }}>
+                <Link
+                  href="/login"
+                  className="w-10 h-10 rounded-full border-2 border-dotted flex items-center justify-center"
+                  style={{
+                    borderColor: currentColors.border,
+                    color: currentColors.text,
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle
+                      cx="12"
+                      cy="7"
+                      r="4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </Link>
+              </motion.div>
+
+              <motion.button
+                className="w-10 h-10 rounded-full border-2 border-dotted flex items-center justify-center"
+                style={{
+                  borderColor: currentColors.border,
+                  color: currentColors.secondary,
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <polyline
+                    points="22,6 12,13 2,6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </motion.button>
+            </div>
           </div>
         </div>
       </motion.header>
@@ -790,20 +883,17 @@ export default function AnimatedHeader({
                       {[
                         { name: "DESTINOS", hasArrow: true, href: "/" },
                         { name: "TOURS", hasArrow: true, href: "/tours" },
-                        { name: "ITINERARIOS", hasArrow: false, href: "#" },
-                        { name: "CUÁNDO IR", hasArrow: false, href: "#" },
-                        { name: "NOSOTROS", hasArrow: false, href: "#" },
-                      ].map((item, index) => (
-                        <motion.a
+                        { name: "ITINERARIOS", hasArrow: true, href: "/itineraries" },
+                        { name: "CUÁNDO IR", hasArrow: true, href: "/when-to-go" },
+                        { name: "NOSOTROS", hasArrow: true, href: "/about-us" },
+                      ].map((item) => (
+                        <Link
                           key={item.name}
                           href={item.href}
                           className="block text-2xl hover:opacity-70 transition-opacity brand-text text-peru-dark"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.3 + index * 0.1, duration: 0.5 }}
                         >
                           {item.name} {item.hasArrow && "›"}
-                        </motion.a>
+                        </Link>
                       ))}
                     </nav>
                   </motion.div>
