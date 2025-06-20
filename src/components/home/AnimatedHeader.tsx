@@ -88,18 +88,18 @@ export default function AnimatedHeader({
       secondary: "var(--peru-orange)",
     },
     explore: {
-      text: "#e67e22",
-      border: "#e67e22",
+      text: "var(--peru-dark)",
+      border: "var(--peru-dark)",
       secondary: "var(--peru-orange)",
     },
     about: {
-      text: "#e67e22",
-      border: "#e67e22",
+      text: "var(--peru-dark)",
+      border: "var(--peru-dark)",
       secondary: "var(--peru-orange)",
     },
     discover: {
-      text: "#e67e22",
-      border: "#e67e22",
+      text: "var(--peru-dark)",
+      border: "var(--peru-dark)",
       secondary: "var(--peru-orange)",
     },
     service: {
@@ -108,8 +108,8 @@ export default function AnimatedHeader({
       secondary: "var(--peru-gold)",
     },
     testimonials: {
-      text: "#e67e22",
-      border: "#e67e22",
+      text: "var(--peru-dark)",
+      border: "var(--peru-dark)",
       secondary: "var(--peru-orange)",
     },
   }
@@ -124,12 +124,17 @@ export default function AnimatedHeader({
     { code: "DE", name: "Deutsch" },
   ]
 
+  // Function to close all menus
+  const closeAllMenus = () => {
+    setIsMenuOpen(false)
+    setIsLanguageMenuOpen(false)
+  }
+
   // Close menu when clicking outside or on escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setIsMenuOpen(false)
-        setIsLanguageMenuOpen(false)
+        closeAllMenus()
       }
     }
 
@@ -274,7 +279,7 @@ export default function AnimatedHeader({
 
             {/* Center - Logo/Brand */}
             <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center">
-              <Link href="/">
+              <Link href="/" onClick={closeAllMenus}>
                 <motion.div
                   className="relative"
                   animate={{
@@ -403,6 +408,7 @@ export default function AnimatedHeader({
                 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2 }}
+                onClick={closeAllMenus}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
@@ -430,6 +436,7 @@ export default function AnimatedHeader({
                     borderColor: currentColors.border,
                     color: currentColors.text,
                   }}
+                  onClick={closeAllMenus}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path
@@ -467,6 +474,7 @@ export default function AnimatedHeader({
                 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2 }}
+                onClick={closeAllMenus}
               >
                 <span className="text-sm font-medium brand-text">RESERVAR</span>
                 <div
@@ -542,6 +550,7 @@ export default function AnimatedHeader({
                           }
                           className="text-base font-medium hover:opacity-70 transition-colors px-6 py-3 brand-text"
                           style={{ color: currentColors.text }}
+                          onClick={closeAllMenus}
                         >
                           {item}
                         </Link>
@@ -595,7 +604,7 @@ export default function AnimatedHeader({
 
             {/* Center - Logo/Brand */}
             <div className="flex-1 flex items-center justify-center px-6 min-w-0">
-              <Link href="/" className="relative flex items-center justify-center">
+              <Link href="/" className="relative flex items-center justify-center" onClick={closeAllMenus}>
                 {/* Full "Peru Travel" */}
                 <motion.div
                   className="flex items-center whitespace-nowrap"
@@ -704,6 +713,7 @@ export default function AnimatedHeader({
                     borderColor: currentColors.border,
                     color: currentColors.text,
                   }}
+                  onClick={closeAllMenus}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path
@@ -735,6 +745,7 @@ export default function AnimatedHeader({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2 }}
+                onClick={closeAllMenus}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
@@ -822,7 +833,10 @@ export default function AnimatedHeader({
                   </div>
 
                   {/* Search */}
-                  <button className="w-12 h-12 rounded-full border border-peru-green text-peru-green flex items-center justify-center hover:opacity-70 transition-opacity">
+                  <button
+                    className="w-12 h-12 rounded-full border border-peru-green text-peru-green flex items-center justify-center hover:opacity-70 transition-opacity"
+                    onClick={closeAllMenus}
+                  >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
                       <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -861,7 +875,10 @@ export default function AnimatedHeader({
                               ? "bg-peru-orange text-white"
                               : "border border-gray-300 text-gray-600 hover:border-peru-orange"
                           }`}
-                          onClick={() => setCurrentLanguage(lang.code)}
+                          onClick={() => {
+                            setCurrentLanguage(lang.code)
+                            closeAllMenus()
+                          }}
                         >
                           {lang.code}
                         </button>
@@ -891,6 +908,7 @@ export default function AnimatedHeader({
                           key={item.name}
                           href={item.href}
                           className="block text-2xl hover:opacity-70 transition-opacity brand-text text-peru-dark"
+                          onClick={closeAllMenus}
                         >
                           {item.name} {item.hasArrow && "›"}
                         </Link>
@@ -917,6 +935,7 @@ export default function AnimatedHeader({
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.8 + index * 0.1, duration: 0.5 }}
+                          onClick={closeAllMenus}
                         >
                           {item}
                         </motion.a>
@@ -932,7 +951,10 @@ export default function AnimatedHeader({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.2, duration: 0.5 }}
                 >
-                  <button className="w-full py-4 text-center text-sm font-medium uppercase tracking-wider border border-peru-gold text-peru-gold rounded-full hover:opacity-70 transition-all duration-300 mb-6 brand-text">
+                  <button
+                    className="w-full py-4 text-center text-sm font-medium uppercase tracking-wider border border-peru-gold text-peru-gold rounded-full hover:opacity-70 transition-all duration-300 mb-6 brand-text"
+                    onClick={closeAllMenus}
+                  >
                     CONTÁCTANOS
                   </button>
                   <p className="text-center body-text text-peru-dark/60">¡Hola! ¿Cómo podemos ayudarte?</p>

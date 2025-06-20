@@ -21,21 +21,21 @@ export default function OurServiceSection() {
       title: "Viajes a Medida",
       description:
         "Cada viaje está diseñado únicamente para ti, adaptándose a tus preferencias personales, intereses y estilo de viaje. Nuestro equipo experto crea itinerarios personalizados que generan experiencias inolvidables.",
-      image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432254/machupicchu-turista-wta_itauck.jpg",
       buttonText: "PLANIFICA TU VIAJE",
     },
     "EXPERT GUIDES": {
       title: "Guías Expertos",
       description:
         "Nuestros guías locales cuidadosamente seleccionados dan vida a los destinos con su profundo conocimiento, pasión y acceso exclusivo. Experimenta conexiones culturales auténticas y gemas ocultas que solo los locales conocen.",
-      image: "https://images.unsplash.com/photo-1539650116574-75c0c6d73c6e?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432254/recorrido-gria-turistas-machu-picchu-full_fvrlcn.jpg",
       buttonText: "CONOCE NUESTROS GUÍAS",
     },
     "PRICE PROMISE": {
       title: "Garantía de Precio",
       description:
         "Garantizamos precios transparentes sin costos ocultos. Si encuentras un viaje comparable a un precio menor, lo igualamos. Tu inversión va directamente a crear experiencias de viaje excepcionales.",
-      image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432261/turismo-vivencial-la-comunidad-amaru-cusco-peru-inkayni-peru-tours_bggbj7.webp",
       buttonText: "VER PRECIOS",
     },
     "FAMILY OPERATED": {
@@ -49,14 +49,14 @@ export default function OurServiceSection() {
       title: "Compensación de Carbono",
       description:
         "Estamos comprometidos con el turismo responsable. Cada viaje incluye iniciativas de compensación de carbono, apoyando proyectos de reforestación y programas de energía renovable para minimizar el impacto ambiental.",
-      image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
       buttonText: "SOSTENIBILIDAD",
     },
     "CHARITY COMMITMENT": {
       title: "Compromiso Benéfico",
       description:
         "Nos enorgullece ser el socio oficial de viajes de la Fundación ForRangers, apoyando sus esfuerzos críticos de conservación y protegiendo la vida silvestre en peligro de extinción.",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432259/turista-fotografiando-machu-picchu-desde-casa-guardian-full_qsoegz.jpg",
       buttonText: "CONOCE MÁS",
     },
   }

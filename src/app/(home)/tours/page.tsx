@@ -15,7 +15,7 @@ const toursByCategory = {
       subtitle: "La ciudadela perdida de los Incas",
       description:
         "Descubre la majestuosa ciudadela inca en una experiencia única que combina historia, naturaleza y aventura en el corazón de los Andes peruanos.",
-      image: "https://images.unsplash.com/photo-1587595431973-160d0d94add1?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433526/colca-canyon-in-arequipa-297_rui1xh.jpg",
       price: 899,
       duration: "4D/3N",
       rating: 4.9,
@@ -36,7 +36,7 @@ const toursByCategory = {
       subtitle: "Pisac, Ollantaytambo y más",
       description:
         "Explora los pueblos ancestrales del Valle Sagrado, donde la cultura inca sigue viva en cada rincón y las tradiciones se mantienen intactas.",
-      image: "https://images.unsplash.com/photo-1531065208531-4036c0dba3ca?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432254/machupicchu-turista-wta_itauck.jpg",
       price: 799,
       duration: "3D/2N",
       rating: 4.8,
@@ -57,7 +57,7 @@ const toursByCategory = {
       subtitle: "Fortaleza de Kuelap",
       description:
         "Aventúrate en la misteriosa fortaleza de Kuelap, conocida como el 'Machu Picchu del norte', rodeada de bosques nubosos únicos.",
-      image: "https://images.unsplash.com/photo-1587595431973-160d0d94add1?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433526/colca-canyon-in-arequipa-297_rui1xh.jpg",
       price: 1099,
       duration: "4D/3N",
       rating: 4.6,
@@ -99,7 +99,7 @@ const toursByCategory = {
       subtitle: "Fortaleza inca de Cusco",
       description:
         "Explora la impresionante fortaleza inca con bloques de piedra perfectamente ensamblados, testimonio de la ingeniería inca.",
-      image: "https://images.unsplash.com/photo-1587595431973-160d0d94add1?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433526/colca-canyon-in-arequipa-297_rui1xh.jpg",
       price: 199,
       duration: "1D",
       rating: 4.5,
@@ -120,7 +120,7 @@ const toursByCategory = {
       subtitle: "La civilización más antigua de América",
       description:
         "Descubre la ciudad sagrada de Caral, la civilización más antigua del continente americano con más de 5000 años de antigüedad.",
-      image: "https://images.unsplash.com/photo-1587595431973-160d0d94add1?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433526/colca-canyon-in-arequipa-297_rui1xh.jpg",
       price: 399,
       duration: "1D",
       rating: 4.3,
@@ -143,7 +143,7 @@ const toursByCategory = {
       subtitle: "Inmersión en la selva tropical",
       description:
         "Sumérgete en la biodiversidad amazónica más rica del planeta, donde cada día trae nuevos descubrimientos de flora y fauna únicas.",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433100/best-time-to-explore-the-manu-amazon-rainforest-4-1_mq8and.jpg",
       price: 1599,
       duration: "6D/5N",
       rating: 4.7,
@@ -164,7 +164,7 @@ const toursByCategory = {
       subtitle: "Reserva Nacional del Amazonas",
       description:
         "Explora la reserva nacional más grande del Perú, hogar de jaguares, manatíes y más de 500 especies de aves en su hábitat natural.",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433100/best-time-to-explore-the-manu-amazon-rainforest-4-1_mq8and.jpg",
       price: 1299,
       duration: "4D/3N",
       rating: 4.8,
@@ -185,7 +185,7 @@ const toursByCategory = {
       subtitle: "Parque Nacional del Manu",
       description:
         "Descubre uno de los lugares con mayor biodiversidad del mundo, donde conviven más de 1000 especies de aves y 200 de mamíferos.",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433100/best-time-to-explore-the-manu-amazon-rainforest-4-1_mq8and.jpg",
       price: 1899,
       duration: "7D/6N",
       rating: 4.9,
@@ -206,7 +206,7 @@ const toursByCategory = {
       subtitle: "Reserva Nacional Tambopata",
       description:
         "Vive la experiencia amazónica más accesible desde Puerto Maldonado, con lodges de lujo en medio de la selva virgen.",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433100/best-time-to-explore-the-manu-amazon-rainforest-4-1_mq8and.jpg",
       price: 999,
       duration: "3D/2N",
       rating: 4.5,
@@ -420,7 +420,7 @@ const toursByCategory = {
       subtitle: "Ciudad Blanca del Perú",
       description:
         "Explora la arquitectura colonial de sillar blanco y degusta la exquisita gastronomía arequipeña en la ciudad de los volcanes.",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433100/best-time-to-explore-the-manu-amazon-rainforest-4-1_mq8and.jpg",
       price: 549,
       duration: "2D/1N",
       rating: 4.5,
@@ -462,7 +462,7 @@ const toursByCategory = {
       subtitle: "Centro histórico y gastronomía",
       description:
         "Recorre el centro histórico de Lima, Patrimonio de la Humanidad, y disfruta de la mejor gastronomía del mundo.",
-      image: "https://images.unsplash.com/photo-1587595431973-160d0d94add1?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433526/colca-canyon-in-arequipa-297_rui1xh.jpg",
       price: 299,
       duration: "1D",
       rating: 4.4,
@@ -483,7 +483,7 @@ const toursByCategory = {
       subtitle: "Pueblo textil del Valle Sagrado",
       description:
         "Conoce las técnicas ancestrales de textilería andina en este pintoresco pueblo donde el tiempo se detuvo.",
-      image: "https://images.unsplash.com/photo-1531065208531-4036c0dba3ca?q=80&w=1000&auto=format&fit=crop",
+      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432254/machupicchu-turista-wta_itauck.jpg",
       price: 199,
       duration: "1D",
       rating: 4.3,

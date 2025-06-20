@@ -22,7 +22,7 @@ export default function ContactSection() {
           {/* Main Image */}
           <div className="w-full h-full relative overflow-hidden">
             <Image
-        src="https://res.cloudinary.com/dwvikvjrq/image/upload/v1750114576/uploads/sgqkf6xncugoizwfbv7o.jpg"
+        src="https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432255/turista-cusco_ad5tin.jpg"
         alt="Safari landscape with acacia tree at sunset"
         fill
         className="object-cover"

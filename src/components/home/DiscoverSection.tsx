@@ -110,7 +110,7 @@ export default function DiscoverSection() {
             viewport={{ once: true }}
           >
             <Image
-              src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?q=80&w=1000&auto=format&fit=crop"
+              src="https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432254/recorrido-gria-turistas-machu-picchu-full_fvrlcn.jpg"
               alt="Aventurero contemplando cascada en la selva peruana"
               fill
               className="object-cover"

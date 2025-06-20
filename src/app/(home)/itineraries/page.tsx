@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
-import { MapPin, Clock, Camera } from "lucide-react"
+import { MapPin, Clock, Camera, Star, Users, Calendar, ArrowRight, CheckCircle } from "lucide-react"
 
 // Itinerarios informativos organizados por duración
 const itinerariesByDuration = {
@@ -18,45 +18,11 @@ const itinerariesByDuration = {
       duration: "3D/2N",
       difficulty: "Fácil" as const,
       tourType: "Premium" as const,
+      price: "desde $299",
+      rating: 4.8,
       destinations: ["Lima Centro", "Miraflores", "Barranco", "San Isidro"],
-      activities: ["City tour", "Tour gastronómico", "Museos", "Vida nocturna"],
-      dayByDay: [
-        {
-          day: 1,
-          title: "LLEGADA A LIMA - CENTRO HISTÓRICO",
-          location: "Lima Centro",
-          activities: [
-            "Recepción en el aeropuerto Jorge Chávez",
-            "Traslado al hotel en Miraflores",
-            "Tour por el Centro Histórico de Lima",
-            "Visita a la Plaza Mayor y Catedral",
-            "Cena de bienvenida con show folclórico",
-          ],
-        },
-        {
-          day: 2,
-          title: "LIMA MODERNA - BARRANCO Y GASTRONOMÍA",
-          location: "Miraflores - Barranco",
-          activities: [
-            "Tour por Miraflores y el Malecón",
-            "Exploración del bohemio distrito de Barranco",
-            "Tour gastronómico por mercados locales",
-            "Degustación de pisco y cócteles peruanos",
-            "Cena en restaurante de autor",
-          ],
-        },
-        {
-          day: 3,
-          title: "MUSEOS Y DESPEDIDA",
-          location: "Lima - Aeropuerto",
-          activities: [
-            "Visita al Museo Larco Herrera",
-            "Tiempo libre para compras",
-            "Almuerzo de despedida",
-            "Traslado al aeropuerto",
-          ],
-        },
-      ],
+      highlights: ["Centro Histórico UNESCO", "Tour Gastronómico", "Museos de Clase Mundial", "Vida Nocturna"],
+      included: ["Hoteles 4*", "Traslados", "Tours guiados", "Algunas comidas"],
     },
     {
       id: 2,
@@ -68,44 +34,11 @@ const itinerariesByDuration = {
       duration: "4D/3N",
       difficulty: "Moderado" as const,
       tourType: "Premium" as const,
+      price: "desde $449",
+      rating: 4.9,
       destinations: ["Cusco", "Valle Sagrado", "Pisac", "Ollantaytambo"],
-      activities: ["Sitios arqueológicos", "Mercados locales", "Textilería", "Gastronomía andina"],
-      dayByDay: [
-        {
-          day: 1,
-          title: "LLEGADA A CUSCO",
-          location: "Cusco",
-          activities: [
-            "Recepción en aeropuerto",
-            "Traslado al hotel",
-            "Tiempo de aclimatación",
-            "Caminata suave por San Blas",
-          ],
-        },
-        {
-          day: 2,
-          title: "CITY TOUR CUSCO",
-          location: "Cusco",
-          activities: ["Visita a Qorikancha", "Tour por Sacsayhuamán", "Exploración de Q'enqo", "Mercado de San Pedro"],
-        },
-        {
-          day: 3,
-          title: "VALLE SAGRADO",
-          location: "Valle Sagrado",
-          activities: [
-            "Mercado de Pisac",
-            "Sitio arqueológico de Pisac",
-            "Almuerzo en Urubamba",
-            "Fortaleza de Ollantaytambo",
-          ],
-        },
-        {
-          day: 4,
-          title: "DESPEDIDA",
-          location: "Cusco - Aeropuerto",
-          activities: ["Tiempo libre para compras", "Traslado al aeropuerto"],
-        },
-      ],
+      highlights: ["Qorikancha", "Sacsayhuamán", "Mercado de Pisac", "Fortaleza Ollantaytambo"],
+      included: ["Hoteles 3-4*", "Traslados", "Tours guiados", "Entradas"],
     },
     {
       id: 3,
@@ -117,44 +50,11 @@ const itinerariesByDuration = {
       duration: "4D/3N",
       difficulty: "Moderado" as const,
       tourType: "Clásico" as const,
+      price: "desde $389",
+      rating: 4.7,
       destinations: ["Arequipa", "Colca", "Chivay", "Yanque"],
-      activities: ["Arquitectura colonial", "Observación de cóndores", "Aguas termales", "Pueblos tradicionales"],
-      dayByDay: [
-        {
-          day: 1,
-          title: "LLEGADA A AREQUIPA",
-          location: "Arequipa",
-          activities: [
-            "Recepción en aeropuerto",
-            "City tour por Arequipa",
-            "Monasterio de Santa Catalina",
-            "Plaza de Armas",
-          ],
-        },
-        {
-          day: 2,
-          title: "CAMINO AL COLCA",
-          location: "Ruta al Colca",
-          activities: ["Salida hacia el Colca", "Mirador de volcanes", "Vicuñas en Pampa Cañahuas", "Llegada a Chivay"],
-        },
-        {
-          day: 3,
-          title: "CRUZ DEL CÓNDOR",
-          location: "Cañón del Colca",
-          activities: [
-            "Mirador Cruz del Cóndor",
-            "Observación de cóndores",
-            "Pueblos de Yanque y Maca",
-            "Aguas termales La Calera",
-          ],
-        },
-        {
-          day: 4,
-          title: "RETORNO A AREQUIPA",
-          location: "Arequipa - Aeropuerto",
-          activities: ["Retorno a Arequipa", "Tiempo libre", "Traslado al aeropuerto"],
-        },
-      ],
+      highlights: ["Monasterio Santa Catalina", "Cruz del Cóndor", "Aguas Termales", "Pueblos Tradicionales"],
+      included: ["Hoteles 3*", "Traslados", "Tours guiados", "Algunas comidas"],
     },
   ],
   "Duración Media": [
@@ -168,52 +68,11 @@ const itinerariesByDuration = {
       duration: "7D/6N",
       difficulty: "Moderado" as const,
       tourType: "Premium" as const,
+      price: "desde $1,299",
+      rating: 4.9,
       destinations: ["Lima", "Cusco", "Aguas Calientes", "Valle Sagrado"],
-      activities: ["Tren a Machu Picchu", "Sitios arqueológicos", "Gastronomía", "Compras"],
-      dayByDay: [
-        {
-          day: 1,
-          title: "LLEGADA A LIMA",
-          location: "Lima",
-          activities: ["Recepción en aeropuerto", "City tour Lima colonial", "Cena de bienvenida"],
-        },
-        {
-          day: 2,
-          title: "LIMA MODERNA",
-          location: "Lima",
-          activities: ["Miraflores y Barranco", "Museos", "Tour gastronómico"],
-        },
-        {
-          day: 3,
-          title: "LIMA - CUSCO",
-          location: "Cusco",
-          activities: ["Vuelo a Cusco", "Aclimatación", "Caminata suave por la ciudad"],
-        },
-        {
-          day: 4,
-          title: "CITY TOUR CUSCO",
-          location: "Cusco",
-          activities: ["Qorikancha", "Sacsayhuamán", "Mercados locales"],
-        },
-        {
-          day: 5,
-          title: "VALLE SAGRADO",
-          location: "Valle Sagrado",
-          activities: ["Pisac", "Ollantaytambo", "Noche en el Valle"],
-        },
-        {
-          day: 6,
-          title: "MACHU PICCHU",
-          location: "Machu Picchu",
-          activities: ["Tren a Aguas Calientes", "Tour guiado Machu Picchu", "Retorno a Cusco"],
-        },
-        {
-          day: 7,
-          title: "DESPEDIDA",
-          location: "Cusco - Lima",
-          activities: ["Vuelo Cusco-Lima", "Conexión internacional"],
-        },
-      ],
+      highlights: ["Machu Picchu", "Tren Vistadome", "Valle Sagrado", "Gastronomía Peruana"],
+      included: ["Hoteles 4*", "Vuelos domésticos", "Tren a Machu Picchu", "Tours guiados"],
     },
     {
       id: 5,
@@ -225,46 +84,11 @@ const itinerariesByDuration = {
       duration: "6D/5N",
       difficulty: "Fácil" as const,
       tourType: "Clásico" as const,
+      price: "desde $899",
+      rating: 4.6,
       destinations: ["Trujillo", "Chiclayo", "Lambayeque", "Huanchaco"],
-      activities: ["Sitios arqueológicos", "Museos", "Playa", "Artesanía"],
-      dayByDay: [
-        {
-          day: 1,
-          title: "LLEGADA A TRUJILLO",
-          location: "Trujillo",
-          activities: ["Recepción", "City tour Trujillo", "Centro histórico"],
-        },
-        {
-          day: 2,
-          title: "HUACAS DEL SOL Y LUNA",
-          location: "Trujillo",
-          activities: ["Huacas Moche", "Museo Huacas de Moche", "Playa Huanchaco"],
-        },
-        {
-          day: 3,
-          title: "CHAN CHAN",
-          location: "Trujillo",
-          activities: ["Ciudadela de Chan Chan", "Museo de sitio", "Huanchaco"],
-        },
-        {
-          day: 4,
-          title: "TRUJILLO - CHICLAYO",
-          location: "Chiclayo",
-          activities: ["Traslado a Chiclayo", "Mercado de Chiclayo", "City tour"],
-        },
-        {
-          day: 5,
-          title: "SEÑOR DE SIPÁN",
-          location: "Lambayeque",
-          activities: ["Museo Tumbas Reales", "Huaca Rajada", "Túcume"],
-        },
-        {
-          day: 6,
-          title: "DESPEDIDA",
-          location: "Chiclayo - Lima",
-          activities: ["Vuelo a Lima", "Conexión internacional"],
-        },
-      ],
+      highlights: ["Señor de Sipán", "Chan Chan", "Huacas del Sol y Luna", "Playa Huanchaco"],
+      included: ["Hoteles 3*", "Vuelos domésticos", "Tours guiados", "Entradas"],
     },
     {
       id: 6,
@@ -276,46 +100,11 @@ const itinerariesByDuration = {
       duration: "6D/5N",
       difficulty: "Moderado" as const,
       tourType: "Premium" as const,
+      price: "desde $1,199",
+      rating: 4.8,
       destinations: ["Iquitos", "Pacaya Samiria", "Río Ucayali", "Nauta"],
-      activities: ["Navegación", "Observación de fauna", "Pesca", "Comunidades"],
-      dayByDay: [
-        {
-          day: 1,
-          title: "LLEGADA A IQUITOS",
-          location: "Iquitos",
-          activities: ["Recepción", "City tour Iquitos", "Mercado de Belén"],
-        },
-        {
-          day: 2,
-          title: "INICIO NAVEGACIÓN",
-          location: "Río Amazonas",
-          activities: ["Embarque", "Navegación río Amazonas", "Observación de delfines"],
-        },
-        {
-          day: 3,
-          title: "PACAYA SAMIRIA",
-          location: "Reserva Nacional",
-          activities: ["Ingreso a la reserva", "Caminatas en selva", "Pesca de pirañas"],
-        },
-        {
-          day: 4,
-          title: "COMUNIDADES NATIVAS",
-          location: "Río Ucayali",
-          activities: ["Visita comunidad nativa", "Intercambio cultural", "Artesanías"],
-        },
-        {
-          day: 5,
-          title: "OBSERVACIÓN NOCTURNA",
-          location: "Selva Amazónica",
-          activities: ["Caminata nocturna", "Sonidos de la selva", "Observación de caimanes"],
-        },
-        {
-          day: 6,
-          title: "RETORNO A IQUITOS",
-          location: "Iquitos - Lima",
-          activities: ["Retorno a Iquitos", "Vuelo a Lima"],
-        },
-      ],
+      highlights: ["Navegación Amazónica", "Observación de Delfines", "Comunidades Nativas", "Pesca de Pirañas"],
+      included: ["Lodge amazónico", "Todas las comidas", "Excursiones", "Guía especializado"],
     },
   ],
   "Larga Duración": [
@@ -329,94 +118,11 @@ const itinerariesByDuration = {
       duration: "14D/13N",
       difficulty: "Moderado" as const,
       tourType: "Premium" as const,
+      price: "desde $2,899",
+      rating: 4.9,
       destinations: ["Lima", "Cusco", "Puno", "Arequipa", "Iquitos", "Paracas"],
-      activities: ["Vuelo Nazca", "Tren Machu Picchu", "Navegación Titicaca", "Safari amazónico"],
-      dayByDay: [
-        {
-          day: 1,
-          title: "LLEGADA A LIMA",
-          location: "Lima",
-          activities: ["Recepción", "City tour Lima", "Cena de bienvenida"],
-        },
-        {
-          day: 2,
-          title: "LIMA - PARACAS",
-          location: "Paracas",
-          activities: ["Traslado a Paracas", "Islas Ballestas", "Reserva Nacional"],
-        },
-        {
-          day: 3,
-          title: "LÍNEAS DE NAZCA",
-          location: "Nazca",
-          activities: ["Sobrevuelo Líneas de Nazca", "Acueductos de Cantalloc"],
-        },
-        {
-          day: 4,
-          title: "NAZCA - AREQUIPA",
-          location: "Arequipa",
-          activities: ["Vuelo a Arequipa", "City tour", "Monasterio Santa Catalina"],
-        },
-        {
-          day: 5,
-          title: "CAÑÓN DEL COLCA",
-          location: "Colca",
-          activities: ["Ruta al Colca", "Pueblos tradicionales", "Chivay"],
-        },
-        {
-          day: 6,
-          title: "CRUZ DEL CÓNDOR",
-          location: "Colca",
-          activities: ["Observación de cóndores", "Aguas termales"],
-        },
-        {
-          day: 7,
-          title: "AREQUIPA - PUNO",
-          location: "Puno",
-          activities: ["Vuelo a Juliaca", "Traslado a Puno", "Lago Titicaca"],
-        },
-        {
-          day: 8,
-          title: "ISLAS DEL TITICACA",
-          location: "Lago Titicaca",
-          activities: ["Islas Uros", "Isla Taquile", "Textilería"],
-        },
-        {
-          day: 9,
-          title: "PUNO - CUSCO",
-          location: "Cusco",
-          activities: ["Tren turístico a Cusco", "Raqchi", "Andahuaylillas"],
-        },
-        {
-          day: 10,
-          title: "CITY TOUR CUSCO",
-          location: "Cusco",
-          activities: ["Qorikancha", "Sacsayhuamán", "San Pedro"],
-        },
-        {
-          day: 11,
-          title: "VALLE SAGRADO",
-          location: "Valle Sagrado",
-          activities: ["Pisac", "Ollantaytambo", "Noche en el Valle"],
-        },
-        {
-          day: 12,
-          title: "MACHU PICCHU",
-          location: "Machu Picchu",
-          activities: ["Tren a Machu Picchu", "Tour guiado", "Retorno a Cusco"],
-        },
-        {
-          day: 13,
-          title: "CUSCO - IQUITOS",
-          location: "Iquitos",
-          activities: ["Vuelo a Iquitos", "Inicio navegación amazónica"],
-        },
-        {
-          day: 14,
-          title: "AMAZONAS - LIMA",
-          location: "Lima",
-          activities: ["Experiencia amazónica", "Vuelo a Lima", "Despedida"],
-        },
-      ],
+      highlights: ["Líneas de Nazca", "Machu Picchu", "Lago Titicaca", "Amazonía", "Cañón del Colca"],
+      included: ["Hoteles 4-5*", "Todos los vuelos", "Tren Machu Picchu", "Lodge amazónico"],
     },
     {
       id: 8,
@@ -428,70 +134,11 @@ const itinerariesByDuration = {
       duration: "10D/9N",
       difficulty: "Difícil" as const,
       tourType: "Premium" as const,
+      price: "desde $1,899",
+      rating: 4.8,
       destinations: ["Cusco", "Ollantaytambo", "Choquequirao", "Aguas Calientes"],
-      activities: ["Trekking", "Camping", "Sitios arqueológicos", "Paisajes andinos"],
-      dayByDay: [
-        {
-          day: 1,
-          title: "LLEGADA A CUSCO",
-          location: "Cusco",
-          activities: ["Recepción", "Aclimatación", "Briefing del trek"],
-        },
-        {
-          day: 2,
-          title: "CUSCO - CACHORA",
-          location: "Cachora",
-          activities: ["Traslado a Cachora", "Inicio del trek", "Campamento Chiquisca"],
-        },
-        {
-          day: 3,
-          title: "CHOQUEQUIRAO",
-          location: "Choquequirao",
-          activities: ["Llegada a Choquequirao", "Exploración del sitio", "Campamento"],
-        },
-        {
-          day: 4,
-          title: "EXPLORACIÓN CHOQUEQUIRAO",
-          location: "Choquequirao",
-          activities: ["Tour completo del sitio", "Terrazas incas", "Llamas de piedra"],
-        },
-        {
-          day: 5,
-          title: "CHOQUEQUIRAO - MAIZAL",
-          location: "Maizal",
-          activities: ["Descenso al río", "Cruce del Apurímac", "Campamento Maizal"],
-        },
-        {
-          day: 6,
-          title: "MAIZAL - YANAMA",
-          location: "Yanama",
-          activities: ["Ascenso a Yanama", "Paisajes andinos", "Campamento"],
-        },
-        {
-          day: 7,
-          title: "YANAMA - TOTORA",
-          location: "Totora",
-          activities: ["Paso de montaña", "Descenso a Totora", "Campamento"],
-        },
-        {
-          day: 8,
-          title: "TOTORA - COLLPAPAMPA",
-          location: "Collpapampa",
-          activities: ["Caminata por selva de nubes", "Campamento final"],
-        },
-        {
-          day: 9,
-          title: "MACHU PICCHU",
-          location: "Machu Picchu",
-          activities: ["Llegada a Machu Picchu", "Tour guiado", "Tren a Cusco"],
-        },
-        {
-          day: 10,
-          title: "DESPEDIDA",
-          location: "Cusco",
-          activities: ["Tiempo libre", "Traslado al aeropuerto"],
-        },
-      ],
+      highlights: ["Choquequirao Trek", "Machu Picchu", "Camping Andino", "Paisajes Épicos"],
+      included: ["Camping completo", "Porteadores", "Cocinero", "Guía especializado"],
     },
     {
       id: 9,
@@ -503,82 +150,11 @@ const itinerariesByDuration = {
       duration: "12D/11N",
       difficulty: "Moderado" as const,
       tourType: "Clásico" as const,
+      price: "desde $1,699",
+      rating: 4.7,
       destinations: ["Cusco", "Puno", "Ayacucho", "Huancayo", "Apurímac"],
-      activities: ["Convivencia comunitaria", "Textilería", "Agricultura", "Ceremonias andinas"],
-      dayByDay: [
-        {
-          day: 1,
-          title: "LLEGADA A CUSCO",
-          location: "Cusco",
-          activities: ["Recepción", "Aclimatación", "Introducción cultural"],
-        },
-        {
-          day: 2,
-          title: "COMUNIDADES DEL CUSCO",
-          location: "Maras - Moray",
-          activities: ["Salineras de Maras", "Laboratorio agrícola Moray", "Comunidad local"],
-        },
-        {
-          day: 3,
-          title: "TEXTILERÍA ANDINA",
-          location: "Chinchero",
-          activities: ["Técnicas ancestrales", "Teñido natural", "Tejido tradicional"],
-        },
-        {
-          day: 4,
-          title: "CUSCO - PUNO",
-          location: "Puno",
-          activities: ["Ruta del Altiplano", "Paisajes andinos", "Llegada a Puno"],
-        },
-        {
-          day: 5,
-          title: "VIDA EN EL TITICACA",
-          location: "Lago Titicaca",
-          activities: ["Convivencia con familia Uros", "Pesca tradicional", "Totora"],
-        },
-        {
-          day: 6,
-          title: "ISLA TAQUILE",
-          location: "Taquile",
-          activities: ["Textilería masculina", "Organización social", "Reciprocidad"],
-        },
-        {
-          day: 7,
-          title: "PUNO - AYACUCHO",
-          location: "Ayacucho",
-          activities: ["Vuelo a Ayacucho", "Ciudad de las 33 iglesias"],
-        },
-        {
-          day: 8,
-          title: "ARTESANÍA AYACUCHANA",
-          location: "Ayacucho",
-          activities: ["Retablos", "Piedra de Huamanga", "Talleres artesanales"],
-        },
-        {
-          day: 9,
-          title: "AYACUCHO - HUANCAYO",
-          location: "Huancayo",
-          activities: ["Traslado a Huancayo", "Valle del Mantaro"],
-        },
-        {
-          day: 10,
-          title: "TRADICIONES DEL MANTARO",
-          location: "Huancayo",
-          activities: ["Convento de Ocopa", "Artesanías de Cochas", "Danzas folclóricas"],
-        },
-        {
-          day: 11,
-          title: "CEREMONIAS ANDINAS",
-          location: "Comunidad Andina",
-          activities: ["Pago a la Pachamama", "Medicina tradicional", "Cosmovisión andina"],
-        },
-        {
-          day: 12,
-          title: "RETORNO A LIMA",
-          location: "Lima",
-          activities: ["Vuelo a Lima", "Reflexión del viaje", "Despedida"],
-        },
-      ],
+      highlights: ["Convivencia Comunitaria", "Textilería Ancestral", "Ceremonias Andinas", "Medicina Tradicional"],
+      included: ["Hoteles locales", "Experiencias comunitarias", "Guías locales", "Todas las comidas"],
     },
   ],
 }
@@ -590,65 +166,120 @@ export default function ItinerariesPage() {
 
   const currentItineraries = itinerariesByDuration[activeDuration as keyof typeof itinerariesByDuration]
 
-  const getDurationTitle = (duration: string) => {
-    const titles = {
-      "Corta Duración": "Escapadas Perfectas de 3-4 Días",
-      "Duración Media": "Experiencias Completas de 5-7 Días",
-      "Larga Duración": "Aventuras Épicas de 8+ Días",
-    }
-    return titles[duration as keyof typeof titles]
-  }
-
-  const getDurationDescription = (duration: string) => {
-    const descriptions = {
-      "Corta Duración": "Perfectos para fines de semana largos o vacaciones cortas",
-      "Duración Media": "Ideales para conocer lo esencial con tiempo suficiente",
-      "Larga Duración": "Para viajeros que buscan experiencias profundas e inmersivas",
-    }
-    return descriptions[duration as keyof typeof descriptions]
-  }
-
   return (
     <div className="min-h-screen bg-white">
-      {/* Header Section */}
-      <div className="pt-32 pb-8 md:pb-12 px-4 md:px-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Main Title */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-8 md:mb-12"
-          >
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-light text-black leading-none brand-text mb-4">
-              Itinerarios del Perú
+      {/* Hero Section */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="https://res.cloudinary.com/dwvikvjrq/image/upload/v1748624876/banner_waz5ov.jpg"
+            alt="Perú Itinerarios"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
+
+        {/* Hero Content */}
+        <div className="relative z-10 text-center text-white px-4 max-w-6xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-light mb-6 brand-text leading-none">
+              Itinerarios
+              <br />
+              <span className="text-peru-gold">del Perú</span>
             </h1>
+            <p className="text-xl md:text-2xl lg:text-3xl font-light mb-8 body-text max-w-4xl mx-auto leading-relaxed">
+              Rutas cuidadosamente diseñadas para descubrir los tesoros más increíbles del Perú
+            </p>
+            <motion.button
+              className="px-8 py-4 bg-peru-orange text-white brand-text text-lg hover:bg-peru-orange/90 transition-all duration-300 group"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              EXPLORAR ITINERARIOS
+              <ArrowRight className="inline-block ml-2 group-hover:translate-x-1 transition-transform" size={20} />
+            </motion.button>
+          </motion.div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+        >
+          <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
+            <div className="w-1 h-3 bg-white rounded-full mt-2"></div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-16 md:py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { number: "50+", label: "Itinerarios Únicos" },
+              { number: "15", label: "Años de Experiencia" },
+              { number: "10,000+", label: "Viajeros Felices" },
+              { number: "4.9", label: "Rating Promedio" },
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                className="text-center"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-peru-orange brand-text mb-2">
+                  {stat.number}
+                </div>
+                <div className="text-gray-600 body-text text-sm md:text-base">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Duration Selection */}
+      <section className="py-16 md:py-24">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-light text-black mb-6 brand-text">
+              Elige tu <span className="text-peru-orange">Aventura</span>
+            </h2>
             <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">
-              Descubre rutas cuidadosamente diseñadas que te llevarán por los destinos más increíbles del Perú. Cada
-              itinerario está pensado para ofrecerte una experiencia completa y auténtica.
+              Desde escapadas de fin de semana hasta expediciones épicas, tenemos el itinerario perfecto para ti
             </p>
           </motion.div>
 
           {/* Duration Tabs */}
           <motion.div
+            className="flex justify-center mb-16"
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex justify-center mb-8"
+            viewport={{ once: true }}
           >
-            <div className="flex flex-wrap justify-center gap-2 md:gap-0 bg-gray-100 p-1 rounded-lg">
-              {durations.map((duration, index) => (
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-0 bg-white shadow-lg rounded-lg p-2">
+              {durations.map((duration, ) => (
                 <motion.button
                   key={duration}
                   onClick={() => setActiveDuration(duration)}
-                  className={`px-4 md:px-8 py-3 md:py-4 text-sm md:text-base font-medium tracking-wider transition-all duration-300 rounded-md ${
+                  className={`px-6 md:px-8 py-4 text-sm md:text-base font-medium tracking-wider transition-all duration-300 rounded-md ${
                     activeDuration === duration
-                      ? "bg-white text-black shadow-md"
-                      : "text-gray-600 hover:text-black hover:bg-white/50"
+                      ? "bg-peru-orange text-white shadow-md"
+                      : "text-gray-600 hover:text-peru-orange hover:bg-peru-orange/5"
                   }`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -657,187 +288,198 @@ export default function ItinerariesPage() {
               ))}
             </div>
           </motion.div>
-
-          {/* Section Title and Description */}
-          <motion.div
-            key={`section-title-${activeDuration}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-light text-black leading-tight mb-4 brand-text">
-              {getDurationTitle(activeDuration)}
-            </h2>
-            <p className="text-base md:text-lg text-gray-600 body-text max-w-2xl mx-auto">
-              {getDurationDescription(activeDuration)}
-            </p>
-          </motion.div>
         </div>
-      </div>
+      </section>
 
       {/* Itineraries Grid */}
-      <div className="px-4 md:px-8 pb-16">
-        <div className="max-w-7xl mx-auto">
+      <section className="pb-16 md:pb-24">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
           <motion.div
-            key={`itineraries-grid-${activeDuration}`}
+            key={`itineraries-${activeDuration}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8 }}
-            className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 md:gap-12"
+            className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8"
           >
             {currentItineraries.map((itinerary, index) => (
               <motion.div
-                key={`itinerary-${itinerary.id}`}
+                key={itinerary.id}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="bg-white shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                className="bg-white rounded-lg shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group"
               >
-                {/* Header Image */}
-                <div className="relative h-64 md:h-80">
+                {/* Image */}
+                <div className="relative h-64 overflow-hidden">
                   <Image
                     src={itinerary.image || "/placeholder.svg"}
                     alt={itinerary.title}
                     fill
-                    className="object-cover"
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-                  {/* Duration Badge */}
-                  <div className="absolute top-4 left-4">
-                    <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 flex items-center space-x-2">
-                      <Clock size={14} className="text-peru-orange" />
-                      <span className="text-xs font-medium text-gray-800 brand-text">{itinerary.duration}</span>
-                    </div>
-                  </div>
-
-                  {/* Tour Type Badge */}
-                  <div className="absolute top-4 right-4">
+                  {/* Badges */}
+                  <div className="absolute top-4 left-4 right-4 flex justify-between">
+                    <span className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium brand-text flex items-center">
+                      <Clock size={12} className="mr-1 text-peru-orange" />
+                      {itinerary.duration}
+                    </span>
                     <span
-                      className={`px-3 py-1.5 text-xs font-medium brand-text ${
-                        itinerary.tourType === "Premium"
-                          ? "bg-peru-gold text-white"
-                          : itinerary.tourType === "Clásico"
-                            ? "bg-peru-orange text-white"
-                            : "bg-gray-600 text-white"
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium brand-text ${
+                        itinerary.tourType === "Premium" ? "bg-peru-gold text-white" : "bg-peru-orange text-white"
                       }`}
                     >
                       {itinerary.tourType}
                     </span>
                   </div>
 
-                  {/* Title Overlay */}
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-xl md:text-2xl font-bold text-white brand-text mb-1">{itinerary.title}</h3>
-                    <p className="text-white/90 text-sm md:text-base body-text">{itinerary.subtitle}</p>
+                  {/* Price */}
+                  <div className="absolute bottom-4 right-4">
+                    <div className="bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg">
+                      <div className="text-xs text-gray-600 body-text">Desde</div>
+                      <div className="text-lg font-bold text-peru-orange brand-text">{itinerary.price}</div>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <div className="absolute bottom-4 left-4">
+                    <h3 className="text-xl font-bold text-white brand-text mb-1">{itinerary.title}</h3>
+                    <div className="flex items-center text-white/90">
+                      <Star size={14} className="text-yellow-400 mr-1" fill="currentColor" />
+                      <span className="text-sm body-text">{itinerary.rating}</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-6 md:p-8">
-                  {/* Description */}
-                  <p className="text-gray-600 body-text leading-relaxed mb-6">{itinerary.description}</p>
+                <div className="p-6">
+                  <h4 className="text-lg font-medium text-gray-800 brand-text mb-2">{itinerary.subtitle}</h4>
+                  <p className="text-gray-600 body-text text-sm leading-relaxed mb-4">{itinerary.description}</p>
+
+                  {/* Highlights */}
+                  <div className="mb-4">
+                    <h5 className="text-sm font-medium text-gray-800 brand-text mb-2">Highlights principales:</h5>
+                    <div className="space-y-1">
+                      {itinerary.highlights.slice(0, 3).map((highlight, idx) => (
+                        <div key={idx} className="flex items-center text-xs text-gray-600">
+                          <CheckCircle size={12} className="text-green-500 mr-2 flex-shrink-0" />
+                          <span className="body-text">{highlight}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
                   {/* Destinations */}
-                  <div className="mb-6">
-                    <h4 className="text-sm font-medium text-gray-800 brand-text mb-3 flex items-center">
-                      <MapPin size={16} className="mr-2 text-peru-orange" />
-                      Destinos incluidos
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {itinerary.destinations.map((destination, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-700 text-sm body-text rounded-full">
+                  <div className="mb-4">
+                    <div className="flex flex-wrap gap-1">
+                      {itinerary.destinations.slice(0, 3).map((destination, idx) => (
+                        <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs body-text rounded">
                           {destination}
                         </span>
                       ))}
-                    </div>
-                  </div>
-
-                  {/* Activities */}
-                  <div className="mb-6">
-                    <h4 className="text-sm font-medium text-gray-800 brand-text mb-3 flex items-center">
-                      <Camera size={16} className="mr-2 text-peru-orange" />
-                      Actividades principales
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {itinerary.activities.map((activity, idx) => (
-                        <span
-                          key={idx}
-                          className="px-3 py-1 bg-peru-orange/10 text-peru-orange text-sm body-text rounded-full"
-                        >
-                          {activity}
+                      {itinerary.destinations.length > 3 && (
+                        <span className="px-2 py-1 bg-peru-orange/10 text-peru-orange text-xs body-text rounded">
+                          +{itinerary.destinations.length - 3} más
                         </span>
-                      ))}
+                      )}
                     </div>
                   </div>
 
-                  {/* Day by Day Itinerary */}
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-800 brand-text mb-4">Itinerario día a día</h4>
-                    <div className="space-y-4">
-                      {itinerary.dayByDay.map((day, dayIdx) => (
-                        <motion.div
-                          key={day.day}
-                          className="border-l-3 border-peru-orange/30 pl-4 hover:border-peru-orange transition-colors duration-300"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.4, delay: dayIdx * 0.1 }}
-                        >
-                          <div className="flex items-center mb-2">
-                            <span className="bg-peru-orange text-white px-2 py-1 text-xs brand-text mr-3 rounded">
-                              DÍA {day.day}
-                            </span>
-                            <h5 className="font-medium text-gray-800 brand-text text-sm">{day.title}</h5>
-                          </div>
-
-                          <div className="flex items-center text-xs text-gray-500 mb-2">
-                            <MapPin size={12} className="mr-1" />
-                            <span className="body-text">{day.location}</span>
-                          </div>
-
-                          <ul className="space-y-1">
-                            {day.activities.slice(0, 3).map((activity, actIdx) => (
-                              <li key={actIdx} className="flex items-start text-xs text-gray-600">
-                                <div className="w-1 h-1 bg-peru-orange rounded-full mt-2 mr-2 flex-shrink-0" />
-                                <span className="body-text">{activity}</span>
-                              </li>
-                            ))}
-                            {day.activities.length > 3 && (
-                              <li className="text-xs text-gray-500 body-text ml-3">
-                                +{day.activities.length - 3} actividades más
-                              </li>
-                            )}
-                          </ul>
-                        </motion.div>
-                      ))}
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <div className="flex items-center space-x-4 text-xs text-gray-500">
+                      <div className="flex items-center">
+                        <Users size={12} className="mr-1" />
+                        <span className="body-text">Grupo</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Calendar size={12} className="mr-1" />
+                        <span className="body-text">{itinerary.difficulty}</span>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Difficulty Badge */}
-                  <div className="mt-6 pt-6 border-t border-gray-200 flex justify-between items-center">
-                    <span className="text-sm text-gray-600 body-text">Nivel de dificultad:</span>
-                    <span
-                      className={`px-3 py-1 text-xs brand-text rounded-full ${
-                        itinerary.difficulty === "Fácil"
-                          ? "bg-green-100 text-green-700"
-                          : itinerary.difficulty === "Moderado"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
-                      }`}
+                    <motion.button
+                      className="text-peru-orange hover:text-peru-orange/80 text-sm font-medium brand-text flex items-center group"
+                      whileHover={{ x: 5 }}
                     >
-                      {itinerary.difficulty}
-                    </span>
+                      Ver detalles
+                      <ArrowRight size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                    </motion.button>
                   </div>
                 </div>
               </motion.div>
             ))}
           </motion.div>
         </div>
-      </div>
+      </section>
 
-      {/* Call to Action */}
-      <div className="bg-gray-50 py-16 md:py-24">
+      {/* Why Choose Us */}
+      <section className="py-16 md:py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-light text-black mb-6 brand-text">
+              ¿Por qué elegir nuestros <span className="text-peru-orange">Itinerarios</span>?
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <MapPin className="text-peru-orange" size={32} />,
+                title: "Rutas Exclusivas",
+                description: "Itinerarios únicos diseñados por expertos locales con acceso a lugares especiales",
+              },
+              {
+                icon: <Users className="text-peru-orange" size={32} />,
+                title: "Grupos Pequeños",
+                description: "Máximo 16 personas para una experiencia más personalizada e íntima",
+              },
+              {
+                icon: <Star className="text-peru-orange" size={32} />,
+                title: "Calidad Garantizada",
+                description: "Hoteles seleccionados, guías certificados y servicios de primera clase",
+              },
+              {
+                icon: <Clock className="text-peru-orange" size={32} />,
+                title: "Flexibilidad Total",
+                description: "Adaptamos cualquier itinerario según tus preferencias y necesidades",
+              },
+              {
+                icon: <CheckCircle className="text-peru-orange" size={32} />,
+                title: "Todo Incluido",
+                description: "Sin sorpresas: hoteles, traslados, tours y muchas comidas incluidas",
+              },
+              {
+                icon: <Camera className="text-peru-orange" size={32} />,
+                title: "Experiencias Únicas",
+                description: "Actividades exclusivas que no encontrarás en otros operadores",
+              },
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                className="text-center p-6"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <div className="flex justify-center mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-medium text-gray-800 brand-text mb-3">{feature.title}</h3>
+                <p className="text-gray-600 body-text leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 md:py-24 bg-peru-dark text-white">
         <div className="max-w-4xl mx-auto text-center px-4 md:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -845,32 +487,34 @@ export default function ItinerariesPage() {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-light text-black leading-tight mb-6 brand-text">
-              ¿Listo para tu próxima aventura?
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-light mb-6 brand-text leading-tight">
+              ¿Listo para tu próxima
+              <br />
+              <span className="text-peru-gold">aventura peruana</span>?
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 body-text mb-8 max-w-2xl mx-auto">
-              Estos itinerarios son solo el comienzo. Podemos personalizar cualquier ruta según tus intereses,
-              presupuesto y tiempo disponible.
+            <p className="text-lg md:text-xl body-text mb-8 max-w-2xl mx-auto opacity-90">
+              Nuestros expertos están listos para diseñar el itinerario perfecto según tus sueños y presupuesto
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.button
-                className="px-8 py-4 bg-peru-orange text-white brand-text text-lg hover:bg-peru-orange/90 transition-colors"
+                className="px-8 py-4 bg-peru-orange text-white brand-text text-lg hover:bg-peru-orange/90 transition-all duration-300 group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 CONSULTAR ITINERARIO
+                <ArrowRight className="inline-block ml-2 group-hover:translate-x-1 transition-transform" size={20} />
               </motion.button>
               <motion.button
-                className="px-8 py-4 border-2 border-peru-dark text-peru-dark brand-text text-lg hover:bg-peru-dark hover:text-white transition-colors"
+                className="px-8 py-4 border-2 border-white text-white brand-text text-lg hover:bg-white hover:text-peru-dark transition-all duration-300"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                VER TODOS LOS TOURS
+                HABLAR CON EXPERTO
               </motion.button>
             </div>
           </motion.div>
         </div>
-      </div>
+      </section>
     </div>
   )
 }
