@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
   const { pathname, origin } = request.nextUrl
   const isDashboardRoute = pathname.startsWith("/dashboard")
   const isUserRoute = pathname.startsWith("/users")
-  const isAuthRoute = ["/login", "/register"].includes(pathname)
+  const isAuthRoute = ["/login", "/register", "/login-success"].includes(pathname)
 
   // Obtener la cookie "token"
   const token = request.cookies.get("token")?.value
@@ -23,6 +23,15 @@ export function middleware(request: NextRequest) {
     try {
       // Decodificar el token JWT
       const decodedToken: DecodedToken = jwtDecode(token)
+
+      // Verificar si el token ha expirado
+      const currentTime = Math.floor(Date.now() / 1000)
+      if (decodedToken.exp < currentTime) {
+        // Token expirado, eliminar cookie y redirigir
+        const response = NextResponse.redirect(`${origin}/login`)
+        response.cookies.delete("token")
+        return response
+      }
 
       const user = {
         id: decodedToken.sub,
