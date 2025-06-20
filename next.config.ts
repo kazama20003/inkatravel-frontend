@@ -1,5 +1,6 @@
-// next.config.js
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
@@ -14,12 +15,8 @@ const nextConfig = {
       },
     ],
   },
-  // ⬇️ Esto es lo clave
-  experimental: {
-    forceWebVitalsReporting: true,
-  },
   output: 'standalone',
   trailingSlash: false,
-}
+};
 
-export default nextConfig
+export default nextConfig;
