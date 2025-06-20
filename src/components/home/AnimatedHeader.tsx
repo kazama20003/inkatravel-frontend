@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Globe } from "lucide-react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 interface AnimatedHeaderProps {
   customScrollPosition?: number
@@ -27,6 +28,7 @@ export default function AnimatedHeader({
   >("explore")
   const lastScrollPosition = useRef<number>(0)
   const [mounted, setMounted] = useState(false)
+  const pathname = usePathname()
 
   // Add this useEffect at the beginning of the component, after all useState declarations
   useEffect(() => {
@@ -88,18 +90,18 @@ export default function AnimatedHeader({
       secondary: "var(--peru-orange)",
     },
     explore: {
-      text: "var(--peru-dark)",
-      border: "var(--peru-dark)",
+      text: "#e67e22",
+      border: "#e67e22",
       secondary: "var(--peru-orange)",
     },
     about: {
-      text: "var(--peru-dark)",
-      border: "var(--peru-dark)",
+      text: "#e67e22",
+      border: "#e67e22",
       secondary: "var(--peru-orange)",
     },
     discover: {
-      text: "var(--peru-dark)",
-      border: "var(--peru-dark)",
+      text: "#e67e22",
+      border: "#e67e22",
       secondary: "var(--peru-orange)",
     },
     service: {
@@ -108,8 +110,8 @@ export default function AnimatedHeader({
       secondary: "var(--peru-gold)",
     },
     testimonials: {
-      text: "var(--peru-dark)",
-      border: "var(--peru-dark)",
+      text: "#e67e22",
+      border: "#e67e22",
       secondary: "var(--peru-orange)",
     },
   }
@@ -129,6 +131,9 @@ export default function AnimatedHeader({
     setIsMenuOpen(false)
     setIsLanguageMenuOpen(false)
   }
+
+  // Function to check if a path is active
+  const isActive = (path: string) => pathname === path
 
   // Close menu when clicking outside or on escape
   useEffect(() => {
@@ -418,6 +423,7 @@ export default function AnimatedHeader({
 
               {/* Login Button */}
               <motion.div
+                className="rounded-full"
                 whileHover={{
                   scale: 1.05,
                   backgroundColor: currentColors.text,
@@ -461,12 +467,8 @@ export default function AnimatedHeader({
               </motion.div>
 
               {/* Reservar Button */}
-              <motion.button
-                className="px-6 py-3 rounded-full border flex items-center space-x-2 transition-all duration-300"
-                style={{
-                  borderColor: currentColors.border,
-                  color: currentColors.text,
-                }}
+              <motion.div
+                className="rounded-full"
                 whileHover={{
                   scale: 1.05,
                   backgroundColor: currentColors.text,
@@ -474,16 +476,25 @@ export default function AnimatedHeader({
                 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                onClick={closeAllMenus}
               >
-                <span className="text-sm font-medium brand-text">RESERVAR</span>
-                <div
-                  className="w-4 h-4 rounded-full border-2 border-dotted flex items-center justify-center"
-                  style={{ borderColor: currentColors.border }}
+                <Link
+                  href="/checkout"
+                  className="px-6 py-3 rounded-full border flex items-center space-x-2 transition-all duration-300"
+                  style={{
+                    borderColor: currentColors.border,
+                    color: currentColors.text,
+                  }}
+                  onClick={closeAllMenus}
                 >
-                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: currentColors.text }}></div>
-                </div>
-              </motion.button>
+                  <span className="text-sm font-medium brand-text">RESERVAR</span>
+                  <div
+                    className="w-4 h-4 rounded-full border-2 border-dotted flex items-center justify-center"
+                    style={{ borderColor: currentColors.border }}
+                  >
+                    <div className="w-1 h-1 rounded-full" style={{ backgroundColor: currentColors.text }}></div>
+                  </div>
+                </Link>
+              </motion.div>
             </div>
           </div>
 
@@ -519,8 +530,14 @@ export default function AnimatedHeader({
             >
               <nav className="max-w-7xl mx-auto px-6 h-15 flex items-center justify-center">
                 <div className="flex items-center">
-                  {["DESTINOS", "TOURS", "ITINERARIOS", "CUÁNDO IR", "NOSOTROS"].map((item, index) => (
-                    <div key={item} className="flex items-center">
+                  {[
+                    { name: "DESTINOS", path: "/" },
+                    { name: "TOURS", path: "/tours" },
+                    { name: "ITINERARIOS", path: "/itineraries" },
+                    { name: "CUÁNDO IR", path: "/when-to-go" },
+                    { name: "NOSOTROS", path: "/about-us" },
+                  ].map((item, index) => (
+                    <div key={item.name} className="flex items-center">
                       <motion.div
                         initial={{ y: -20, opacity: 0 }}
                         animate={{
@@ -535,24 +552,14 @@ export default function AnimatedHeader({
                         whileHover={{ scale: 1.05 }}
                       >
                         <Link
-                          href={
-                            item === "TOURS"
-                              ? "/tours"
-                              : item === "DESTINOS"
-                                ? "/"
-                                : item === "ITINERARIOS"
-                                  ? "/itineraries"
-                                  : item === "CUÁNDO IR"
-                                    ? "/when-to-go"
-                                    : item === "NOSOTROS"
-                                      ? "/about-us"
-                                      : "#"
-                          }
-                          className="text-base font-medium hover:opacity-70 transition-colors px-6 py-3 brand-text"
+                          href={item.path}
+                          className={`text-base font-medium hover:opacity-70 transition-all duration-300 px-6 py-3 brand-text rounded-full ${
+                            isActive(item.path) ? "bg-current/10 font-bold" : ""
+                          }`}
                           style={{ color: currentColors.text }}
                           onClick={closeAllMenus}
                         >
-                          {item}
+                          {item.name}
                         </Link>
                       </motion.div>
 
@@ -736,34 +743,34 @@ export default function AnimatedHeader({
                 </Link>
               </motion.div>
 
-              <motion.button
-                className="w-10 h-10 rounded-full border-2 border-dotted flex items-center justify-center"
-                style={{
-                  borderColor: currentColors.border,
-                  color: currentColors.secondary,
-                }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-                onClick={closeAllMenus}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <polyline
-                    points="22,6 12,13 2,6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </motion.button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.2 }}>
+                <Link
+                  href="/checkout"
+                  className="w-10 h-10 rounded-full border-2 border-dotted flex items-center justify-center"
+                  style={{
+                    borderColor: currentColors.border,
+                    color: currentColors.secondary,
+                  }}
+                  onClick={closeAllMenus}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <polyline
+                      points="22,6 12,13 2,6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </Link>
+              </motion.div>
             </div>
           </div>
         </div>
@@ -907,7 +914,9 @@ export default function AnimatedHeader({
                         <Link
                           key={item.name}
                           href={item.href}
-                          className="block text-2xl hover:opacity-70 transition-opacity brand-text text-peru-dark"
+                          className={`block text-2xl hover:opacity-70 transition-opacity brand-text ${
+                            isActive(item.href) ? "text-peru-orange font-bold" : "text-peru-dark"
+                          }`}
                           onClick={closeAllMenus}
                         >
                           {item.name} {item.hasArrow && "›"}
@@ -951,12 +960,13 @@ export default function AnimatedHeader({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.2, duration: 0.5 }}
                 >
-                  <button
-                    className="w-full py-4 text-center text-sm font-medium uppercase tracking-wider border border-peru-gold text-peru-gold rounded-full hover:opacity-70 transition-all duration-300 mb-6 brand-text"
+                  <Link
+                    href="/checkout"
+                    className="w-full py-4 text-center text-sm font-medium uppercase tracking-wider border border-peru-gold text-peru-gold rounded-full hover:opacity-70 transition-all duration-300 mb-6 brand-text block"
                     onClick={closeAllMenus}
                   >
-                    CONTÁCTANOS
-                  </button>
+                    RESERVAR AHORA
+                  </Link>
                   <p className="text-center body-text text-peru-dark/60">¡Hola! ¿Cómo podemos ayudarte?</p>
                 </motion.div>
               </div>
