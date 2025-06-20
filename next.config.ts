@@ -15,8 +15,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  output: 'standalone',
-  trailingSlash: false,
 };
 
 export default nextConfig;
