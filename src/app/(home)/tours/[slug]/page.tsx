@@ -583,7 +583,7 @@ export default function TourDetailPage() {
                     </h3>
                     {tour.transportOptionIds && tour.transportOptionIds.length > 0 ? (
                       <div className="space-y-6">
-                        {tour.transportOptionIds.map((transport,) => (
+                        {tour.transportOptionIds.map((transport, ) => (
                           <div
                             key={transport._id}
                             className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
