@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { X, Plus } from "lucide-react"
 import { useState } from "react"
-import type { TourFormData, Difficulty } from "@/types/tour"
+import type { TourFormData, Difficulty, PackageType } from "@/types/tour"
 
 interface TourDetailsFormProps {
   data: TourFormData
@@ -21,13 +21,15 @@ export function TourDetailsForm({ data, onChange }: TourDetailsFormProps) {
 
   const addHighlight = () => {
     if (newHighlight.trim()) {
-      onChange({ highlights: [...data.highlights, newHighlight.trim()] })
+      const currentHighlights = data.highlights || []
+      onChange({ highlights: [...currentHighlights, newHighlight.trim()] })
       setNewHighlight("")
     }
   }
 
   const removeHighlight = (index: number) => {
-    onChange({ highlights: data.highlights.filter((_, i) => i !== index) })
+    const currentHighlights = data.highlights || []
+    onChange({ highlights: currentHighlights.filter((_, i) => i !== index) })
   }
 
   return (
@@ -82,16 +84,42 @@ export function TourDetailsForm({ data, onChange }: TourDetailsFormProps) {
               />
             </div>
           </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="originalPrice">Precio Original (PEN)</Label>
+            <Input
+              id="originalPrice"
+              type="number"
+              min="0"
+              step="0.01"
+              value={data.originalPrice || ""}
+              onChange={(e) => onChange({ originalPrice: e.target.value ? Number(e.target.value) : undefined })}
+              placeholder="Precio antes del descuento (opcional)"
+            />
+            <p className="text-xs text-muted-foreground">Solo completar si el tour tiene un precio con descuento</p>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>Clasificación</CardTitle>
-          <CardDescription>Dificultad del tour</CardDescription>
+          <CardDescription>Tipo de paquete y dificultad del tour</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="packageType">Tipo de Paquete *</Label>
+              <Select value={data.packageType} onValueChange={(value: PackageType) => onChange({ packageType: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona el tipo de paquete" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Basico">Básico</SelectItem>
+                  <SelectItem value="Premium">Premium</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="difficulty">Dificultad *</Label>
               <Select value={data.difficulty} onValueChange={(value: Difficulty) => onChange({ difficulty: value })}>
@@ -99,20 +127,21 @@ export function TourDetailsForm({ data, onChange }: TourDetailsFormProps) {
                   <SelectValue placeholder="Selecciona la dificultad" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Fácil">Fácil</SelectItem>
+                  <SelectItem value="Facil">Fácil</SelectItem>
                   <SelectItem value="Moderado">Moderado</SelectItem>
                   <SelectItem value="Difícil">Difícil</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="featured"
-                checked={data.featured || false}
-                onCheckedChange={(checked) => onChange({ featured: checked })}
-              />
-              <Label htmlFor="featured">Paquete destacado</Label>
-            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="featured"
+              checked={data.featured || false}
+              onCheckedChange={(checked) => onChange({ featured: checked })}
+            />
+            <Label htmlFor="featured">Paquete destacado</Label>
           </div>
         </CardContent>
       </Card>
@@ -136,7 +165,7 @@ export function TourDetailsForm({ data, onChange }: TourDetailsFormProps) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {data.highlights.map((highlight, index) => (
+            {(data.highlights || []).map((highlight, index) => (
               <Badge key={index} variant="secondary" className="flex items-center gap-1">
                 {highlight}
                 <Button

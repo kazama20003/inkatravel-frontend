@@ -1,533 +1,28 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { useState, useEffect, useMemo, useCallback } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
-import { MapPin, Clock, Star, Users, Calendar } from "lucide-react"
+import { MapPin, Clock, Star, Users, AlertCircle, Search, Filter, X, ChevronDown } from "lucide-react"
+import { api } from "@/lib/axiosInstance"
+import type { Tour, TourCategory, Difficulty, PackageType } from "@/types/tour"
 
-// Tours data organizados por categorías
-const toursByCategory = {
-  Arqueología: [
-    {
-      id: 1,
-      title: "MACHU PICCHU",
-      subtitle: "La ciudadela perdida de los Incas",
-      description:
-        "Descubre la majestuosa ciudadela inca en una experiencia única que combina historia, naturaleza y aventura en el corazón de los Andes peruanos.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433526/colca-canyon-in-arequipa-297_rui1xh.jpg",
-      price: 899,
-      duration: "4D/3N",
-      rating: 4.9,
-      reviews: 234,
-      location: "Cusco",
-      region: "Cusco",
-      category: "Arqueología",
-      difficulty: "Moderado" as const,
-      featured: true,
-      tourType: "Premium" as const,
-      groupSize: "2-12 personas",
-      nextDeparture: "2024-12-15",
-      highlights: ["Machu Picchu", "Valle Sagrado", "Tren panorámico"],
-    },
-    {
-      id: 2,
-      title: "VALLE SAGRADO",
-      subtitle: "Pisac, Ollantaytambo y más",
-      description:
-        "Explora los pueblos ancestrales del Valle Sagrado, donde la cultura inca sigue viva en cada rincón y las tradiciones se mantienen intactas.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432254/machupicchu-turista-wta_itauck.jpg",
-      price: 799,
-      duration: "3D/2N",
-      rating: 4.8,
-      reviews: 167,
-      location: "Cusco",
-      region: "Cusco",
-      category: "Arqueología",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Premium" as const,
-      groupSize: "2-16 personas",
-      nextDeparture: "2024-12-10",
-      highlights: ["Pisac", "Ollantaytambo", "Mercados locales"],
-    },
-    {
-      id: 3,
-      title: "CHACHAPOYAS",
-      subtitle: "Fortaleza de Kuelap",
-      description:
-        "Aventúrate en la misteriosa fortaleza de Kuelap, conocida como el 'Machu Picchu del norte', rodeada de bosques nubosos únicos.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433526/colca-canyon-in-arequipa-297_rui1xh.jpg",
-      price: 1099,
-      duration: "4D/3N",
-      rating: 4.6,
-      reviews: 134,
-      location: "Chachapoyas",
-      region: "Amazonas",
-      category: "Arqueología",
-      difficulty: "Moderado" as const,
-      featured: false,
-      tourType: "Premium" as const,
-      groupSize: "2-10 personas",
-      nextDeparture: "2024-12-20",
-      highlights: ["Fortaleza Kuelap", "Sarcófagos de Karajía", "Catarata Gocta"],
-    },
-    {
-      id: 4,
-      title: "SILLUSTANI",
-      subtitle: "Torres funerarias pre-incas",
-      description:
-        "Visita las impresionantes torres funerarias de Sillustani, testimonio de la avanzada cultura Colla en las orillas del lago Umayo.",
-      image: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1000&auto=format&fit=crop",
-      price: 299,
-      duration: "1D",
-      rating: 4.4,
-      reviews: 145,
-      location: "Puno",
-      region: "Puno",
-      category: "Arqueología",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Básico" as const,
-      groupSize: "2-20 personas",
-      nextDeparture: "2024-12-05",
-      highlights: ["Torres funerarias", "Lago Umayo", "Cultura Colla"],
-    },
-    {
-      id: 17,
-      title: "SACSAYHUAMÁN",
-      subtitle: "Fortaleza inca de Cusco",
-      description:
-        "Explora la impresionante fortaleza inca con bloques de piedra perfectamente ensamblados, testimonio de la ingeniería inca.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433526/colca-canyon-in-arequipa-297_rui1xh.jpg",
-      price: 199,
-      duration: "1D",
-      rating: 4.5,
-      reviews: 189,
-      location: "Cusco",
-      region: "Cusco",
-      category: "Arqueología",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Básico" as const,
-      groupSize: "2-25 personas",
-      nextDeparture: "2024-12-03",
-      highlights: ["Sacsayhuamán", "Qenqo", "Tambomachay"],
-    },
-    {
-      id: 18,
-      title: "CARAL",
-      subtitle: "La civilización más antigua de América",
-      description:
-        "Descubre la ciudad sagrada de Caral, la civilización más antigua del continente americano con más de 5000 años de antigüedad.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433526/colca-canyon-in-arequipa-297_rui1xh.jpg",
-      price: 399,
-      duration: "1D",
-      rating: 4.3,
-      reviews: 76,
-      location: "Lima",
-      region: "Lima",
-      category: "Arqueología",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Clásico" as const,
-      groupSize: "2-20 personas",
-      nextDeparture: "2024-12-11",
-      highlights: ["Ciudad sagrada Caral", "Pirámides", "Museo de sitio"],
-    },
-  ],
-  Naturaleza: [
-    {
-      id: 5,
-      title: "AMAZONAS",
-      subtitle: "Inmersión en la selva tropical",
-      description:
-        "Sumérgete en la biodiversidad amazónica más rica del planeta, donde cada día trae nuevos descubrimientos de flora y fauna únicas.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433100/best-time-to-explore-the-manu-amazon-rainforest-4-1_mq8and.jpg",
-      price: 1599,
-      duration: "6D/5N",
-      rating: 4.7,
-      reviews: 156,
-      location: "Iquitos",
-      region: "Loreto",
-      category: "Naturaleza",
-      difficulty: "Fácil" as const,
-      featured: true,
-      tourType: "Premium" as const,
-      groupSize: "2-8 personas",
-      nextDeparture: "2024-12-12",
-      highlights: ["Río Amazonas", "Observación de delfines", "Comunidades nativas"],
-    },
-    {
-      id: 6,
-      title: "PACAYA SAMIRIA",
-      subtitle: "Reserva Nacional del Amazonas",
-      description:
-        "Explora la reserva nacional más grande del Perú, hogar de jaguares, manatíes y más de 500 especies de aves en su hábitat natural.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433100/best-time-to-explore-the-manu-amazon-rainforest-4-1_mq8and.jpg",
-      price: 1299,
-      duration: "4D/3N",
-      rating: 4.8,
-      reviews: 92,
-      location: "Iquitos",
-      region: "Loreto",
-      category: "Naturaleza",
-      difficulty: "Moderado" as const,
-      featured: false,
-      tourType: "Clásico" as const,
-      groupSize: "2-12 personas",
-      nextDeparture: "2024-12-18",
-      highlights: ["Reserva Pacaya Samiria", "Pesca de pirañas", "Caminatas nocturnas"],
-    },
-    {
-      id: 7,
-      title: "MANU",
-      subtitle: "Parque Nacional del Manu",
-      description:
-        "Descubre uno de los lugares con mayor biodiversidad del mundo, donde conviven más de 1000 especies de aves y 200 de mamíferos.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433100/best-time-to-explore-the-manu-amazon-rainforest-4-1_mq8and.jpg",
-      price: 1899,
-      duration: "7D/6N",
-      rating: 4.9,
-      reviews: 78,
-      location: "Cusco",
-      region: "Madre de Dios",
-      category: "Naturaleza",
-      difficulty: "Moderado" as const,
-      featured: false,
-      tourType: "Premium" as const,
-      groupSize: "2-8 personas",
-      nextDeparture: "2024-12-22",
-      highlights: ["Parque Nacional Manu", "Collpa de guacamayos", "Observación de jaguares"],
-    },
-    {
-      id: 8,
-      title: "TAMBOPATA",
-      subtitle: "Reserva Nacional Tambopata",
-      description:
-        "Vive la experiencia amazónica más accesible desde Puerto Maldonado, con lodges de lujo en medio de la selva virgen.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433100/best-time-to-explore-the-manu-amazon-rainforest-4-1_mq8and.jpg",
-      price: 999,
-      duration: "3D/2N",
-      rating: 4.5,
-      reviews: 123,
-      location: "Puerto Maldonado",
-      region: "Madre de Dios",
-      category: "Naturaleza",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Clásico" as const,
-      groupSize: "2-16 personas",
-      nextDeparture: "2024-12-08",
-      highlights: ["Lago Sandoval", "Canopy walk", "Observación de nutrias"],
-    },
-    {
-      id: 19,
-      title: "PARACAS",
-      subtitle: "Reserva Nacional y vida marina",
-      description:
-        "Explora la reserva nacional costera más importante del Perú, hogar de lobos marinos, pingüinos y aves guaneras.",
-      image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1000&auto=format&fit=crop",
-      price: 449,
-      duration: "2D/1N",
-      rating: 4.4,
-      reviews: 167,
-      location: "Paracas",
-      region: "Ica",
-      category: "Naturaleza",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Clásico" as const,
-      groupSize: "2-20 personas",
-      nextDeparture: "2024-12-06",
-      highlights: ["Islas Ballestas", "Reserva Nacional", "Candelabro de Paracas"],
-    },
-    {
-      id: 20,
-      title: "HUASCARÁN",
-      subtitle: "Parque Nacional Huascarán",
-      description:
-        "Descubre la cordillera tropical más alta del mundo, con glaciares, lagunas turquesas y una biodiversidad única de alta montaña.",
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1000&auto=format&fit=crop",
-      price: 799,
-      duration: "3D/2N",
-      rating: 4.6,
-      reviews: 134,
-      location: "Huaraz",
-      region: "Ancash",
-      category: "Naturaleza",
-      difficulty: "Moderado" as const,
-      featured: false,
-      tourType: "Premium" as const,
-      groupSize: "2-12 personas",
-      nextDeparture: "2024-12-19",
-      highlights: ["Laguna 69", "Nevado Huascarán", "Pastoruri"],
-    },
-  ],
-  Aventura: [
-    {
-      id: 9,
-      title: "CAMINO INCA",
-      subtitle: "Trekking por la ruta ancestral",
-      description:
-        "Recorre el legendario sendero inca hasta Machu Picchu, siguiendo los pasos de los antiguos chasquis en una aventura épica.",
-      image: "https://images.unsplash.com/photo-1526392060635-9d6019884377?q=80&w=1000&auto=format&fit=crop",
-      price: 1299,
-      duration: "5D/4N",
-      rating: 4.8,
-      reviews: 189,
-      location: "Cusco",
-      region: "Cusco",
-      category: "Aventura",
-      difficulty: "Difícil" as const,
-      featured: false,
-      tourType: "Premium" as const,
-      groupSize: "2-12 personas",
-      nextDeparture: "2024-12-14",
-      highlights: ["Camino Inca clásico", "Paso Warmiwañusca", "Wiñay Wayna"],
-    },
-    {
-      id: 10,
-      title: "VALLE DEL COLCA",
-      subtitle: "El cañón más profundo del Perú",
-      description:
-        "Contempla el majestuoso vuelo de los cóndores en el segundo cañón más profundo del mundo, rodeado de terrazas ancestrales.",
-      image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1000&auto=format&fit=crop",
-      price: 899,
-      duration: "3D/2N",
-      rating: 4.9,
-      reviews: 87,
-      location: "Arequipa",
-      region: "Arequipa",
-      category: "Aventura",
-      difficulty: "Difícil" as const,
-      featured: false,
-      tourType: "Premium" as const,
-      groupSize: "2-14 personas",
-      nextDeparture: "2024-12-16",
-      highlights: ["Cruz del Cóndor", "Aguas termales", "Pueblos coloniales"],
-    },
-    {
-      id: 11,
-      title: "HUACACHINA",
-      subtitle: "Aventura en el desierto",
-      description:
-        "Experimenta la adrenalina del sandboarding y los paseos en buggy en el único oasis natural de América del Sur.",
-      image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1000&auto=format&fit=crop",
-      price: 399,
-      duration: "2D/1N",
-      rating: 4.3,
-      reviews: 78,
-      location: "Ica",
-      region: "Ica",
-      category: "Aventura",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Básico" as const,
-      groupSize: "2-20 personas",
-      nextDeparture: "2024-12-06",
-      highlights: ["Oasis de Huacachina", "Sandboarding", "Paseos en buggy"],
-    },
-    {
-      id: 12,
-      title: "COTAHUASI",
-      subtitle: "El cuarto cañón más profundo del planeta",
-      description:
-        "Descubre el cañón más profundo de América, con paisajes dramáticos, aguas termales y una biodiversidad única.",
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1000&auto=format&fit=crop",
-      price: 899,
-      duration: "4D/3N",
-      rating: 4.7,
-      reviews: 201,
-      location: "Arequipa",
-      region: "Arequipa",
-      category: "Aventura",
-      difficulty: "Moderado" as const,
-      featured: false,
-      tourType: "Clásico" as const,
-      groupSize: "2-10 personas",
-      nextDeparture: "2024-12-25",
-      highlights: ["Cañón de Cotahuasi", "Cascadas de Sipia", "Baños termales"],
-    },
-    {
-      id: 21,
-      title: "SALKANTAY",
-      subtitle: "Trekking alternativo a Machu Picchu",
-      description:
-        "Recorre la ruta alternativa más espectacular hacia Machu Picchu, pasando por el nevado Salkantay y paisajes diversos.",
-      image: "https://images.unsplash.com/photo-1526392060635-9d6019884377?q=80&w=1000&auto=format&fit=crop",
-      price: 999,
-      duration: "5D/4N",
-      rating: 4.7,
-      reviews: 156,
-      location: "Cusco",
-      region: "Cusco",
-      category: "Aventura",
-      difficulty: "Difícil" as const,
-      featured: false,
-      tourType: "Premium" as const,
-      groupSize: "2-14 personas",
-      nextDeparture: "2024-12-17",
-      highlights: ["Nevado Salkantay", "Laguna Humantay", "Llactapata"],
-    },
-    {
-      id: 22,
-      title: "CHOQUEQUIRAO",
-      subtitle: "La hermana sagrada de Machu Picchu",
-      description:
-        "Aventúrate en el trekking más desafiante del Perú hacia la ciudadela inca menos visitada pero igualmente impresionante.",
-      image: "https://images.unsplash.com/photo-1526392060635-9d6019884377?q=80&w=1000&auto=format&fit=crop",
-      price: 1599,
-      duration: "7D/6N",
-      rating: 4.9,
-      reviews: 67,
-      location: "Cusco",
-      region: "Cusco",
-      category: "Aventura",
-      difficulty: "Difícil" as const,
-      featured: false,
-      tourType: "Premium" as const,
-      groupSize: "2-8 personas",
-      nextDeparture: "2024-12-28",
-      highlights: ["Choquequirao", "Cañón del Apurímac", "Terrazas incas"],
-    },
-  ],
-  Cultural: [
-    {
-      id: 13,
-      title: "LAGO TITICACA",
-      subtitle: "Islas flotantes y cultura viva",
-      description:
-        "Navega por el lago navegable más alto del mundo y conoce las tradiciones milenarias de los uros y taquileños.",
-      image: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1000&auto=format&fit=crop",
-      price: 649,
-      duration: "3D/2N",
-      rating: 4.6,
-      reviews: 98,
-      location: "Puno",
-      region: "Puno",
-      category: "Cultural",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Clásico" as const,
-      groupSize: "2-18 personas",
-      nextDeparture: "2024-12-09",
-      highlights: ["Islas flotantes Uros", "Isla Taquile", "Textilería tradicional"],
-    },
-    {
-      id: 14,
-      title: "AREQUIPA",
-      subtitle: "Ciudad Blanca del Perú",
-      description:
-        "Explora la arquitectura colonial de sillar blanco y degusta la exquisita gastronomía arequipeña en la ciudad de los volcanes.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433100/best-time-to-explore-the-manu-amazon-rainforest-4-1_mq8and.jpg",
-      price: 549,
-      duration: "2D/1N",
-      rating: 4.5,
-      reviews: 123,
-      location: "Arequipa",
-      region: "Arequipa",
-      category: "Cultural",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Clásico" as const,
-      groupSize: "2-20 personas",
-      nextDeparture: "2024-12-07",
-      highlights: ["Monasterio Santa Catalina", "Volcán Misti", "Gastronomía local"],
-    },
-    {
-      id: 15,
-      title: "TRUJILLO",
-      subtitle: "Ciudad de la Eterna Primavera",
-      description:
-        "Descubre las culturas Moche y Chimú en esta ciudad colonial, famosa por sus huacas y la ciudadela de Chan Chan.",
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1000&auto=format&fit=crop",
-      price: 699,
-      duration: "3D/2N",
-      rating: 4.6,
-      reviews: 167,
-      location: "Trujillo",
-      region: "La Libertad",
-      category: "Cultural",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Premium" as const,
-      groupSize: "2-16 personas",
-      nextDeparture: "2024-12-13",
-      highlights: ["Chan Chan", "Huacas del Sol y Luna", "Playa Huanchaco"],
-    },
-    {
-      id: 16,
-      title: "LIMA HISTÓRICA",
-      subtitle: "Centro histórico y gastronomía",
-      description:
-        "Recorre el centro histórico de Lima, Patrimonio de la Humanidad, y disfruta de la mejor gastronomía del mundo.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750433526/colca-canyon-in-arequipa-297_rui1xh.jpg",
-      price: 299,
-      duration: "1D",
-      rating: 4.4,
-      reviews: 234,
-      location: "Lima",
-      region: "Lima",
-      category: "Cultural",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Básico" as const,
-      groupSize: "2-25 personas",
-      nextDeparture: "2024-12-04",
-      highlights: ["Centro histórico", "Tour gastronómico", "Museos coloniales"],
-    },
-    {
-      id: 23,
-      title: "CHINCHERO",
-      subtitle: "Pueblo textil del Valle Sagrado",
-      description:
-        "Conoce las técnicas ancestrales de textilería andina en este pintoresco pueblo donde el tiempo se detuvo.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432254/machupicchu-turista-wta_itauck.jpg",
-      price: 199,
-      duration: "1D",
-      rating: 4.3,
-      reviews: 89,
-      location: "Cusco",
-      region: "Cusco",
-      category: "Cultural",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Básico" as const,
-      groupSize: "2-20 personas",
-      nextDeparture: "2024-12-05",
-      highlights: ["Textilería tradicional", "Mercado dominical", "Iglesia colonial"],
-    },
-    {
-      id: 24,
-      title: "AYACUCHO",
-      subtitle: "Cuna de la artesanía peruana",
-      description:
-        "Descubre la ciudad de las 33 iglesias, famosa por su Semana Santa y sus increíbles retablos ayacuchanos.",
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1000&auto=format&fit=crop",
-      price: 599,
-      duration: "3D/2N",
-      rating: 4.5,
-      reviews: 112,
-      location: "Ayacucho",
-      region: "Ayacucho",
-      category: "Cultural",
-      difficulty: "Fácil" as const,
-      featured: false,
-      tourType: "Clásico" as const,
-      groupSize: "2-18 personas",
-      nextDeparture: "2024-12-21",
-      highlights: ["Iglesias coloniales", "Retablos ayacuchanos", "Artesanía local"],
-    },
-  ],
+// Interfaces para filtros
+interface TourFilters {
+  page: number
+  limit: number
+  category?: TourCategory
+  difficulty?: Difficulty
+  packageType?: PackageType
+  region?: string
+  location?: string
 }
-
-const categories = ["Arqueología", "Naturaleza", "Aventura", "Cultural"]
 
 // Componente para el texto circular giratorio
 const SpinningText = ({ text = "RESERVAR • RESERVAR • " }: { text?: string }) => {
   return (
-    <div className="relative w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
+    <div className="relative w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20">
       <motion.div
         className="absolute inset-0"
         animate={{ rotate: 360 }}
@@ -541,7 +36,7 @@ const SpinningText = ({ text = "RESERVAR • RESERVAR • " }: { text?: string }
           <defs>
             <path id="circle" d="M 50, 50 m -28, 0 a 28,28 0 1,1 56,0 a 28,28 0 1,1 -56,0" />
           </defs>
-          <text className="text-[6px] md:text-[8px] lg:text-[10px] fill-white font-medium tracking-wider brand-text">
+          <text className="text-[5px] md:text-[6px] lg:text-[8px] fill-white font-medium tracking-wider brand-text">
             <textPath href="#circle" startOffset="0%">
               {text}
             </textPath>
@@ -550,9 +45,9 @@ const SpinningText = ({ text = "RESERVAR • RESERVAR • " }: { text?: string }
       </motion.div>
 
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+        <div className="w-4 h-4 md:w-6 md:h-6 lg:w-8 lg:h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
           <svg
-            className="w-3 h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 text-white"
+            className="w-2 h-2 md:w-3 md:h-3 lg:w-4 lg:h-4 text-white"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -565,38 +60,348 @@ const SpinningText = ({ text = "RESERVAR • RESERVAR • " }: { text?: string }
   )
 }
 
+// Componente de Loading Skeleton
+const LoadingSkeleton = () => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="relative h-[60vh] md:h-[70vh] lg:h-[75vh] bg-gray-200 animate-pulse rounded-lg">
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-300 via-gray-200 to-transparent rounded-lg" />
+          <div className="absolute top-4 left-4">
+            <div className="bg-gray-300 h-6 w-24 rounded animate-pulse" />
+          </div>
+          <div className="absolute bottom-4 left-4 right-4">
+            <div className="bg-gray-300 h-8 w-3/4 rounded mb-2 animate-pulse" />
+            <div className="bg-gray-300 h-4 w-1/2 rounded animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Componente de Error State
+const ErrorState = ({ onRetry }: { onRetry: () => void }) => {
+  return (
+    <div className="flex flex-col items-center justify-center py-16">
+      <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">Error al cargar los tours</h3>
+      <p className="text-gray-600 mb-4 text-center">No pudimos cargar los tours. Por favor, intenta nuevamente.</p>
+      <button
+        onClick={onRetry}
+        className="bg-peru-orange text-white px-6 py-2 rounded-lg hover:bg-peru-orange/90 transition-colors"
+      >
+        Reintentar
+      </button>
+    </div>
+  )
+}
+
+// Componente de Filtros Mejorado
+const FiltersPanel = ({
+  filters,
+  onFiltersChange,
+  onClearFilters,
+  isOpen,
+  onToggle,
+}: {
+  filters: TourFilters
+  onFiltersChange: (newFilters: Partial<TourFilters>) => void
+  onClearFilters: () => void
+  isOpen: boolean
+  onToggle: () => void
+}) => {
+  const categories: TourCategory[] = ["Aventura", "Cultural", "Relax", "Naturaleza"]
+  const difficulties: Difficulty[] = ["Facil", "Moderado", "Difícil"]
+  const packageTypes: PackageType[] = ["Basico", "Premium"]
+
+  return (
+    <div className="relative">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors shadow-sm"
+      >
+        <Filter size={16} />
+        <span className="text-sm font-medium hidden md:inline">Filtros</span>
+        <ChevronDown size={14} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-12 right-0 md:left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80 max-w-[90vw]"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-gray-900">Filtros de Búsqueda</h3>
+              <button onClick={onToggle} className="text-gray-500 hover:text-gray-700 p-1">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {/* Categoría */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
+                <select
+                  value={filters.category || ""}
+                  onChange={(e) => onFiltersChange({ category: (e.target.value as TourCategory) || undefined })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
+                >
+                  <option value="">Todas las categorías</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dificultad */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Dificultad</label>
+                <select
+                  value={filters.difficulty || ""}
+                  onChange={(e) => onFiltersChange({ difficulty: (e.target.value as Difficulty) || undefined })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
+                >
+                  <option value="">Todas las dificultades</option>
+                  {difficulties.map((diff) => (
+                    <option key={diff} value={diff}>
+                      {diff === "Facil" ? "Fácil" : diff}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tipo de Paquete */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Paquete</label>
+                <select
+                  value={filters.packageType || ""}
+                  onChange={(e) => onFiltersChange({ packageType: (e.target.value as PackageType) || undefined })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
+                >
+                  <option value="">Todos los tipos</option>
+                  {packageTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type === "Basico" ? "Básico" : type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Región */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Región</label>
+                <input
+                  type="text"
+                  value={filters.region || ""}
+                  onChange={(e) => onFiltersChange({ region: e.target.value || undefined })}
+                  placeholder="Ej: Cusco, Lima, Arequipa..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
+                />
+              </div>
+
+              {/* Ubicación */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ubicación</label>
+                <input
+                  type="text"
+                  value={filters.location || ""}
+                  onChange={(e) => onFiltersChange({ location: e.target.value || undefined })}
+                  placeholder="Ej: Machu Picchu, Iquitos..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Botones */}
+            <div className="flex gap-2 pt-4 border-t mt-4">
+              <button
+                onClick={onClearFilters}
+                className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Limpiar
+              </button>
+              <button
+                onClick={onToggle}
+                className="flex-1 px-4 py-2 bg-peru-orange text-white rounded-lg hover:bg-peru-orange/90 transition-colors text-sm"
+              >
+                Aplicar
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 export default function ToursPage() {
-  const [activeCategory, setActiveCategory] = useState("Arqueología")
-  const [currentTours, setCurrentTours] = useState<(typeof toursByCategory)[keyof typeof toursByCategory]>(
-    toursByCategory["Arqueología"],
+  const [tours, setTours] = useState<Tour[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [totalTours, setTotalTours] = useState(0)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+
+  const [filters, setFilters] = useState<TourFilters>({
+    page: 1,
+    limit: 12,
+  })
+
+  // Función para construir query params
+  const buildQueryParams = useCallback((filterParams: TourFilters) => {
+    const params = new URLSearchParams()
+
+    Object.entries(filterParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        params.append(key, value.toString())
+      }
+    })
+
+    return params.toString()
+  }, [])
+
+  // Función para cargar tours con useCallback para evitar dependencias
+  const fetchTours = useCallback(
+    async (filterParams: TourFilters = filters) => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const queryString = buildQueryParams(filterParams)
+        const response = await api.get(`/tours${queryString ? `?${queryString}` : ""}`)
+
+        setTours(response.data.data || [])
+        setTotalTours(response.data.total || response.data.data?.length || 0)
+      } catch (err) {
+        console.error("Error fetching tours:", err)
+        setError("Error al cargar los tours")
+      } finally {
+        setLoading(false)
+      }
+    },
+    [buildQueryParams, filters],
   )
 
+  // Efecto para cargar tours cuando cambian los filtros con debounce
   useEffect(() => {
-    setCurrentTours(toursByCategory[activeCategory as keyof typeof toursByCategory])
-  }, [activeCategory])
+    const timeoutId = setTimeout(() => {
+      fetchTours(filters)
+    }, 300) // Debounce de 300ms
 
-  const getCategoryTitle = (category: string) => {
-    const titles = {
-      Arqueología: "Descubre las Maravillas Arqueológicas del Perú",
-      Naturaleza: "Explora la Biodiversidad Natural del Perú",
-      Aventura: "Vive Aventuras Extremas en el Perú",
-      Cultural: "Sumérgete en la Cultura Viva del Perú",
+    return () => clearTimeout(timeoutId)
+  }, [filters, fetchTours])
+
+  // Función para actualizar filtros sin recargar inmediatamente
+  const handleFiltersChange = useCallback((newFilters: Partial<TourFilters>) => {
+    setFilters((prev) => ({
+      ...prev,
+      ...newFilters,
+      page: newFilters.page || 1, // Reset page when filters change unless it's a page change
+    }))
+  }, [])
+
+  // Función para limpiar filtros
+  const handleClearFilters = useCallback(() => {
+    setFilters({
+      page: 1,
+      limit: 12,
+    })
+    setSearchTerm("")
+    setFiltersOpen(false)
+  }, [])
+
+  // Filtrar tours por búsqueda local
+  const filteredTours = useMemo(() => {
+    if (!searchTerm) return tours
+
+    return tours.filter(
+      (tour) =>
+        tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tour.subtitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tour.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tour.region.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
+  }, [tours, searchTerm])
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "Facil":
+        return "bg-green-500 text-white"
+      case "Moderado":
+        return "bg-yellow-500 text-white"
+      case "Difícil":
+        return "bg-red-500 text-white"
+      default:
+        return "bg-gray-500 text-white"
     }
-    return titles[category as keyof typeof titles]
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
+  const getPackageTypeColor = (packageType: string) => {
+    switch (packageType) {
+      case "Premium":
+        return "bg-peru-gold text-white"
+      case "Basico":
+        return "bg-gray-600 text-white"
+      default:
+        return "bg-peru-orange text-white"
+    }
+  }
+
+  // Función para truncar texto
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text
+    return text.substring(0, maxLength) + "..."
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="pt-32 pb-4 md:pb-6 px-4 md:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-6">
+              <div className="h-8 md:h-12 bg-gray-200 rounded w-1/2 md:w-1/3 mb-4 animate-pulse" />
+              <div className="h-4 md:h-6 bg-gray-200 rounded w-3/4 md:w-1/2 animate-pulse" />
+            </div>
+            <div className="mb-8">
+              <div className="flex gap-4 mb-4">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="h-8 md:h-10 bg-gray-200 rounded w-20 md:w-24 animate-pulse" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="px-4 md:px-8">
+          <div className="max-w-7xl mx-auto">
+            <LoadingSkeleton />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="pt-32 pb-4 md:pb-6 px-4 md:px-8">
+          <div className="max-w-7xl mx-auto">
+            <ErrorState onRetry={() => fetchTours()} />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header Section - Compacto */}
+      {/* Header Section */}
       <div className="pt-32 pb-4 md:pb-6 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Main Title */}
@@ -606,230 +411,325 @@ export default function ToursPage() {
             transition={{ duration: 0.8 }}
             className="mb-6"
           >
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-black leading-none brand-text">
+            <h1 className="text-2xl md:text-4xl lg:text-6xl font-light text-black leading-none brand-text">
               Tours del Perú
             </h1>
-            <p className="text-base md:text-lg text-gray-600 mt-2 body-text max-w-2xl">
-              Descubre los destinos más increíbles del Perú
+            <p className="text-sm md:text-base lg:text-lg text-gray-600 mt-2 body-text max-w-2xl">
+              Descubre los destinos más increíbles del Perú ({totalTours} tours disponibles)
             </p>
           </motion.div>
 
-          {/* Category Tabs */}
+          {/* Search and Filters */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-4"
+            className="mb-6"
           >
-            <div className="flex flex-wrap gap-2 md:gap-0">
-              {categories.map((category, index) => (
-                <motion.button
-                  key={category}
-                  onClick={() => setActiveCategory(category)}
-                  className={`px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm font-medium tracking-wider transition-all duration-300 md:border-r border-gray-300 last:border-r-0 ${
-                    activeCategory === category
-                      ? "bg-black text-white"
-                      : "bg-gray-100 md:bg-white text-black hover:bg-gray-200 md:hover:bg-gray-100"
-                  }`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {category}
-                </motion.button>
-              ))}
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-center">
+              {/* Search Bar */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="Buscar tours..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
+                />
+              </div>
+
+              {/* Filters */}
+              <FiltersPanel
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+                onClearFilters={handleClearFilters}
+                isOpen={filtersOpen}
+                onToggle={() => setFiltersOpen(!filtersOpen)}
+              />
             </div>
+
+            {/* Active Filters Display */}
+            {(filters.category || filters.difficulty || filters.packageType || filters.region || filters.location) && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="flex flex-wrap gap-2 mt-4"
+              >
+                <span className="text-xs md:text-sm text-gray-600">Filtros activos:</span>
+                {filters.category && (
+                  <span className="px-2 py-1 bg-peru-orange/10 text-peru-orange text-xs rounded-full flex items-center gap-1">
+                    {filters.category}
+                    <button
+                      onClick={() => handleFiltersChange({ category: undefined })}
+                      className="hover:bg-peru-orange/20 rounded-full p-0.5"
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                )}
+                {filters.difficulty && (
+                  <span className="px-2 py-1 bg-peru-orange/10 text-peru-orange text-xs rounded-full flex items-center gap-1">
+                    {filters.difficulty === "Facil" ? "Fácil" : filters.difficulty}
+                    <button
+                      onClick={() => handleFiltersChange({ difficulty: undefined })}
+                      className="hover:bg-peru-orange/20 rounded-full p-0.5"
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                )}
+                {filters.packageType && (
+                  <span className="px-2 py-1 bg-peru-orange/10 text-peru-orange text-xs rounded-full flex items-center gap-1">
+                    {filters.packageType === "Basico" ? "Básico" : filters.packageType}
+                    <button
+                      onClick={() => handleFiltersChange({ packageType: undefined })}
+                      className="hover:bg-peru-orange/20 rounded-full p-0.5"
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                )}
+                {filters.region && (
+                  <span className="px-2 py-1 bg-peru-orange/10 text-peru-orange text-xs rounded-full flex items-center gap-1">
+                    {filters.region}
+                    <button
+                      onClick={() => handleFiltersChange({ region: undefined })}
+                      className="hover:bg-peru-orange/20 rounded-full p-0.5"
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                )}
+                {filters.location && (
+                  <span className="px-2 py-1 bg-peru-orange/10 text-peru-orange text-xs rounded-full flex items-center gap-1">
+                    {filters.location}
+                    <button
+                      onClick={() => handleFiltersChange({ location: undefined })}
+                      className="hover:bg-peru-orange/20 rounded-full p-0.5"
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                )}
+              </motion.div>
+            )}
           </motion.div>
 
-          {/* Section Title */}
+          {/* Results Count */}
           <motion.div
-            key={`section-title-${activeCategory}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="mb-4"
           >
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-light text-black leading-tight">
-              {getCategoryTitle(activeCategory)}
-            </h2>
+            <p className="text-sm md:text-base text-gray-600">
+              {filteredTours.length} {filteredTours.length === 1 ? "tour encontrado" : "tours encontrados"}
+            </p>
           </motion.div>
         </div>
       </div>
 
-      {/* Tours Grid - Ocupa toda la pantalla */}
+      {/* Tours Grid */}
       <div className="px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
-          <motion.div
-            key={`tours-grid-${activeCategory}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
-          >
-            {currentTours.map((tour, index) => (
-              <motion.div
-                key={`tour-${tour.id}`}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="group cursor-pointer"
-              >
-                <Link href={`/tours/${tour.id}`}>
-                  <div className="relative h-[70vh] md:h-[80vh] lg:h-[85vh] overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
-                    {/* Background Image */}
-                    <div className="absolute inset-0">
-                      <Image
-                        src={tour.image || "/placeholder.svg"}
-                        alt={tour.title}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
-                      {/* Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                    </div>
-
-                    {/* Category Badge */}
-                    <div className="absolute top-4 left-4 z-20">
-                      <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-peru-orange rounded-full"></div>
-                        <span className="text-xs font-medium text-gray-800 brand-text">{tour.category}</span>
-                        <span className="text-xs text-gray-500 body-text">{formatDate(tour.nextDeparture)}</span>
+          {filteredTours.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="text-4xl md:text-6xl mb-4">🏔️</div>
+              <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">No hay tours disponibles</h3>
+              <p className="text-sm md:text-base text-gray-600 text-center">
+                No encontramos tours que coincidan con tus filtros. Prueba ajustando los criterios de búsqueda.
+              </p>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+            >
+              {filteredTours.map((tour, index) => (
+                <motion.div
+                  key={`tour-${tour._id}`}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="group cursor-pointer"
+                >
+                  <Link href={`/tours/${tour.slug}`}>
+                    <div className="relative h-[60vh] md:h-[70vh] lg:h-[75vh] overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg">
+                      {/* Background Image */}
+                      <div className="absolute inset-0">
+                        <Image
+                          src={tour.imageUrl || "/placeholder.svg?height=800&width=600&text=Tour+Image"}
+                          alt={tour.title}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-110"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        />
+                        {/* Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                       </div>
-                    </div>
 
-                    {/* Featured Badge */}
-                    {tour.featured === true && (
-                      <div className="absolute top-4 right-4 z-20">
-                        <div className="bg-peru-gold text-white px-3 py-1.5 text-xs font-medium brand-text">
-                          DESTACADO
+                      {/* Category Badge */}
+                      <div className="absolute top-3 left-3 z-20">
+                        <div className="bg-white/95 backdrop-blur-sm px-2 md:px-3 py-1 md:py-1.5 rounded-lg flex items-center space-x-1 md:space-x-2">
+                          <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-peru-orange rounded-full"></div>
+                          <span className="text-xs font-medium text-gray-800 brand-text">{tour.category}</span>
                         </div>
                       </div>
-                    )}
 
-                    {/* Spinning Text - Aparece en hover */}
-                    <div className="absolute top-16 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-2 group-hover:translate-x-0">
-                      <SpinningText />
-                    </div>
-
-                    {/* Content */}
-                    <div className="absolute inset-0 p-4 md:p-6 flex flex-col justify-between z-10">
-                      {/* Top Section - Title */}
-                      <div className="mt-12 md:mt-16">
-                        <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-white brand-text mb-2 leading-tight">
-                          {tour.title}
-                        </h3>
-                        <p className="text-white/90 text-sm md:text-base body-text mb-3 leading-relaxed">
-                          {tour.subtitle}
-                        </p>
-                      </div>
-
-                      {/* Middle Section - Description (visible en hover) */}
-                      <div className="flex-1 flex items-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
-                        <p className="text-white/90 text-sm md:text-base body-text leading-relaxed line-clamp-3">
-                          {tour.description}
-                        </p>
-                      </div>
-
-                      {/* Bottom Section - Tour Info */}
-                      <div className="bg-black/60 backdrop-blur-sm p-4 md:p-5 space-y-3">
-                        {/* Price and Duration */}
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <span className="text-xl md:text-2xl font-bold text-white brand-text">${tour.price}</span>
-                            <span className="text-white/70 text-sm ml-2 body-text">por persona</span>
+                      {/* Featured Badge */}
+                      {tour.featured && (
+                        <div className="absolute top-3 right-3 z-20">
+                          <div className="bg-peru-gold text-white px-2 md:px-3 py-1 md:py-1.5 text-xs font-medium brand-text rounded-lg">
+                            DESTACADO
                           </div>
-                          <div className="flex items-center text-white/90 text-sm">
-                            <Clock size={16} className="mr-1" />
-                            <span className="body-text">{tour.duration}</span>
+                        </div>
+                      )}
+
+                      {/* Spinning Text - Aparece en hover */}
+                      <div className="absolute top-12 md:top-16 right-3 z-20 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-2 group-hover:translate-x-0">
+                        <SpinningText />
+                      </div>
+
+                      {/* Content */}
+                      <div className="absolute inset-0 p-3 md:p-4 lg:p-6 flex flex-col justify-between z-10">
+                        {/* Top Section - Title */}
+                        <div className="mt-8 md:mt-12 lg:mt-16">
+                          <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-white brand-text mb-1 md:mb-2 leading-tight">
+                            {truncateText(tour.title, 30)}
+                          </h3>
+                          <p className="text-white/90 text-xs md:text-sm lg:text-base body-text mb-2 md:mb-3 leading-relaxed">
+                            {truncateText(tour.subtitle, 60)}
+                          </p>
+                        </div>
+
+                        {/* Middle Section - Lugares destacados (visible en hover) */}
+                        <div className="flex-1 flex items-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
+                          <div className="space-y-2">
+                            <p className="text-white/90 text-xs md:text-sm font-medium">Lugares destacados:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {tour.highlights.slice(0, 3).map((highlight, idx) => (
+                                <span
+                                  key={idx}
+                                  className="text-xs bg-white/20 text-white px-2 py-1 rounded body-text flex items-center gap-1"
+                                >
+                                  <MapPin size={10} />
+                                  {truncateText(highlight, 15)}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
 
-                        {/* Location and Rating */}
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center text-white/90 text-sm">
-                            <MapPin size={16} className="mr-1" />
-                            <span className="body-text">{tour.location}</span>
+                        {/* Bottom Section - Tour Info */}
+                        <div className="bg-black/60 backdrop-blur-sm p-3 md:p-4 lg:p-5 space-y-2 md:space-y-3 rounded-lg">
+                          {/* Price and Duration */}
+                          <div className="flex justify-between items-center">
+                            <div>
+                              {tour.originalPrice && tour.originalPrice > tour.price && (
+                                <span className="text-xs md:text-sm text-white/60 line-through mr-2">
+                                  ${tour.originalPrice}
+                                </span>
+                              )}
+                              <span className="text-lg md:text-xl lg:text-2xl font-bold text-white brand-text">
+                                ${tour.price}
+                              </span>
+                              <span className="text-white/70 text-xs md:text-sm ml-1 md:ml-2 body-text">
+                                por persona
+                              </span>
+                            </div>
+                            <div className="flex items-center text-white/90 text-xs md:text-sm">
+                              <Clock size={12} className="mr-1" />
+                              <span className="body-text">{tour.duration}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center text-white/90 text-sm">
-                            <Star size={16} className="mr-1 text-yellow-400 fill-current" />
-                            <span className="body-text">
-                              {tour.rating} ({tour.reviews})
+
+                          {/* Location and Rating */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center text-white/90 text-xs md:text-sm">
+                              <MapPin size={12} className="mr-1" />
+                              <span className="body-text">{truncateText(tour.location, 12)}</span>
+                            </div>
+                            <div className="flex items-center text-white/90 text-xs md:text-sm">
+                              <Star size={12} className="mr-1 text-yellow-400 fill-current" />
+                              <span className="body-text">
+                                {tour.rating} ({tour.reviews})
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Transport and Difficulty */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center text-white/90 text-xs md:text-sm">
+                              <Users size={12} className="mr-1" />
+                              <span className="body-text">
+                                {tour.transportOptionIds.length > 0
+                                  ? truncateText(tour.transportOptionIds[0].vehicle, 12)
+                                  : "Transporte"}
+                              </span>
+                            </div>
+                            <span
+                              className={`px-2 py-1 text-xs brand-text rounded ${getDifficultyColor(tour.difficulty)}`}
+                            >
+                              {tour.difficulty === "Facil" ? "Fácil" : tour.difficulty}
+                            </span>
+                          </div>
+
+                          {/* Package Type */}
+                          <div className="flex justify-center pt-1 md:pt-2">
+                            <span
+                              className={`px-2 md:px-3 py-1 text-xs brand-text rounded ${getPackageTypeColor(tour.packageType)}`}
+                            >
+                              {tour.packageType === "Basico" ? "Básico" : tour.packageType}
                             </span>
                           </div>
                         </div>
-
-                        {/* Group Size and Difficulty */}
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center text-white/90 text-sm">
-                            <Users size={16} className="mr-1" />
-                            <span className="body-text">{tour.groupSize}</span>
-                          </div>
-                          <span
-                            className={`px-2 py-1 text-xs brand-text ${
-                              tour.difficulty === "Fácil"
-                                ? "bg-green-500 text-white"
-                                : tour.difficulty === "Moderado"
-                                  ? "bg-yellow-500 text-white"
-                                  : "bg-red-500 text-white"
-                            }`}
-                          >
-                            {tour.difficulty}
-                          </span>
-                        </div>
-
-                        {/* Next Departure */}
-                        <div className="flex items-center justify-between pt-2 border-t border-white/20">
-                          <div className="flex items-center text-white/90 text-sm">
-                            <Calendar size={16} className="mr-1" />
-                            <span className="body-text">Próxima salida</span>
-                          </div>
-                          <span className="text-white text-sm font-medium brand-text">
-                            {formatDate(tour.nextDeparture)}
-                          </span>
-                        </div>
-
-                        {/* Tour Type */}
-                        <div className="flex justify-center pt-2">
-                          <span
-                            className={`px-3 py-1 text-xs brand-text ${
-                              tour.tourType === "Premium"
-                                ? "bg-peru-gold text-white"
-                                : tour.tourType === "Clásico"
-                                  ? "bg-peru-orange text-white"
-                                  : "bg-gray-600 text-white"
-                            }`}
-                          >
-                            {tour.tourType}
-                          </span>
-                        </div>
-
-                        {/* Highlights - Visible en hover */}
-                        <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 pt-2 border-t border-white/20">
-                          <div className="flex flex-wrap gap-1">
-                            {tour.highlights.slice(0, 3).map((highlight, idx) => (
-                              <span key={idx} className="text-xs bg-white/20 text-white px-2 py-1 body-text">
-                                {highlight}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
                       </div>
-                    </div>
 
-                    {/* Hover Effect */}
-                    <div className="absolute inset-0 bg-peru-orange/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
+                      {/* Hover Effect */}
+                      <div className="absolute inset-0 bg-peru-orange/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </div>
       </div>
 
+      {/* Pagination */}
+      {totalTours > filters.limit && (
+        <div className="px-4 md:px-8 py-6 md:py-8">
+          <div className="max-w-7xl mx-auto flex justify-center">
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleFiltersChange({ page: Math.max(1, filters.page - 1) })}
+                disabled={filters.page === 1}
+                className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors text-sm"
+              >
+                Anterior
+              </button>
+
+              <span className="px-3 md:px-4 py-2 bg-peru-orange text-white rounded-lg text-sm">
+                Página {filters.page}
+              </span>
+
+              <button
+                onClick={() => handleFiltersChange({ page: filters.page + 1 })}
+                disabled={tours.length < filters.limit}
+                className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors text-sm"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Spacing */}
-      <div className="h-8 md:h-12"></div>
+      <div className="h-6 md:h-8 lg:h-12"></div>
     </div>
   )
 }

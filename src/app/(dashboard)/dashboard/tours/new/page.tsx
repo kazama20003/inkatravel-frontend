@@ -32,6 +32,18 @@ import { RouteForm } from "@/components/dashboard/tour/route-form"
 import { ItineraryForm } from "@/components/dashboard/tour/itinerary-form"
 import { IncludesForm } from "@/components/dashboard/tour/includes-form"
 
+// Función para generar slug
+const generateSlug = (title: string): string => {
+  return title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remover acentos
+    .replace(/[^a-z0-9\s-]/g, "") // Remover caracteres especiales
+    .trim()
+    .replace(/\s+/g, "-") // Reemplazar espacios con guiones
+    .replace(/-+/g, "-") // Remover guiones duplicados
+}
+
 export default function NewTourPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("basic")
@@ -46,7 +58,6 @@ export default function NewTourPage() {
     imageUrl: "",
     imageId: "",
     price: 0,
-    priceGroup: undefined,
     originalPrice: undefined,
     duration: "",
     rating: 0,
@@ -54,15 +65,18 @@ export default function NewTourPage() {
     location: "",
     region: "",
     category: "Aventura", // Valor por defecto
-    difficulty: "Fácil",
+    difficulty: "Facil", // Sin tilde
+    packageType: "Basico", // Valor por defecto
     highlights: [],
     featured: false,
-    transportOptions: [], // Ahora opcional
+    selectedTransports: [], // Para mostrar en el formulario
+    transportOptionIds: [], // Para enviar al backend
     itinerary: [],
     includes: [],
     notIncludes: [],
     toBring: [],
     conditions: [],
+    slug: "", // Agregar slug
   })
 
   // Función para agregar imagen temporal
@@ -126,6 +140,11 @@ export default function NewTourPage() {
       })
     }
 
+    // Generar slug automáticamente cuando cambie el título
+    if (data.title && data.title !== formData.title) {
+      data.slug = generateSlug(data.title)
+    }
+
     setFormData((prev) => ({ ...prev, ...data }))
   }
 
@@ -178,21 +197,31 @@ export default function NewTourPage() {
         return
       }
 
-      // Crear el DTO correcto para el backend
+      // Crear el DTO correcto para el backend (con slug)
       const tourData: CreateTourDto = {
-        ...formData,
-        // Asegurar que los arrays no estén vacíos si son opcionales
+        title: formData.title,
+        subtitle: formData.subtitle,
+        imageUrl: formData.imageUrl,
+        imageId: formData.imageId || undefined,
+        price: formData.price,
+        originalPrice: formData.originalPrice && formData.originalPrice > 0 ? formData.originalPrice : undefined,
+        duration: formData.duration,
+        rating: formData.rating,
+        reviews: formData.reviews,
+        location: formData.location,
+        region: formData.region,
+        category: formData.category,
+        difficulty: formData.difficulty,
+        packageType: formData.packageType,
+        highlights: formData.highlights,
+        featured: formData.featured,
+        transportOptionIds: formData.transportOptionIds?.length ? formData.transportOptionIds : undefined,
         itinerary: formData.itinerary?.length ? formData.itinerary : undefined,
         includes: formData.includes?.length ? formData.includes : undefined,
         notIncludes: formData.notIncludes?.length ? formData.notIncludes : undefined,
         toBring: formData.toBring?.length ? formData.toBring : undefined,
         conditions: formData.conditions?.length ? formData.conditions : undefined,
-        transportOptions: formData.transportOptions?.length ? formData.transportOptions : undefined,
-        // Limpiar precios opcionales si son 0
-        priceGroup: formData.priceGroup && formData.priceGroup > 0 ? formData.priceGroup : undefined,
-        originalPrice: formData.originalPrice && formData.originalPrice > 0 ? formData.originalPrice : undefined,
-        // Limpiar imageId si está vacío
-        imageId: formData.imageId || undefined,
+        slug: formData.slug || generateSlug(formData.title), // Incluir slug
       }
 
       console.log("Sending tour data:", tourData)
@@ -248,8 +277,6 @@ export default function NewTourPage() {
     }
   }
 
-  // Limpiar imágenes temporales cuando el usuario sale sin guardar
-
   // Usar useEffect para manejar la limpieza al desmontar el componente
   React.useEffect(() => {
     const handleUnload = () => {
@@ -289,10 +316,10 @@ export default function NewTourPage() {
         const basicFields = [formData.title, formData.subtitle, formData.location, formData.region, formData.category]
         return (basicFields.filter(Boolean).length / basicFields.length) * 100
       case "details":
-        const detailFields = [formData.duration, formData.price > 0]
+        const detailFields = [formData.duration, formData.price > 0, formData.packageType, formData.difficulty]
         return (detailFields.filter(Boolean).length / detailFields.length) * 100
       case "transport":
-        return formData.transportOptions && formData.transportOptions.length > 0 ? 100 : 0
+        return formData.selectedTransports && formData.selectedTransports.length > 0 ? 100 : 0
       case "route":
         return 100 // Siempre completo ya que es informativo
       case "itinerary":
@@ -339,6 +366,11 @@ export default function NewTourPage() {
               <h1 className="text-2xl font-bold">Crear Nuevo Paquete Turístico</h1>
             </div>
             <p className="text-muted-foreground">Completa la información para crear un nuevo paquete turístico</p>
+            {formData.slug && (
+              <p className="text-xs text-muted-foreground">
+                URL: <code className="bg-muted px-1 rounded">/tours/{formData.slug}</code>
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -479,9 +511,9 @@ export default function NewTourPage() {
                 <ul className="list-disc ml-4 space-y-1">
                   <li>Completa toda la información básica (marcada con *)</li>
                   <li>Agrega imágenes atractivas para cada sección</li>
+                  <li>Selecciona las opciones de transporte disponibles</li>
                   <li>Define claramente qué incluye y qué no incluye el tour</li>
                   <li>Crea un itinerario detallado día por día con rutas específicas</li>
-                  <li>Especifica las opciones de transporte disponibles</li>
                 </ul>
               </div>
             </div>

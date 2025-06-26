@@ -123,48 +123,23 @@ export function BasicInfoForm({ data, onChange }: BasicInfoFormProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Precios</CardTitle>
-          <CardDescription>Configuración de precios del paquete</CardDescription>
+          <CardTitle>Precio</CardTitle>
+          <CardDescription>Precio base del paquete turístico</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="price">Precio Base (USD) *</Label>
-              <Input
-                id="price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={data.price}
-                onChange={(e) => onChange({ price: Number(e.target.value) })}
-                placeholder="0"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="originalPrice">Precio Original (USD)</Label>
-              <Input
-                id="originalPrice"
-                type="number"
-                min="0"
-                step="0.01"
-                value={data.originalPrice || ""}
-                onChange={(e) => onChange({ originalPrice: e.target.value ? Number(e.target.value) : undefined })}
-                placeholder="Precio antes del descuento"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="priceGroup">Precio Grupal (USD)</Label>
-              <Input
-                id="priceGroup"
-                type="number"
-                min="0"
-                step="0.01"
-                value={data.priceGroup || ""}
-                onChange={(e) => onChange({ priceGroup: e.target.value ? Number(e.target.value) : undefined })}
-                placeholder="Precio para grupos"
-              />
-            </div>
+          <div className="grid gap-2">
+            <Label htmlFor="price">Precio Base (PEN) *</Label>
+            <Input
+              id="price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={data.price}
+              onChange={(e) => onChange({ price: Number(e.target.value) })}
+              placeholder="0"
+              required
+            />
+            <p className="text-xs text-muted-foreground">Precio por persona en soles peruanos</p>
           </div>
         </CardContent>
       </Card>

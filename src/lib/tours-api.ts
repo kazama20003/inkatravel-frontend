@@ -6,11 +6,16 @@ interface ToursResponse {
   data: Tour[]
   message: string
   pagination?: {
-    currentPage: number
-    totalPages: number
-    totalTours: number
+    total: number
+    page: number
     limit: number
+    totalPages: number
   }
+}
+
+interface TourResponse {
+  data: Tour
+  message: string
 }
 
 interface ApiError {
@@ -28,7 +33,6 @@ const mockToursData = [
     imageUrl: "/placeholder.svg?height=300&width=400&text=Europa+Clásica",
     imageId: "mock-image-id-1",
     price: 3200,
-    priceGroup: 2800,
     originalPrice: 3800,
     duration: "10 días",
     rating: 4.8,
@@ -36,14 +40,20 @@ const mockToursData = [
     location: "París",
     region: "Europa",
     category: "Cultural",
-    difficulty: "Fácil",
+    difficulty: "Facil", // Sin tilde
+    packageType: "Premium",
     highlights: ["Torre Eiffel", "Coliseo Romano", "Sagrada Familia", "Museo del Louvre", "Vaticano"],
     featured: true,
-    transportOptions: [
+    transportOptionIds: [
       {
+        _id: "685abac224654a2b186c0e13",
         type: "Premium",
         vehicle: "Vuelo directo + Bus de lujo",
         services: ["WiFi", "Aire acondicionado", "Guía bilingüe", "Snacks incluidos"],
+        imageUrl: "/placeholder.svg?height=200&width=300&text=Bus+Premium",
+        imageId: "mock-bus-premium",
+        createdAt: "2025-06-24T14:48:34.057Z",
+        updatedAt: "2025-06-24T14:48:34.057Z",
       },
     ],
     itinerary: [
@@ -67,31 +77,12 @@ const mockToursData = [
           },
         ],
       },
-      {
-        day: 2,
-        title: "París - Día completo",
-        description: "Visita a los principales monumentos de París",
-        activities: ["Torre Eiffel", "Museo del Louvre", "Campos Elíseos", "Arco del Triunfo"],
-        meals: ["Desayuno", "Almuerzo", "Cena"],
-        accommodation: "Hotel Le Marais 4*",
-        route: [
-          {
-            location: "Torre Eiffel",
-            description: "Símbolo de París",
-            imageUrl: "/placeholder.svg?height=200&width=300&text=Torre+Eiffel",
-          },
-          {
-            location: "Museo del Louvre",
-            description: "El museo más visitado del mundo",
-            imageUrl: "/placeholder.svg?height=200&width=300&text=Louvre",
-          },
-        ],
-      },
     ],
     includes: ["Vuelos internacionales", "Hoteles 4*", "Desayunos", "Guía especializado", "Entradas a museos"],
     notIncludes: ["Almuerzos", "Cenas", "Propinas", "Gastos personales", "Seguro de viaje"],
     toBring: ["Pasaporte vigente", "Ropa cómoda", "Cámara fotográfica", "Adaptador europeo"],
     conditions: ["Mínimo 2 personas", "Cancelación 15 días antes", "Seguro de viaje recomendado"],
+    slug: "europa-clasica-premium",
     createdAt: "2024-01-15T10:30:00Z",
     updatedAt: "2025-06-10T14:20:00Z",
   },
@@ -119,10 +110,10 @@ export const toursApi = {
         data: paginatedTours,
         message: "Tours obtenidos exitosamente (datos de desarrollo)",
         pagination: {
-          currentPage: page,
-          totalPages: Math.ceil(mockToursData.length / limit),
-          totalTours: mockToursData.length,
+          total: mockToursData.length,
+          page,
           limit,
+          totalPages: Math.ceil(mockToursData.length / limit),
         },
       }
     }
@@ -132,7 +123,8 @@ export const toursApi = {
   getById: async (id: string): Promise<Tour> => {
     try {
       const response = await api.get(`/tours/${id}`)
-      return response.data
+      const tourResponse = response.data as TourResponse
+      return tourResponse.data
     } catch (error) {
       console.warn(`API endpoint for tour ${id} not available, using fallback data:`, error)
 
@@ -159,9 +151,11 @@ export const toursApi = {
         location: "Destino",
         region: "Región",
         category: "Aventura",
-        difficulty: "Fácil",
+        difficulty: "Facil", // Sin tilde
+        packageType: "Basico",
         highlights: ["Highlight 1", "Highlight 2"],
-        transportOptions: [],
+        transportOptionIds: [],
+        slug: "tour-de-prueba",
         createdAt: "2024-01-01T00:00:00Z",
         updatedAt: "2025-06-14T00:00:00Z",
       }
@@ -241,14 +235,16 @@ export const toursApi = {
         location: tourData.location || "Destino",
         region: tourData.region || "Región",
         category: tourData.category || "Aventura",
-        difficulty: tourData.difficulty || "Fácil",
+        difficulty: tourData.difficulty || "Facil", // Sin tilde
+        packageType: tourData.packageType || "Basico",
         highlights: tourData.highlights || [],
-        transportOptions: tourData.transportOptions || [],
+        transportOptionIds: [],
         itinerary: tourData.itinerary,
         includes: tourData.includes,
         notIncludes: tourData.notIncludes,
         toBring: tourData.toBring,
         conditions: tourData.conditions,
+        slug: tourData.slug || "tour-actualizado",
         createdAt: "2024-01-01T00:00:00Z",
         updatedAt: new Date().toISOString(),
       }

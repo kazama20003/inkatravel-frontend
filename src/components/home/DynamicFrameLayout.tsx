@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useRouter } from "next/navigation"
 
 interface Frame {
   id: number
@@ -13,40 +14,43 @@ interface Frame {
   borderSize: number
   label: string
   sublabel?: string
-  projectId?: string
+  description: string
 }
 
-// Simplified frames without unused border assets
+// Frames con descripciones más limpias
 const initialFrames: Frame[] = [
   {
     id: 1,
-    video: "https://static.cdn-luma.com/files/981e483f71aa764b/Company%20Thing%20Exported.mp4",
+    video: "https://res.cloudinary.com/dwvikvjrq/video/upload/v1750825533/12510930_2160_3840_32fps_wqwo4z.mp4",
     defaultPos: { x: 0, y: 0, w: 4, h: 12 },
     mediaSize: 1,
     borderThickness: 0,
     borderSize: 80,
     label: "MACHU PICCHU",
-    projectId: "[01444]",
+    sublabel: "Ciudadela Sagrada",
+    description: "Descubre la maravilla del mundo",
   },
   {
     id: 2,
-    video: "https://static.cdn-luma.com/files/58ab7363888153e3/WebGL%20Exported%20(1).mp4",
+    video: "https://res.cloudinary.com/dwvikvjrq/video/upload/v1750825508/16754886-hd_1080_1920_30fps_yjhcem.mp4",
     defaultPos: { x: 4, y: 0, w: 4, h: 12 },
     mediaSize: 1,
     borderThickness: 0,
     borderSize: 80,
     label: "AMAZONAS",
-    sublabel: "IQUITOS",
+    sublabel: "Selva Peruana",
+    description: "Explora la biodiversidad única",
   },
   {
     id: 3,
-    video: "https://static.cdn-luma.com/files/58ab7363888153e3/Jitter%20Exported%20Poster.mp4",
+    video: "https://res.cloudinary.com/dwvikvjrq/video/upload/v1750825546/20771551-uhd_3840_2160_30fps_cjhmva.mp4",
     defaultPos: { x: 8, y: 0, w: 4, h: 12 },
     mediaSize: 1,
     borderThickness: 0,
     borderSize: 80,
     label: "CUSCO",
-    sublabel: "CIUDAD IMPERIAL",
+    sublabel: "Corazón del Imperio",
+    description: "Vive la historia inca",
   },
 ]
 
@@ -55,6 +59,7 @@ export default function DynamicFrameLayout() {
   const [hovered, setHovered] = useState<number | null>(null)
   const [autoplayAll] = useState(true)
   const [activeFrame, setActiveFrame] = useState<number | null>(null)
+  const router = useRouter()
 
   // Detectar si es móvil
   const isMobile = useIsMobile()
@@ -69,10 +74,8 @@ export default function DynamicFrameLayout() {
         const isHovered = hovered === frameId || activeFrame === frameId
 
         if (autoplayAll || isHovered) {
-          // Use muted attribute to allow autoplay
           video.muted = true
 
-          // Only attempt to play if the video is not already playing
           if (video.paused) {
             const playPromise = video.play()
 
@@ -83,7 +86,6 @@ export default function DynamicFrameLayout() {
             }
           }
         } else if (!autoplayAll && !isHovered) {
-          // Only pause if the video is actually playing
           if (!video.paused) {
             video.pause()
           }
@@ -91,10 +93,7 @@ export default function DynamicFrameLayout() {
       })
     }
 
-    // Initial setup
     setupVideos()
-
-    // Setup interval to ensure videos play (helps with browser restrictions)
     const playInterval = setInterval(setupVideos, 1000)
 
     return () => {
@@ -109,12 +108,28 @@ export default function DynamicFrameLayout() {
     }
   }
 
+  // Función para navegar a tours
+  const handleViajar = () => {
+    router.push("/tours")
+  }
+
+  // Función para hacer scroll a la sección de paquetes
+  const handleReservar = () => {
+    const tourPackagesSection = document.getElementById("tour-packages-section")
+    if (tourPackagesSection) {
+      tourPackagesSection.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
+    }
+  }
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
       {/* Desktop Layout - Horizontal */}
       {!isMobile && (
         <div className="w-full h-full flex">
-          {frames.map((frame, index) => {
+          {frames.map((frame) => {
             const isActive = hovered === frame.id
 
             return (
@@ -141,7 +156,7 @@ export default function DynamicFrameLayout() {
                   />
 
                   {/* Dark overlay for better text visibility */}
-                  <div className="absolute inset-0 bg-black/30" />
+                  <div className="absolute inset-0 bg-black/40" />
 
                   {/* Content overlay */}
                   <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-8 z-10">
@@ -150,43 +165,58 @@ export default function DynamicFrameLayout() {
 
                     {/* Middle content */}
                     <div className="flex flex-col items-center justify-center flex-1">
-                      {isActive && (
-                        <motion.div
-                          className="text-center"
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <div className="text-peru-gold font-bold text-2xl md:text-3xl lg:text-4xl brand-text mb-2">
-                            {frame.label}
-                          </div>
-                          {frame.sublabel && (
-                            <div className="text-peru-gold/80 text-lg md:text-xl brand-text">{frame.sublabel}</div>
-                          )}
-                        </motion.div>
-                      )}
+                      <motion.div
+                        className="text-center"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <div className="text-peru-gold font-bold text-2xl md:text-3xl lg:text-4xl brand-text mb-2">
+                          {frame.label}
+                        </div>
+                        {frame.sublabel && (
+                          <div className="text-peru-gold/90 text-lg md:text-xl brand-text mb-2">{frame.sublabel}</div>
+                        )}
+                        <div className="text-peru-gold/70 text-sm md:text-base body-text mb-6">{frame.description}</div>
+
+                        {/* Botones de acción - Solo visible cuando está activo */}
+                        {isActive && (
+                          <motion.div
+                            className="flex gap-3 justify-center"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: 0.2 }}
+                          >
+                            <motion.button
+                              onClick={handleViajar}
+                              className="px-4 py-2 bg-transparent border border-peru-gold/50 text-peru-gold text-xs font-medium rounded hover:bg-peru-gold hover:text-black transition-all duration-300"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              VIAJAR
+                            </motion.button>
+                            <motion.button
+                              onClick={handleReservar}
+                              className="px-4 py-2 bg-peru-gold text-black text-xs font-medium rounded hover:bg-peru-gold/90 transition-all duration-300"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              RESERVAR
+                            </motion.button>
+                          </motion.div>
+                        )}
+                      </motion.div>
                     </div>
 
                     {/* Bottom content */}
-                    <div className="text-peru-gold text-sm">
+                    <div className="text-peru-gold/60 text-xs text-center">
                       {isActive && (
                         <motion.div
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.5, delay: 0.2 }}
+                          transition={{ duration: 0.5, delay: 0.3 }}
                         >
-                          {frame.projectId && (
-                            <div className="mb-2">
-                              <span className="mr-2 brand-text">→DESCUBRE PERÚ</span>
-                              <span className="brand-text">VIAJE {frame.projectId}</span>
-                            </div>
-                          )}
-                          {index === 0 && (
-                            <div className="text-xs">
-                              <span className="mr-2 brand-text">{frame.label}</span>
-                              <span className="opacity-70 body-text">[ver destino]</span>
-                            </div>
-                          )}
+                          <span className="brand-text">→ DESCUBRE PERÚ</span>
                         </motion.div>
                       )}
                     </div>
@@ -201,7 +231,7 @@ export default function DynamicFrameLayout() {
       {/* Mobile Layout - Vertical */}
       {isMobile && (
         <div className="w-full h-full flex flex-col">
-          {frames.map((frame, ) => {
+          {frames.map((frame) => {
             const isActive = activeFrame === frame.id
 
             return (
@@ -228,7 +258,7 @@ export default function DynamicFrameLayout() {
                   />
 
                   {/* Dark overlay for better text visibility */}
-                  <div className="absolute inset-0 bg-black/30" />
+                  <div className="absolute inset-0 bg-black/40" />
                 </div>
 
                 {/* Content overlay */}
@@ -236,25 +266,61 @@ export default function DynamicFrameLayout() {
                   {/* Top content - Empty space for header */}
                   <div className="h-16"></div>
 
-                  {/* Middle content - Empty space */}
-                  <div className="flex-1"></div>
+                  {/* Middle content - Centered when active */}
+                  <div className="flex-1 flex flex-col justify-center items-center">
+                    {isActive && (
+                      <motion.div
+                        className="text-center"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <div className="text-peru-gold font-bold text-xl md:text-2xl brand-text mb-1">
+                          {frame.label}
+                        </div>
+                        {frame.sublabel && (
+                          <div className="text-peru-gold/90 text-sm md:text-base brand-text mb-2">{frame.sublabel}</div>
+                        )}
+                        <div className="text-peru-gold/70 text-xs md:text-sm body-text mb-4">{frame.description}</div>
 
-                  {/* Bottom content - Label positioned in middle-bottom */}
-                  <div className="flex flex-col items-center justify-end pb-8">
-                    <div className="text-peru-gold text-center">
-                      <div className="text-xl md:text-2xl brand-text">{frame.label}</div>
-                      {frame.sublabel && <div className="text-sm md:text-base brand-text">{frame.sublabel}</div>}
-                      {isActive && <div className="text-sm body-text mt-2">Toca para explorar</div>}
-                    </div>
-
-                    {/* Project ID - Only visible when active */}
-                    {isActive && frame.projectId && (
-                      <div className="text-peru-gold text-sm text-center mt-4">
-                        <span className="mr-2 brand-text">→PERÚ</span>
-                        <span className="brand-text">{frame.projectId}</span>
-                      </div>
+                        {/* Botones móviles */}
+                        <motion.div
+                          className="flex gap-2 justify-center"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: 0.2 }}
+                        >
+                          <motion.button
+                            onClick={handleViajar}
+                            className="px-3 py-1.5 bg-transparent border border-peru-gold/50 text-peru-gold text-xs font-medium rounded hover:bg-peru-gold hover:text-black transition-all duration-300"
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            VIAJAR
+                          </motion.button>
+                          <motion.button
+                            onClick={handleReservar}
+                            className="px-3 py-1.5 bg-peru-gold text-black text-xs font-medium rounded hover:bg-peru-gold/90 transition-all duration-300"
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            RESERVAR
+                          </motion.button>
+                        </motion.div>
+                      </motion.div>
                     )}
                   </div>
+
+                  {/* Bottom content - Label when not active */}
+                  {!isActive && (
+                    <div className="flex flex-col items-center justify-end pb-8">
+                      <div className="text-peru-gold text-center">
+                        <div className="text-lg md:text-xl brand-text">{frame.label}</div>
+                        {frame.sublabel && (
+                          <div className="text-sm md:text-base brand-text opacity-80">{frame.sublabel}</div>
+                        )}
+                        <div className="text-xs body-text mt-1 opacity-60">Toca para explorar</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Overlay semi-transparente para indicar que es interactivo */}

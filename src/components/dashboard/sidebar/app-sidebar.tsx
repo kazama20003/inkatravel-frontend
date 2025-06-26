@@ -3,13 +3,10 @@
 import type * as React from "react"
 import {
   Plane,
-  MapPin,
   Users,
   Calendar,
-  Hotel,
   Car,
   BarChart3,
-  Settings2,
   Package,
   CreditCard,
   FileText,
@@ -47,14 +44,6 @@ const data = {
           title: "Resumen General",
           url: "/dashboard",
         },
-        {
-          title: "Métricas",
-          url: "/dashboard/metricas",
-        },
-        {
-          title: "Reportes",
-          url: "/dashboard/reportes",
-        },
       ],
     },
     {
@@ -64,7 +53,7 @@ const data = {
       items: [
         {
           title: "Todas las Reservas",
-          url: "/reservas",
+          url: "/dashboard/booking",
         },
         {
           title: "Pendientes",
@@ -87,19 +76,15 @@ const data = {
       items: [
         {
           title: "Todos los Paquetes",
-          url: "/paquetes",
+          url: "/dashboard/tours",
         },
         {
           title: "Crear Paquete",
-          url: "/paquetes/crear",
+          url: "/dashboard/tours/new",
         },
         {
           title: "Promociones",
-          url: "/paquetes/promociones",
-        },
-        {
-          title: "Temporadas",
-          url: "/paquetes/temporadas",
+          url: "/dashboard/offer",
         },
       ],
     },
@@ -110,57 +95,22 @@ const data = {
       items: [
         {
           title: "Lista de Clientes",
-          url: "/clientes",
+          url: "/dashboard/users",
         },
         {
           title: "Historial",
-          url: "/clientes/historial",
-        },
-        {
-          title: "Preferencias",
-          url: "/clientes/preferencias",
+          url: "/dashboard/users/history",
         },
       ],
     },
     {
-      title: "Destinos",
-      url: "/destinos",
-      icon: MapPin,
+      title: "Transportes",
+      url: "/dashboard/transport",
+      icon: Car,
       items: [
         {
-          title: "Todos los Destinos",
-          url: "/destinos",
-        },
-        {
-          title: "Agregar Destino",
-          url: "/destinos/crear",
-        },
-        {
-          title: "Actividades",
-          url: "/destinos/actividades",
-        },
-      ],
-    },
-    {
-      title: "Servicios",
-      url: "/servicios",
-      icon: Hotel,
-      items: [
-        {
-          title: "Hoteles",
-          url: "/servicios/hoteles",
-        },
-        {
-          title: "Transporte",
-          url: "/servicios/transporte",
-        },
-        {
-          title: "Excursiones",
-          url: "/servicios/excursiones",
-        },
-        {
-          title: "Proveedores",
-          url: "/servicios/proveedores",
+          title: "Creación de Transportes",
+          url: "/dashboard/transport",
         },
       ],
     },
@@ -187,29 +137,6 @@ const data = {
         },
       ],
     },
-    {
-      title: "Configuración",
-      url: "/configuracion",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "/configuracion/general",
-        },
-        {
-          title: "Usuarios",
-          url: "/configuracion/usuarios",
-        },
-        {
-          title: "Permisos",
-          url: "/configuracion/permisos",
-        },
-        {
-          title: "Integraciones",
-          url: "/configuracion/integraciones",
-        },
-      ],
-    },
   ],
   navSecondary: [
     {
@@ -228,18 +155,7 @@ const data = {
       name: "Caribe Premium",
       url: "/paquetes/caribe-premium",
       icon: Plane,
-    },
-    {
-      name: "Europa Clásica",
-      url: "/paquetes/europa-clasica",
-      icon: MapPin,
-    },
-    {
-      name: "Aventura Patagonia",
-      url: "/paquetes/aventura-patagonia",
-      icon: Car,
-    },
-  ],
+    },]
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

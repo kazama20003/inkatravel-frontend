@@ -1,202 +1,14 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
-
-// Enums basados en el DTO
-export enum TourCategory {
-  Aventura = "Aventura",
-  Cultural = "Cultural",
-  Relax = "Relax",
-  Naturaleza = "Naturaleza",
-}
-
-export enum Difficulty {
-  Fácil = "Fácil",
-  Moderado = "Moderado",
-  Difícil = "Difícil",
-}
-
-export enum TransportType {
-  Premium = "Premium",
-  Básico = "Básico",
-}
-
-interface TransportOptionDto {
-  type: TransportType
-  vehicle: string
-  services: string[]
-}
-
-interface TourPackage {
-  id: number
-  title: string
-  subtitle: string
-  imageUrl: string
-  imageId?: string
-  price: number
-  priceGroup?: number
-  originalPrice?: number
-  duration: string
-  rating: number
-  reviews: number
-  location: string
-  region: string
-  category: TourCategory
-  difficulty: Difficulty
-  highlights: string[]
-  featured?: boolean
-  transportOptions?: TransportOptionDto[]
-}
-
-const tourPackages: TourPackage[] = [
-  {
-    id: 1,
-    title: "CUSCO",
-    subtitle: "Ciudad Imperial",
-    imageUrl: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1748624876/banner_waz5ov.jpg",
-    price: 899,
-    priceGroup: 4999,
-    originalPrice: 1199,
-    duration: "4D/3N",
-    rating: 4.9,
-    reviews: 234,
-    location: "Cusco",
-    region: "Cusco",
-    category: TourCategory.Cultural,
-    difficulty: Difficulty.Moderado,
-    highlights: ["Machu Picchu", "Valle Sagrado", "Sacsayhuamán"],
-    featured: true,
-    transportOptions: [
-      {
-        type: TransportType.Premium,
-        vehicle: "Camioneta 4x4",
-        services: ["Aire acondicionado", "Guía especializado"],
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: "AREQUIPA",
-    subtitle: "Ciudad Blanca",
-    imageUrl: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1748624876/banner_waz5ov.jpg",
-    price: 649,
-    priceGroup: 3499,
-    duration: "3D/2N",
-    rating: 4.7,
-    reviews: 189,
-    location: "Arequipa",
-    region: "Arequipa",
-    category: TourCategory.Cultural,
-    difficulty: Difficulty.Fácil,
-    highlights: ["Cañón del Colca", "Monasterio Santa Catalina", "Volcán Misti"],
-    transportOptions: [
-      {
-        type: TransportType.Premium,
-        vehicle: "Minivan turística",
-        services: ["Aire acondicionado", "WiFi"],
-      },
-    ],
-  },
-  {
-    id: 3,
-    title: "AMAZONAS",
-    subtitle: "Selva Tropical",
-    imageUrl: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1748624876/banner_waz5ov.jpg",
-    price: 1299,
-    priceGroup: 6999,
-    originalPrice: 1599,
-    duration: "5D/4N",
-    rating: 4.8,
-    reviews: 156,
-    location: "Iquitos",
-    region: "Loreto",
-    category: TourCategory.Naturaleza,
-    difficulty: Difficulty.Moderado,
-    highlights: ["Pacaya Samiria", "Río Amazonas", "Comunidades Nativas"],
-    featured: true,
-    transportOptions: [
-      {
-        type: TransportType.Premium,
-        vehicle: "Bote privado",
-        services: ["Guía naturalista", "Equipo de pesca"],
-      },
-    ],
-  },
-  {
-    id: 4,
-    title: "PARACAS",
-    subtitle: "Costa Peruana",
-    imageUrl: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1748624876/banner_waz5ov.jpg",
-    price: 549,
-    priceGroup: 2499,
-    duration: "2D/1N",
-    rating: 4.5,
-    reviews: 123,
-    location: "Paracas",
-    region: "Ica",
-    category: TourCategory.Relax,
-    difficulty: Difficulty.Fácil,
-    highlights: ["Islas Ballestas", "Reserva Nacional", "Huacachina"],
-    transportOptions: [
-      {
-        type: TransportType.Básico,
-        vehicle: "Bus turístico",
-        services: ["Aire acondicionado"],
-      },
-    ],
-  },
-  {
-    id: 5,
-    title: "HUANCAYO",
-    subtitle: "Valle del Mantaro",
-    imageUrl: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1748624876/banner_waz5ov.jpg",
-    price: 399,
-    priceGroup: 1999,
-    duration: "3D/2N",
-    rating: 4.3,
-    reviews: 98,
-    location: "Huancayo",
-    region: "Junín",
-    category: TourCategory.Cultural,
-    difficulty: Difficulty.Fácil,
-    highlights: ["Convento de Ocopa", "Torre Torre", "Artesanías"],
-    transportOptions: [
-      {
-        type: TransportType.Básico,
-        vehicle: "Minivan",
-        services: ["Aire acondicionado"],
-      },
-    ],
-  },
-  {
-    id: 6,
-    title: "TRUJILLO",
-    subtitle: "Ciudad de la Eterna Primavera",
-    imageUrl: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1748624876/banner_waz5ov.jpg",
-    price: 699,
-    priceGroup: 3299,
-    duration: "3D/2N",
-    rating: 4.6,
-    reviews: 167,
-    location: "Trujillo",
-    region: "La Libertad",
-    category: TourCategory.Cultural,
-    difficulty: Difficulty.Fácil,
-    highlights: ["Huacas del Sol y de la Luna", "Chan Chan", "Huanchaco"],
-    transportOptions: [
-      {
-        type: TransportType.Premium,
-        vehicle: "Camioneta 4x4",
-        services: ["Aire acondicionado", "Guía arqueólogo"],
-      },
-    ],
-  },
-]
+import { api } from "@/lib/axiosInstance"
+import type { Tour } from "@/types/tour"
 
 // Componente para el texto circular giratorio
 const SpinningText = ({ text = "RESERVAR • RESERVAR • " }: { text?: string }) => {
@@ -239,12 +51,88 @@ const SpinningText = ({ text = "RESERVAR • RESERVAR • " }: { text?: string }
   )
 }
 
+// Componente de Loading
+const LoadingSkeleton = () => {
+  const isMobile = useIsMobile()
+
+  return (
+    <div className="flex h-full overflow-hidden">
+      <div className="flex-shrink-0 w-4 md:w-8"></div>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className={`flex-shrink-0 h-full ${isMobile ? "w-[75vw]" : "w-[30vw] max-w-[420px]"}`}>
+          <div className="relative h-full mx-2 md:mx-3 overflow-hidden rounded-lg bg-gray-200 animate-pulse">
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-300 via-gray-200 to-gray-300" />
+            <div className="absolute top-4 left-4 w-20 h-6 bg-gray-300 rounded"></div>
+            <div className="absolute top-16 left-4 right-4">
+              <div className="w-3/4 h-8 bg-gray-300 rounded mb-2"></div>
+              <div className="w-1/2 h-4 bg-gray-300 rounded"></div>
+            </div>
+            <div className="absolute bottom-20 left-4 right-4">
+              <div className="bg-gray-300 rounded-lg p-3">
+                <div className="flex justify-between">
+                  <div className="w-20 h-4 bg-gray-400 rounded"></div>
+                  <div className="w-16 h-4 bg-gray-400 rounded"></div>
+                </div>
+              </div>
+            </div>
+            <div className="absolute bottom-4 left-4 right-4">
+              <div className="flex justify-between items-end">
+                <div>
+                  <div className="w-24 h-4 bg-gray-300 rounded mb-1"></div>
+                  <div className="w-16 h-4 bg-gray-300 rounded"></div>
+                </div>
+                <div>
+                  <div className="w-20 h-6 bg-gray-300 rounded mb-1"></div>
+                  <div className="w-16 h-3 bg-gray-300 rounded"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+      <div className="flex-shrink-0 w-4 md:w-8"></div>
+    </div>
+  )
+}
+
 export default function TourPackagesSection() {
   const isMobile = useIsMobile()
+  const router = useRouter()
   const carouselRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
   const [scrollLeft, setScrollLeft] = useState(0)
+
+  // Estados para la API
+  const [tours, setTours] = useState<Tour[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Cargar tours desde la API
+  useEffect(() => {
+    const fetchTours = async () => {
+      try {
+        setLoading(true)
+        const response = await api.get("/tours/top")
+        setTours(response.data.data || [])
+        setError(null)
+      } catch (err) {
+        console.error("Error fetching tours:", err)
+        setError("Error al cargar los tours. Por favor, intenta de nuevo.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTours()
+  }, [])
+
+  // Función para navegar al detalle del tour
+  const handleTourClick = (slug: string) => {
+    if (!isDragging) {
+      router.push(`/tours/${slug}`)
+    }
+  }
 
   // Prevenir scroll vertical cuando se está arrastrando horizontalmente
   const handleWheel = (e: React.WheelEvent) => {
@@ -311,12 +199,12 @@ export default function TourPackagesSection() {
   }
 
   return (
-    <section className="w-full h-screen bg-white flex flex-col overflow-hidden">
-      {/* Header Section - Más compacto */}
+    <section id="tour-packages-section" className="w-full h-screen bg-white flex flex-col overflow-hidden">
+      {/* Header Section */}
       <div className="px-4 md:px-8 lg:px-16 pt-16 md:pt-20 pb-4 md:pb-6 flex-shrink-0">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8 items-center">
-            {/* Left Side - Description más corta */}
+            {/* Left Side - Description */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -324,8 +212,8 @@ export default function TourPackagesSection() {
               viewport={{ once: true }}
             >
               <p className="text-sm md:text-base text-gray-600 body-text leading-relaxed">
-                Explora destinos únicos del Perú. Desde los Andes hasta la Amazonía, cada lugar cuenta una historia
-                milenaria que despertará tu espíritu aventurero.
+                Descubre los destinos más elegidos por nuestros viajeros. Tours únicos que combinan aventura, cultura y
+                naturaleza en experiencias inolvidables por todo el Perú.
               </p>
             </motion.div>
 
@@ -338,144 +226,182 @@ export default function TourPackagesSection() {
               viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-5xl lg:text-6xl xl:text-7xl text-black leading-none brand-text">
-                Destinos que
+                Destinos más
                 <br />
-                <em className="italic text-peru-orange">Inspiran</em>
+                <em className="italic text-peru-orange">Populares</em>
               </h2>
-              <div className="mt-2 lg:mt-4">
-                <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wider body-text">
-                  ARRASTRA PARA EXPLORAR
+              <div className="mt-2 lg:mt-4 flex flex-col lg:items-end">
+                <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wider body-text mb-2">
+                  EXPLORA LOS FAVORITOS
                 </p>
+                <Link
+                  href="/tours"
+                  className="inline-flex items-center text-peru-orange hover:text-peru-orange/80 transition-colors text-sm font-medium"
+                >
+                  Ver todos los tours
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
               </div>
             </motion.div>
           </div>
         </div>
       </div>
 
-      {/* Carousel Section - Ocupa el resto del espacio */}
+      {/* Carousel Section */}
       <div className="flex-1 min-h-0">
-        <div
-          ref={carouselRef}
-          className="flex h-full overflow-x-auto overflow-y-hidden scrollbar-hide select-none"
-          style={{
-            cursor: isDragging ? "grabbing" : "grab",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
-          onWheel={handleWheel}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          {/* Padding inicial */}
-          <div className="flex-shrink-0 w-4 md:w-8"></div>
+        {loading ? (
+          <LoadingSkeleton />
+        ) : error ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <p className="text-red-500 mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-peru-orange text-white px-4 py-2 rounded hover:bg-peru-orange/90 transition-colors"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
+        ) : tours.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-500">No hay tours disponibles en este momento.</p>
+          </div>
+        ) : (
+          <div
+            ref={carouselRef}
+            className="flex h-full overflow-x-auto overflow-y-hidden scrollbar-hide select-none"
+            style={{
+              cursor: isDragging ? "grabbing" : "grab",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+            }}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Padding inicial */}
+            <div className="flex-shrink-0 w-4 md:w-8"></div>
 
-          {/* Cards - Ocupan toda la altura disponible */}
-          {tourPackages.map((tour, index) => (
-            <motion.div
-              key={tour.id}
-              className={`flex-shrink-0 h-full ${isMobile ? "w-[75vw]" : "w-[30vw] max-w-[420px]"}`}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.8,
-                delay: index * 0.1,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              viewport={{ once: true }}
-            >
-              <div className="relative h-full mx-2 md:mx-3 overflow-hidden group rounded-lg">
-                {/* Background Image */}
-                <div className="absolute inset-0">
-                  <Image
-                    src={tour.imageUrl || "/placeholder.svg"}
-                    alt={tour.title}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                    draggable={false}
-                  />
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
-                </div>
-
-                {/* Featured Badge */}
-                {tour.featured && (
-                  <div className="absolute top-4 left-4 z-20">
-                    <span className="bg-peru-gold text-white px-2 py-1 text-xs brand-text tracking-wider rounded">
-                      DESTACADO
-                    </span>
+            {/* Cards */}
+            {tours.map((tour, index) => (
+              <motion.div
+                key={tour._id}
+                className={`flex-shrink-0 h-full ${isMobile ? "w-[75vw]" : "w-[30vw] max-w-[420px]"}`}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.8,
+                  delay: index * 0.1,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                viewport={{ once: true }}
+              >
+                <div
+                  className="relative h-full mx-2 md:mx-3 overflow-hidden group rounded-lg cursor-pointer"
+                  onClick={() => handleTourClick(tour.slug)}
+                >
+                  {/* Background Image */}
+                  <div className="absolute inset-0">
+                    <Image
+                      src={tour.imageUrl || "/placeholder.svg?height=600&width=400&query=tour"}
+                      alt={tour.title}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
+                      draggable={false}
+                    />
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
                   </div>
-                )}
 
-                {/* Spinning Text - Solo aparece en hover */}
-                <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-2 group-hover:translate-x-0">
-                  <SpinningText />
-                </div>
-
-                {/* Top Section - Título */}
-                <div className="absolute top-16 left-4 right-4 z-10">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
-                    viewport={{ once: true }}
-                  >
-                    <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white brand-text tracking-wider mb-1">
-                      {tour.title}
-                    </h3>
-                    <p className="text-sm md:text-base text-white/90 brand-text tracking-wide">{tour.subtitle}</p>
-                  </motion.div>
-                </div>
-
-                {/* Middle Section - Info esencial */}
-                <div className="absolute bottom-20 left-4 right-4 z-10">
-                  <div className="bg-black/40 backdrop-blur-sm rounded-lg p-2 md:p-3 text-white">
-                    <div className="flex justify-between items-center text-xs md:text-sm">
-                      <div className="flex items-center space-x-3">
-                        <span className="brand-text font-medium">{tour.duration}</span>
-                        <span className="text-white/70">•</span>
-                        <span className="brand-text font-medium">{tour.difficulty}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="text-yellow-400 mr-1">★</span>
-                        <span className="brand-text font-medium">{tour.rating}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Section - Ubicación y precio */}
-                <div className="absolute bottom-4 left-4 right-4 z-10">
-                  <div className="flex justify-between items-end">
-                    <div className="text-white">
-                      <p className="text-sm md:text-base body-text font-medium">{tour.location}</p>
-                      <span className="bg-white/20 text-white px-2 py-0.5 text-xs brand-text rounded">
-                        {tour.category}
+                  {/* Featured Badge */}
+                  {tour.featured && (
+                    <div className="absolute top-4 left-4 z-20">
+                      <span className="bg-peru-gold text-white px-2 py-1 text-xs brand-text tracking-wider rounded">
+                        DESTACADO
                       </span>
                     </div>
+                  )}
 
-                    <div className="text-right">
-                      <div className="text-white">
-                        <span className="text-lg md:text-xl font-bold brand-text">${tour.price}</span>
-                        <p className="text-xs text-white/70 body-text">por persona</p>
+                  {/* Spinning Text - Solo aparece en hover */}
+                  <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-2 group-hover:translate-x-0">
+                    <SpinningText />
+                  </div>
+
+                  {/* Top Section - Título */}
+                  <div className="absolute top-16 left-4 right-4 z-10">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
+                      viewport={{ once: true }}
+                    >
+                      <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white brand-text tracking-wider mb-1">
+                        {tour.title}
+                      </h3>
+                      <p className="text-sm md:text-base text-white/90 brand-text tracking-wide line-clamp-2">
+                        {tour.subtitle}
+                      </p>
+                    </motion.div>
+                  </div>
+
+                  {/* Middle Section - Info esencial */}
+                  <div className="absolute bottom-20 left-4 right-4 z-10">
+                    <div className="bg-black/40 backdrop-blur-sm rounded-lg p-2 md:p-3 text-white">
+                      <div className="flex justify-between items-center text-xs md:text-sm">
+                        <div className="flex items-center space-x-3">
+                          <span className="brand-text font-medium">{tour.duration}</span>
+                          <span className="text-white/70">•</span>
+                          <span className="brand-text font-medium">{tour.difficulty}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-yellow-400 mr-1">★</span>
+                          <span className="brand-text font-medium">{tour.rating}</span>
+                          <span className="text-white/70 text-xs ml-1">({tour.reviews})</span>
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  {/* Bottom Section - Ubicación y precio */}
+                  <div className="absolute bottom-4 left-4 right-4 z-10">
+                    <div className="flex justify-between items-end">
+                      <div className="text-white">
+                        <p className="text-sm md:text-base body-text font-medium">{tour.location}</p>
+                        <span className="bg-white/20 text-white px-2 py-0.5 text-xs brand-text rounded">
+                          {tour.category}
+                        </span>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="text-white">
+                          {tour.originalPrice && tour.originalPrice > tour.price && (
+                            <span className="text-xs text-white/60 line-through block">${tour.originalPrice}</span>
+                          )}
+                          <span className="text-lg md:text-xl font-bold brand-text">${tour.price}</span>
+                          <p className="text-xs text-white/70 body-text">por persona</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Hover Effect */}
+                  <div className="absolute inset-0 bg-peru-orange/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg"></div>
                 </div>
+              </motion.div>
+            ))}
 
-                {/* Hover Effect */}
-                <div className="absolute inset-0 bg-peru-orange/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg"></div>
-              </div>
-            </motion.div>
-          ))}
-
-          {/* Padding final */}
-          <div className="flex-shrink-0 w-4 md:w-8"></div>
-        </div>
+            {/* Padding final */}
+            <div className="flex-shrink-0 w-4 md:w-8"></div>
+          </div>
+        )}
       </div>
 
       {/* Estilos para ocultar scrollbar completamente */}
@@ -486,6 +412,12 @@ export default function TourPackagesSection() {
         }
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       `}</style>
     </section>

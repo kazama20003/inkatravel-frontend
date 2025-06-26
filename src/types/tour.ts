@@ -1,9 +1,10 @@
 // Actualizado para coincidir EXACTAMENTE con el nuevo backend DTO
-export type TransportType = "Premium" | "Básico"
-export type Difficulty = "Fácil" | "Moderado" | "Difícil"
+export type PackageType = "Basico" | "Premium"
+export type Difficulty = "Facil" | "Moderado" | "Difícil" // Sin tilde en "Facil"
 export type TourCategory = "Aventura" | "Cultural" | "Relax" | "Naturaleza"
 
 export interface RoutePoint {
+  _id?: string // Añadido para compatibilidad con MongoDB
   location: string
   description?: string
   imageId?: string
@@ -11,6 +12,7 @@ export interface RoutePoint {
 }
 
 export interface ItineraryDay {
+  _id?: string // Añadido para compatibilidad con MongoDB
   day: number
   title: string
   description: string
@@ -19,13 +21,19 @@ export interface ItineraryDay {
   accommodation?: string
   imageId?: string
   imageUrl?: string
-  route: RoutePoint[] // Agregado según el nuevo DTO
+  route: RoutePoint[]
 }
 
+// Interfaz para el transporte completo (cuando se obtiene poblado)
 export interface TransportOption {
-  type: TransportType
+  _id: string
+  type: PackageType
   vehicle: string
   services: string[]
+  imageUrl: string
+  imageId?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Tour {
@@ -35,77 +43,60 @@ export interface Tour {
   imageUrl: string
   imageId?: string
   price: number
-  priceGroup?: number
   originalPrice?: number
   duration: string
   rating: number
   reviews: number
   location: string
   region: string
-  category: TourCategory // Cambiado a enum
+  category: TourCategory
   difficulty: Difficulty
+  packageType: PackageType
   highlights: string[]
   featured?: boolean
-  transportOptions?: TransportOption[] // Ahora opcional
+  transportOptionIds: TransportOption[] // Poblado con datos completos
   itinerary?: ItineraryDay[]
   includes?: string[]
   notIncludes?: string[]
   toBring?: string[]
   conditions?: string[]
+  slug: string
   createdAt: string
   updatedAt: string
 }
 
-// DTO que coincide EXACTAMENTE con el backend
+// DTO para crear tours (sin _id, createdAt, updatedAt)
 export interface CreateTourDto {
   title: string
   subtitle: string
   imageUrl: string
   imageId?: string
   price: number
-  priceGroup?: number
   originalPrice?: number
   duration: string
   rating: number
   reviews: number
   location: string
   region: string
-  category: TourCategory // Cambiado a enum
+  category: TourCategory
   difficulty: Difficulty
+  packageType: PackageType
   highlights: string[]
   featured?: boolean
-  transportOptions?: TransportOption[] // Ahora opcional
+  transportOptionIds?: string[] // Solo IDs para crear
   itinerary?: ItineraryDay[]
   includes?: string[]
   notIncludes?: string[]
   toBring?: string[]
   conditions?: string[]
+  slug: string // El backend lo requiere
 }
 
-export interface UpdateTourDto {
-  title?: string
-  subtitle?: string
-  imageUrl?: string
-  imageId?: string
-  price?: number
-  priceGroup?: number
-  originalPrice?: number
-  duration?: string
-  rating?: number
-  reviews?: number
-  location?: string
-  region?: string
-  category?: TourCategory
-  difficulty?: Difficulty
-  highlights?: string[]
-  featured?: boolean
-  transportOptions?: TransportOption[]
-  itinerary?: ItineraryDay[]
-  includes?: string[]
-  notIncludes?: string[]
-  toBring?: string[]
-  conditions?: string[]
-}
+// DTO para actualizar tours (igual que CreateTourDto)
+export type UpdateTourDto = CreateTourDto
 
-// Usamos CreateTourDto directamente para el formulario
-export type TourFormData = CreateTourDto
+// Tipo para el formulario interno (incluye transportes seleccionados)
+export interface TourFormData extends Omit<CreateTourDto, "transportOptionIds"> {
+  selectedTransports: TransportOption[] // Para mostrar en el formulario
+  transportOptionIds?: string[] // Para enviar al backend
+}

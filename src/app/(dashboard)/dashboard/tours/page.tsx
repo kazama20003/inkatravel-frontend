@@ -14,19 +14,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,7 +37,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Switch } from "@/components/ui/switch"
 import {
   Search,
   Plus,
@@ -71,38 +61,21 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { toursApi } from "@/lib/tours-api"
-import type { Tour, CreateTourDto, TransportType, Difficulty, TourCategory } from "@/types/tour"
+import type { Tour, PackageType, Difficulty, TourCategory } from "@/types/tour"
 
 export default function PaquetesPage() {
   const [tours, setTours] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedType, setSelectedType] = useState<TransportType | "all">("all")
+  const [selectedType, setSelectedType] = useState<PackageType | "all">("all")
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | "all">("all")
   const [selectedCategory, setSelectedCategory] = useState<TourCategory | "all">("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalTours, setTotalTours] = useState(0)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
-  const [formData, setFormData] = useState<CreateTourDto>({
-    title: "",
-    subtitle: "",
-    imageUrl: "",
-    price: 0,
-    duration: "",
-    rating: 0,
-    reviews: 0,
-    location: "",
-    region: "",
-    category: "Aventura",
-    difficulty: "Fácil",
-    highlights: [],
-    featured: false,
-    transportOptions: [],
-  })
   const [submitting, setSubmitting] = useState(false)
 
   const router = useRouter()
@@ -114,9 +87,9 @@ export default function PaquetesPage() {
       const response = await toursApi.getAll(page, 12)
       setTours(response.data)
       if (response.pagination) {
-        setCurrentPage(response.pagination.currentPage)
+        setCurrentPage(response.pagination.page)
         setTotalPages(response.pagination.totalPages)
-        setTotalTours(response.pagination.totalTours)
+        setTotalTours(response.pagination.total)
       }
 
       // Check if we're using fallback data
@@ -151,38 +124,11 @@ export default function PaquetesPage() {
       tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tour.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tour.region.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = selectedType === "all" || tour.transportOptions?.[0]?.type === selectedType
+    const matchesType = selectedType === "all" || tour.packageType === selectedType
     const matchesDifficulty = selectedDifficulty === "all" || tour.difficulty === selectedDifficulty
     const matchesCategory = selectedCategory === "all" || tour.category === selectedCategory
     return matchesSearch && matchesType && matchesDifficulty && matchesCategory
   })
-
-  // Manejar edición de tour
-  const handleEditTour = async () => {
-    if (!selectedTour) return
-    try {
-      setSubmitting(true)
-      await toursApi.update(selectedTour._id, formData)
-      setIsEditDialogOpen(false)
-      resetForm()
-      setSelectedTour(null)
-      loadTours(currentPage)
-
-      toast.success("Paquete actualizado", {
-        description: "El paquete turístico ha sido actualizado exitosamente.",
-        duration: 3000,
-      })
-    } catch (error) {
-      console.error("Error updating tour:", error)
-
-      toast.error("Error al actualizar paquete", {
-        description: "No se pudo actualizar el paquete turístico. Por favor, intente más tarde.",
-        duration: 5000,
-      })
-    } finally {
-      setSubmitting(false)
-    }
-  }
 
   // Manejar eliminación de tour
   const handleDeleteTour = async () => {
@@ -210,53 +156,6 @@ export default function PaquetesPage() {
     }
   }
 
-  const resetForm = () => {
-    setFormData({
-      title: "",
-      subtitle: "",
-      imageUrl: "",
-      price: 0,
-      duration: "",
-      rating: 0,
-      reviews: 0,
-      location: "",
-      region: "",
-      category: "Aventura",
-      difficulty: "Fácil",
-      highlights: [],
-      featured: false,
-      transportOptions: [],
-    })
-  }
-
-  const openEditDialog = (tour: Tour) => {
-    setSelectedTour(tour)
-    setFormData({
-      title: tour.title,
-      subtitle: tour.subtitle,
-      imageUrl: tour.imageUrl,
-      price: tour.price,
-      priceGroup: tour.priceGroup,
-      originalPrice: tour.originalPrice,
-      duration: tour.duration,
-      rating: tour.rating,
-      reviews: tour.reviews,
-      location: tour.location,
-      region: tour.region,
-      category: tour.category,
-      difficulty: tour.difficulty,
-      highlights: tour.highlights,
-      featured: tour.featured,
-      transportOptions: tour.transportOptions || [],
-      itinerary: tour.itinerary,
-      includes: tour.includes,
-      notIncludes: tour.notIncludes,
-      toBring: tour.toBring,
-      conditions: tour.conditions,
-    })
-    setIsEditDialogOpen(true)
-  }
-
   const openDeleteDialog = (tour: Tour) => {
     setSelectedTour(tour)
     setIsDeleteDialogOpen(true)
@@ -267,7 +166,7 @@ export default function PaquetesPage() {
     setIsViewDialogOpen(true)
   }
 
-  const getTourTypeBadge = (type: TransportType) => {
+  const getTourTypeBadge = (type: PackageType) => {
     switch (type) {
       case "Premium":
         return (
@@ -276,7 +175,7 @@ export default function PaquetesPage() {
             Premium
           </Badge>
         )
-      case "Básico":
+      case "Basico":
         return (
           <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
             <Package className="w-3 h-3 mr-1" />
@@ -321,7 +220,7 @@ export default function PaquetesPage() {
 
   const getDifficultyBadge = (difficulty: Difficulty) => {
     switch (difficulty) {
-      case "Fácil":
+      case "Facil":
         return (
           <Badge variant="outline" className="text-green-700 border-green-300">
             <Shield className="w-3 h-3 mr-1" />
@@ -346,14 +245,14 @@ export default function PaquetesPage() {
   }
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-AR", {
+    return new Intl.NumberFormat("es-PE", {
       style: "currency",
-      currency: "USD",
+      currency: "PEN",
     }).format(price)
   }
 
-  const premiumCount = tours.filter((t) => t.transportOptions?.[0]?.type === "Premium").length
-  const basicoCount = tours.filter((t) => t.transportOptions?.[0]?.type === "Básico").length
+  const premiumCount = tours.filter((t) => t.packageType === "Premium").length
+  const basicoCount = tours.filter((t) => t.packageType === "Basico").length
 
   // Estadísticas de tipos de tour
   const tourTypeStats = [
@@ -444,7 +343,7 @@ export default function PaquetesPage() {
                 <CardTitle>Paquetes Turísticos</CardTitle>
                 <CardDescription>Gestiona los paquetes y tours disponibles</CardDescription>
               </div>
-              <Button onClick={() => router.push("/dashboard/tours/new")}>
+              <Button onClick={() => router.push("/paquetes/new")}>
                 <Plus className="mr-2 h-4 w-4" />
                 Nuevo Paquete
               </Button>
@@ -462,14 +361,14 @@ export default function PaquetesPage() {
                 />
               </div>
               <div className="flex flex-wrap gap-2">
-                <Select value={selectedType} onValueChange={(value: TransportType | "all") => setSelectedType(value)}>
+                <Select value={selectedType} onValueChange={(value: PackageType | "all") => setSelectedType(value)}>
                   <SelectTrigger className="w-[120px]">
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="Premium">Premium</SelectItem>
-                    <SelectItem value="Básico">Básico</SelectItem>
+                    <SelectItem value="Basico">Básico</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select
@@ -481,7 +380,7 @@ export default function PaquetesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas</SelectItem>
-                    <SelectItem value="Fácil">Fácil</SelectItem>
+                    <SelectItem value="Facil">Fácil</SelectItem>
                     <SelectItem value="Moderado">Moderado</SelectItem>
                     <SelectItem value="Difícil">Difícil</SelectItem>
                   </SelectContent>
@@ -529,7 +428,7 @@ export default function PaquetesPage() {
                   </div>
                   <div className="absolute top-2 left-2 flex gap-2">
                     {getCategoryBadge(tour.category)}
-                    {tour.transportOptions?.[0] && getTourTypeBadge(tour.transportOptions[0].type)}
+                    {tour.packageType && getTourTypeBadge(tour.packageType)}
                     {tour.featured && (
                       <Badge className="bg-yellow-500 text-white">
                         <Star className="w-3 h-3 mr-1" />
@@ -550,7 +449,7 @@ export default function PaquetesPage() {
                           <Eye className="mr-2 h-4 w-4" />
                           Ver Detalles
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openEditDialog(tour)}>
+                        <DropdownMenuItem onClick={() => router.push(`/paquetes/${tour._id}/edit`)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
@@ -731,128 +630,6 @@ export default function PaquetesPage() {
               )}
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de edición */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar Paquete</DialogTitle>
-            <DialogDescription>Modifica los datos del paquete seleccionado.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="edit-title">Título</Label>
-                <Input
-                  id="edit-title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-location">Ubicación</Label>
-                <Input
-                  id="edit-location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-subtitle">Subtítulo</Label>
-              <Textarea
-                id="edit-subtitle"
-                value={formData.subtitle}
-                onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                rows={2}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="edit-price">Precio (USD)</Label>
-                <Input
-                  id="edit-price"
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-duration">Duración</Label>
-                <Input
-                  id="edit-duration"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-rating">Rating</Label>
-                <Input
-                  id="edit-rating"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="5"
-                  value={formData.rating}
-                  onChange={(e) => setFormData({ ...formData, rating: Number(e.target.value) })}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="edit-category">Categoría</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value: TourCategory) => setFormData({ ...formData, category: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Aventura">Aventura</SelectItem>
-                    <SelectItem value="Cultural">Cultural</SelectItem>
-                    <SelectItem value="Relax">Relax</SelectItem>
-                    <SelectItem value="Naturaleza">Naturaleza</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-difficulty">Dificultad</Label>
-                <Select
-                  value={formData.difficulty}
-                  onValueChange={(value: Difficulty) => setFormData({ ...formData, difficulty: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Fácil">Fácil</SelectItem>
-                    <SelectItem value="Moderado">Moderado</SelectItem>
-                    <SelectItem value="Difícil">Difícil</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="edit-featured"
-                checked={formData.featured || false}
-                onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
-              />
-              <Label htmlFor="edit-featured">Paquete destacado</Label>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleEditTour} disabled={submitting}>
-              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Guardar Cambios
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

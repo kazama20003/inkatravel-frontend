@@ -40,6 +40,10 @@ export function ItineraryForm({ data, onChange }: ItineraryFormProps) {
     imageId: "",
   })
 
+  // Estado para mensajes de confirmación
+  const [routePointConfirmation, setRoutePointConfirmation] = useState<string | null>(null)
+  const [isAddingRoutePoint, setIsAddingRoutePoint] = useState(false)
+
   const handleDayImageChange = (url: string, imageId: string) => {
     setNewDay({
       ...newDay,
@@ -108,6 +112,7 @@ export function ItineraryForm({ data, onChange }: ItineraryFormProps) {
 
   const addRoutePoint = () => {
     if (newRoutePoint.location.trim()) {
+      setIsAddingRoutePoint(true)
       setNewDay({
         ...newDay,
         route: [...newDay.route, { ...newRoutePoint }],
@@ -118,6 +123,13 @@ export function ItineraryForm({ data, onChange }: ItineraryFormProps) {
         imageUrl: "",
         imageId: "",
       })
+      // Limpiar también el estado de la imagen
+      handleRouteImageRemove()
+      setRoutePointConfirmation("Punto de ruta agregado!")
+      setTimeout(() => {
+        setRoutePointConfirmation(null)
+        setIsAddingRoutePoint(false)
+      }, 2000) // Mostrar confirmación por 2 segundos
     }
   }
 
@@ -161,6 +173,9 @@ export function ItineraryForm({ data, onChange }: ItineraryFormProps) {
     })
   }
 
+  const isTitleInvalid = !newDay.title.trim()
+  const isDescriptionInvalid = !newDay.description.trim()
+
   return (
     <div className="space-y-6">
       <div>
@@ -182,7 +197,9 @@ export function ItineraryForm({ data, onChange }: ItineraryFormProps) {
                 value={newDay.title}
                 onChange={(e) => setNewDay({ ...newDay, title: e.target.value })}
                 placeholder="Ej: Llegada a París"
+                className={isTitleInvalid ? "border-red-500" : ""}
               />
+              {isTitleInvalid && <p className="text-red-500 text-sm">El título del día es requerido.</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="day-accommodation">Alojamiento</Label>
@@ -203,7 +220,9 @@ export function ItineraryForm({ data, onChange }: ItineraryFormProps) {
               onChange={(e) => setNewDay({ ...newDay, description: e.target.value })}
               placeholder="Descripción general del día"
               rows={2}
+              className={isDescriptionInvalid ? "border-red-500" : ""}
             />
+            {isDescriptionInvalid && <p className="text-red-500 text-sm">La descripción del día es requerida.</p>}
           </div>
 
           <ImageUpload
@@ -312,28 +331,48 @@ export function ItineraryForm({ data, onChange }: ItineraryFormProps) {
                   placeholder="Subir imagen del lugar"
                 />
 
-                <Button type="button" onClick={addRoutePoint} disabled={!newRoutePoint.location.trim()}>
+                <Button
+                  type="button"
+                  onClick={addRoutePoint}
+                  disabled={!newRoutePoint.location.trim()}
+                  className={isAddingRoutePoint ? "bg-green-500 hover:bg-green-700 text-white" : ""}
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Agregar Punto de Ruta
                 </Button>
+                {routePointConfirmation && <p className="text-green-500">{routePointConfirmation}</p>}
               </div>
             </Card>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2">
               {newDay.route.map((point, index) => (
-                <Badge key={index} variant="outline" className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {point.location}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-auto p-0 hover:bg-transparent"
-                    onClick={() => removeRoutePoint(index)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
+                <Card key={index} className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3 w-3" />
+                      <span className="font-semibold">{point.location}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 hover:bg-transparent"
+                      onClick={() => removeRoutePoint(index)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  {point.description && <p className="text-sm text-muted-foreground">{point.description}</p>}
+                  {point.imageUrl && (
+                    <Image
+                      src={point.imageUrl || "/placeholder.svg"}
+                      alt={point.location}
+                      width={200}
+                      height={100}
+                      className="w-full h-20 object-cover rounded mt-2"
+                    />
+                  )}
+                </Card>
               ))}
             </div>
           </div>
