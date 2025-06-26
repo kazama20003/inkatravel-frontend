@@ -158,3 +158,4 @@ export default function LoginSuccess() {
     </Suspense>
   )
 }
+export const dynamic = 'force-dynamic';
