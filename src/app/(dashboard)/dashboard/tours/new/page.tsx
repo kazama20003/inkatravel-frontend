@@ -238,7 +238,7 @@ export default function NewTourPage() {
         description: "El paquete turístico ha sido creado exitosamente.",
       })
 
-      router.push("/paquetes")
+      router.push("/dashboard/tours")
     } catch (error) {
       console.error("Error creating tour:", error)
 

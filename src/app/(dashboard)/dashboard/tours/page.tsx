@@ -343,7 +343,7 @@ export default function PaquetesPage() {
                 <CardTitle>Paquetes Turísticos</CardTitle>
                 <CardDescription>Gestiona los paquetes y tours disponibles</CardDescription>
               </div>
-              <Button onClick={() => router.push("/paquetes/new")}>
+              <Button onClick={() => router.push("/dashboard/tours/new")} className="w-full md:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Nuevo Paquete
               </Button>

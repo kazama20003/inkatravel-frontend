@@ -383,9 +383,9 @@ export default function TourPackagesSection() {
                       <div className="text-right">
                         <div className="text-white">
                           {tour.originalPrice && tour.originalPrice > tour.price && (
-                            <span className="text-xs text-white/60 line-through block">${tour.originalPrice}</span>
+                            <span className="text-xs text-white/60 line-through block">S/{tour.originalPrice}</span>
                           )}
-                          <span className="text-lg md:text-xl font-bold brand-text">${tour.price}</span>
+                          <span className="text-xl md:text-2xl lg:text-3xl font-bold brand-text">S/{tour.price}</span>
                           <p className="text-xs text-white/70 body-text">por persona</p>
                         </div>
                       </div>

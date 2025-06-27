@@ -360,6 +360,11 @@ export default function ToursPage() {
     return text.substring(0, maxLength) + "..."
   }
 
+  // Función para formatear precio en soles
+  const formatPrice = (price: number) => {
+    return `S/ ${price.toLocaleString("es-PE")}`
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
@@ -630,11 +635,11 @@ export default function ToursPage() {
                             <div>
                               {tour.originalPrice && tour.originalPrice > tour.price && (
                                 <span className="text-xs md:text-sm text-white/60 line-through mr-2">
-                                  ${tour.originalPrice}
+                                  {formatPrice(tour.originalPrice)}
                                 </span>
                               )}
                               <span className="text-lg md:text-xl lg:text-2xl font-bold text-white brand-text">
-                                ${tour.price}
+                                {formatPrice(tour.price)}
                               </span>
                               <span className="text-white/70 text-xs md:text-sm ml-1 md:ml-2 body-text">
                                 por persona
