@@ -77,7 +77,7 @@ export interface Order {
   updatedAt: string
 }
 
-// DTOs para crear y actualizar órdenes
+// DTOs para crear y actualizar órdenes individuales (legacy)
 export interface CreateOrderDto {
   tour: string
   customer: Customer
@@ -147,7 +147,7 @@ export interface OrderResponse {
   startDate: string
   people: number
   totalPrice: number
-  status: string
+  status: "pending" | "confirmed" | "cancelled"
   paymentMethod?: string
   notes?: string
   discountCodeUsed?: string
@@ -155,12 +155,16 @@ export interface OrderResponse {
   createdAt: string
   updatedAt: string
 }
+
+// ===== NUEVAS INTERFACES PARA CHECKOUT CON MÚLTIPLES ITEMS =====
+
 export interface CustomerInfoDto {
   fullName: string
   email: string
   phone?: string
   nationality?: string
 }
+
 export interface OrderItemDto {
   tour: string // MongoDB ObjectId
   startDate: string // ISO Date string
@@ -168,4 +172,34 @@ export interface OrderItemDto {
   pricePerPerson: number
   total: number
   notes?: string
+}
+
+// DTO para crear órdenes con múltiples items (checkout)
+export interface CreateMultiOrderDto {
+  items: OrderItemDto[]
+  customer: CustomerInfoDto
+  totalPrice: number
+  paymentMethod?: string
+  notes?: string
+  discountCodeUsed?: string
+}
+
+// Response types para órdenes con múltiples items
+export interface MultiOrderResponse {
+  _id: string
+  items: OrderItemDto[]
+  customer: CustomerInfoDto
+  totalPrice: number
+  paymentMethod?: string
+  notes?: string
+  discountCodeUsed?: string
+  status: "pending" | "confirmed" | "cancelled"
+  createdAt: string
+  updatedAt: string
+}
+
+export interface OrdersApiResponse {
+  success: boolean
+  data: MultiOrderResponse[]
+  message?: string
 }
