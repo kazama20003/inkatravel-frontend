@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Globe } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 interface AnimatedHeaderProps {
   customScrollPosition?: number
@@ -22,13 +23,15 @@ export default function AnimatedHeader({
   const [isCompact, setIsCompact] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false)
-  const [currentLanguage, setCurrentLanguage] = useState("ES")
   const [currentSection, setCurrentSection] = useState<
     "video" | "explore" | "about" | "discover" | "service" | "testimonials"
   >("explore")
   const lastScrollPosition = useRef<number>(0)
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
+
+  // Usar el contexto de idioma
+  const { language, setLanguage, t } = useLanguage()
 
   // Add this useEffect at the beginning of the component, after all useState declarations
   useEffect(() => {
@@ -120,10 +123,10 @@ export default function AnimatedHeader({
 
   // Idiomas disponibles
   const languages = [
-    { code: "ES", name: "Español" },
-    { code: "EN", name: "English" },
-    { code: "FR", name: "Français" },
-    { code: "DE", name: "Deutsch" },
+    { code: "ES", name: "Español", lang: "es" as const },
+    { code: "EN", name: "English", lang: "en" as const },
+    { code: "FR", name: "Français", lang: "fr" as const },
+    { code: "DE", name: "Deutsch", lang: "de" as const },
   ]
 
   // Function to close all menus
@@ -363,7 +366,7 @@ export default function AnimatedHeader({
                   transition={{ duration: 0.2 }}
                   onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
                 >
-                  <span className="text-sm font-medium brand-text">{currentLanguage}</span>
+                  <span className="text-sm font-medium brand-text">{language.toUpperCase()}</span>
                   <Globe size={14} />
                 </motion.button>
 
@@ -381,10 +384,10 @@ export default function AnimatedHeader({
                         <button
                           key={lang.code}
                           className={`w-full text-center px-3 py-2 text-sm hover:bg-gray-100 transition-colors brand-text ${
-                            currentLanguage === lang.code ? "font-medium bg-gray-50" : ""
+                            language === lang.lang ? "font-medium bg-gray-50" : ""
                           }`}
                           onClick={() => {
-                            setCurrentLanguage(lang.code)
+                            setLanguage(lang.lang)
                             setIsLanguageMenuOpen(false)
                           }}
                         >
@@ -462,7 +465,7 @@ export default function AnimatedHeader({
                       strokeLinejoin="round"
                     />
                   </svg>
-                  <span className="text-sm font-medium brand-text">INICIAR SESIÓN</span>
+                  <span className="text-sm font-medium brand-text">{t.login}</span>
                 </Link>
               </motion.div>
 
@@ -486,7 +489,7 @@ export default function AnimatedHeader({
                   }}
                   onClick={closeAllMenus}
                 >
-                  <span className="text-sm font-medium brand-text">RESERVAR</span>
+                  <span className="text-sm font-medium brand-text">{t.reserve}</span>
                   <div
                     className="w-4 h-4 rounded-full border-2 border-dotted flex items-center justify-center"
                     style={{ borderColor: currentColors.border }}
@@ -531,11 +534,11 @@ export default function AnimatedHeader({
               <nav className="max-w-7xl mx-auto px-6 h-15 flex items-center justify-center">
                 <div className="flex items-center">
                   {[
-                    { name: "DESTINOS", path: "/" },
-                    { name: "TOURS", path: "/tours" },
-                    { name: "ITINERARIOS", path: "/itineraries" },
-                    { name: "CUÁNDO IR", path: "/when-to-go" },
-                    { name: "NOSOTROS", path: "/about-us" },
+                    { name: t.destinations, path: "/" },
+                    { name: t.tours, path: "/tours" },
+                    { name: t.itineraries, path: "/itineraries" },
+                    { name: t.whenToGo, path: "/when-to-go" },
+                    { name: t.aboutUs, path: "/about-us" },
                   ].map((item, index) => (
                     <div key={item.name} className="flex items-center">
                       <motion.div
@@ -562,7 +565,6 @@ export default function AnimatedHeader({
                           {item.name}
                         </Link>
                       </motion.div>
-
                       {index < 4 && (
                         <motion.div
                           className="w-px h-6"
@@ -678,7 +680,7 @@ export default function AnimatedHeader({
                   transition={{ duration: 0.2 }}
                   onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
                 >
-                  <span className="text-xs brand-text">{currentLanguage}</span>
+                  <span className="text-xs brand-text">{language.toUpperCase()}</span>
                   <Globe size={10} />
                 </motion.button>
 
@@ -696,10 +698,10 @@ export default function AnimatedHeader({
                         <button
                           key={lang.code}
                           className={`w-full text-center px-1 py-1.5 text-xs hover:bg-gray-100 transition-colors brand-text ${
-                            currentLanguage === lang.code ? "font-medium bg-gray-50" : ""
+                            language === lang.lang ? "font-medium bg-gray-50" : ""
                           }`}
                           onClick={() => {
-                            setCurrentLanguage(lang.code)
+                            setLanguage(lang.lang)
                             setIsLanguageMenuOpen(false)
                           }}
                         >
@@ -834,7 +836,7 @@ export default function AnimatedHeader({
                       className="px-3 py-2 rounded-full border border-peru-green text-peru-green flex items-center space-x-2 hover:opacity-70 transition-opacity"
                       onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
                     >
-                      <span className="text-sm brand-text">{currentLanguage}</span>
+                      <span className="text-sm brand-text">{language.toUpperCase()}</span>
                       <Globe size={14} />
                     </button>
                   </div>
@@ -878,12 +880,12 @@ export default function AnimatedHeader({
                         <button
                           key={lang.code}
                           className={`px-3 py-1 text-sm rounded-full transition-all brand-text ${
-                            currentLanguage === lang.code
+                            language === lang.lang
                               ? "bg-peru-orange text-white"
                               : "border border-gray-300 text-gray-600 hover:border-peru-orange"
                           }`}
                           onClick={() => {
-                            setCurrentLanguage(lang.code)
+                            setLanguage(lang.lang)
                             closeAllMenus()
                           }}
                         >
@@ -905,11 +907,11 @@ export default function AnimatedHeader({
                     </h3>
                     <nav className="space-y-4">
                       {[
-                        { name: "DESTINOS", hasArrow: true, href: "/" },
-                        { name: "TOURS", hasArrow: true, href: "/tours" },
-                        { name: "ITINERARIOS", hasArrow: true, href: "/itineraries" },
-                        { name: "CUÁNDO IR", hasArrow: true, href: "/when-to-go" },
-                        { name: "NOSOTROS", hasArrow: true, href: "/about-us" },
+                        { name: t.destinations, hasArrow: true, href: "/" },
+                        { name: t.tours, hasArrow: true, href: "/tours" },
+                        { name: t.itineraries, hasArrow: true, href: "/itineraries" },
+                        { name: t.whenToGo, hasArrow: true, href: "/when-to-go" },
+                        { name: t.aboutUs, hasArrow: true, href: "/about-us" },
                       ].map((item) => (
                         <Link
                           key={item.name}
@@ -965,7 +967,7 @@ export default function AnimatedHeader({
                     className="w-full py-4 text-center text-sm font-medium uppercase tracking-wider border border-peru-gold text-peru-gold rounded-full hover:opacity-70 transition-all duration-300 mb-6 brand-text block"
                     onClick={closeAllMenus}
                   >
-                    RESERVAR AHORA
+                    {t.reserve}
                   </Link>
                   <p className="text-center body-text text-peru-dark/60">¡Hola! ¿Cómo podemos ayudarte?</p>
                 </motion.div>

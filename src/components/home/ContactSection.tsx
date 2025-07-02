@@ -1,8 +1,12 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import Image from 'next/image';
+import Image from "next/image"
+import { useLanguage } from "@/contexts/LanguageContext"
+
 export default function ContactSection() {
+  const { t } = useLanguage()
+
   return (
     <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center">
       <div className="w-full h-full grid grid-cols-1 lg:grid-cols-5 gap-0">
@@ -12,9 +16,12 @@ export default function ContactSection() {
           <div className="absolute top-4 left-4 sm:top-8 sm:left-8 z-10">
             <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center bg-white/90 backdrop-blur-sm">
               <span className="text-[10px] sm:text-xs font-medium text-gray-700 text-center leading-tight">
-                ENQUIRE
-                <br />
-                NOW
+                {t.enquireNow.split(" ").map((word, index) => (
+                  <span key={index}>
+                    {word}
+                    {index < t.enquireNow.split(" ").length - 1 && <br />}
+                  </span>
+                ))}
               </span>
             </div>
           </div>
@@ -22,12 +29,12 @@ export default function ContactSection() {
           {/* Main Image */}
           <div className="w-full h-full relative overflow-hidden">
             <Image
-        src="https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432255/turista-cusco_ad5tin.jpg"
-        alt="Safari landscape with acacia tree at sunset"
-        fill
-        className="object-cover"
-        priority // opcional: carga prioritaria
-      />
+              src="https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432255/turista-cusco_ad5tin.jpg"
+              alt={t.contactImageAlt}
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
         </div>
 
@@ -37,9 +44,9 @@ export default function ContactSection() {
             {/* Main Title */}
             <div className="space-y-3 sm:space-y-4 lg:space-y-6">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-light text-gray-900 leading-tight">
-                Start planning your tailor-made holiday
+                {t.startPlanningTitle}
               </h2>
-              <p className="text-base sm:text-lg lg:text-xl text-gray-600">Speak to one of our travel specialists</p>
+              <p className="text-base sm:text-lg lg:text-xl text-gray-600">{t.speakToSpecialist}</p>
             </div>
 
             {/* Buttons */}
@@ -48,15 +55,14 @@ export default function ContactSection() {
                 className="w-full bg-navy-900 hover:bg-navy-800 text-white py-4 sm:py-5 lg:py-6 px-6 sm:px-8 text-sm sm:text-base font-medium tracking-wider"
                 size="lg"
               >
-                ENQUIRE NOW
+                {t.enquireNowButton}
               </Button>
-
               <Button
                 variant="outline"
                 className="w-full border-2 border-gray-300 hover:border-gray-400 text-gray-700 py-4 sm:py-5 lg:py-6 px-6 sm:px-8 text-sm sm:text-base font-medium tracking-wider bg-white hover:bg-gray-50"
                 size="lg"
               >
-                CALL US
+                {t.callUsButton}
               </Button>
             </div>
 
@@ -65,17 +71,17 @@ export default function ContactSection() {
               <div className="flex items-center space-x-2 lg:space-x-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full overflow-hidden">
                   <Image
-  src="https://res.cloudinary.com/dwvikvjrq/image/upload/v1750114576/uploads/sgqkf6xncugoizwfbv7o.jpg"
-  alt="Travel specialist"
-  width={800} // Ajusta según tu diseño
-  height={600} // Ajusta según tu diseño
-  className="w-full h-full object-cover"
-/>
+                    src="https://res.cloudinary.com/dwvikvjrq/image/upload/v1750114576/uploads/sgqkf6xncugoizwfbv7o.jpg"
+                    alt={t.travelSpecialistAlt}
+                    width={800}
+                    height={600}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="w-2 h-2 sm:w-3 sm:h-3 lg:w-4 lg:h-4 bg-green-500 rounded-full"></div>
               </div>
               <span className="text-xs sm:text-sm lg:text-base font-medium text-gray-700 tracking-wider">
-                AVAILABLE NOW
+                {t.availableNow}
               </span>
             </div>
           </div>

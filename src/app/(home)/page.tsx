@@ -7,13 +7,14 @@ import DiscoverSection from "@/components/home/DiscoverSection"
 import OurServiceSection from "@/components/home/OurServiceSection"
 import TestimonialsSection from "@/components/home/TestimonialsSection"
 import ContactSection from "@/components/home/ContactSection"
+import HeroSection from "@/components/home/herosectionPrincipal"
 
 export default function HomePage() {
   return (
     <div className="w-full">
       {/* First Section - Video Layout */}
       <div className="min-h-screen w-full bg-black">
-        <DynamicFrameLayout />
+        <HeroSection />
       </div>
 
       {/* Second Section - Tour Packages Section */}
@@ -24,6 +25,9 @@ export default function HomePage() {
       {/* Third Section - About Section */}
       <div className="min-h-screen w-full">
         <AboutSection />
+      </div>
+      <div className="min-h-screen w-full bg-black">
+        <DynamicFrameLayout />
       </div>
 
       {/* Fourth Section - Discover Section */}

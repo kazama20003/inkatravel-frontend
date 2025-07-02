@@ -155,7 +155,7 @@ export default function EditTourPage() {
           description: "No se pudo cargar la información del tour. Redirigiendo...",
           duration: 3000,
         })
-        setTimeout(() => router.push("/paquetes"), 2000)
+        setTimeout(() => router.push("/dashboard/tours"), 2000)
       } finally {
         setLoading(false)
       }
@@ -289,7 +289,7 @@ export default function EditTourPage() {
 
       // Redirigir después de un breve delay
       setTimeout(() => {
-        router.push("/paquetes")
+        router.push("/dashboard/tours")
       }, 1500)
     } catch (error) {
       console.error("Error updating tour:", error)
@@ -304,7 +304,7 @@ export default function EditTourPage() {
 
   // Manejar cancelación
   const handleCancel = () => {
-    router.push("/paquetes")
+    router.push("/dashboard/tours")
   }
 
   if (loading) {

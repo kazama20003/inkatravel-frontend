@@ -8,7 +8,6 @@ import {
   Car,
   BarChart3,
   Package,
-  CreditCard,
   FileText,
   Globe,
 } from "lucide-react"
@@ -99,7 +98,7 @@ const data = {
         },
         {
           title: "Historial",
-          url: "/dashboard/users/history",
+          url: "/dashboard/users",
         },
       ],
     },
@@ -114,48 +113,44 @@ const data = {
         },
       ],
     },
-    {
-      title: "Finanzas",
-      url: "/finanzas",
-      icon: CreditCard,
-      items: [
-        {
-          title: "Facturación",
-          url: "/finanzas/facturacion",
-        },
-        {
-          title: "Pagos",
-          url: "/finanzas/pagos",
-        },
-        {
-          title: "Comisiones",
-          url: "/finanzas/comisiones",
-        },
-        {
-          title: "Reportes Financieros",
-          url: "/finanzas/reportes",
-        },
-      ],
-    },
+    // {
+    //   title: "Finanzas",
+    //   url: "/finanzas",
+    //   icon: CreditCard,
+    //   items: [
+    //     {
+    //       title: "Facturación",
+    //       url: "/finanzas/facturacion",
+    //     },
+    //     {
+    //       title: "Pagos",
+    //       url: "/finanzas/pagos",
+    //     },
+    //     {
+    //       title: "Comisiones",
+    //       url: "/finanzas/comisiones",
+    //     },
+    //     {
+    //       title: "Reportes Financieros",
+    //       url: "/finanzas/reportes",
+    //     },
+    //   ],
+    // },
   ],
   navSecondary: [
     {
       title: "Documentación",
-      url: "/documentacion",
+      url: "/dashboard/documentacion",
       icon: FileText,
     },
     {
       title: "Soporte Técnico",
-      url: "/soporte",
+      url: "/dashboard/soporte",
       icon: Globe,
     },
   ],
   projects: [
-    {
-      name: "Caribe Premium",
-      url: "/paquetes/caribe-premium",
-      icon: Plane,
-    },]
+  ]
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

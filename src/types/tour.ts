@@ -1,7 +1,15 @@
 // Actualizado para coincidir EXACTAMENTE con el nuevo backend DTO
 export type PackageType = "Basico" | "Premium"
 export type Difficulty = "Facil" | "Moderado" | "Difícil" // Sin tilde en "Facil"
-export type TourCategory = "Aventura" | "Cultural" | "Relax" | "Naturaleza"
+export type TourCategory =
+  | "Aventura"
+  | "Cultural"
+  | "Relajación"
+  | "Naturaleza"
+  | "Trekking"
+  | "Panoramico"
+  | "Transporte Turistico"
+
 
 export interface RoutePoint {
   _id?: string // Añadido para compatibilidad con MongoDB

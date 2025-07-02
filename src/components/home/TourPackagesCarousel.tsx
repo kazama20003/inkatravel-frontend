@@ -7,6 +7,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { api } from "@/lib/axiosInstance"
 import type { Tour } from "@/types/tour"
 
@@ -34,7 +35,6 @@ const SpinningText = ({ text = "RESERVAR • RESERVAR • " }: { text?: string }
           </text>
         </svg>
       </motion.div>
-
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-7 h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
           <svg
@@ -98,6 +98,7 @@ const LoadingSkeleton = () => {
 export default function TourPackagesSection() {
   const isMobile = useIsMobile()
   const router = useRouter()
+  const { t, language } = useLanguage()
   const carouselRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
@@ -118,14 +119,14 @@ export default function TourPackagesSection() {
         setError(null)
       } catch (err) {
         console.error("Error fetching tours:", err)
-        setError("Error al cargar los tours. Por favor, intenta de nuevo.")
+        setError(t.errorLoadingTours)
       } finally {
         setLoading(false)
       }
     }
 
     fetchTours()
-  }, [])
+  }, [t.errorLoadingTours])
 
   // Función para navegar al detalle del tour
   const handleTourClick = (slug: string) => {
@@ -148,6 +149,7 @@ export default function TourPackagesSection() {
   // Funciones para el drag
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!carouselRef.current) return
+
     setIsDragging(true)
     setStartX(e.pageX - carouselRef.current.offsetLeft)
     setScrollLeft(carouselRef.current.scrollLeft)
@@ -182,6 +184,7 @@ export default function TourPackagesSection() {
   // Funciones para touch (móvil)
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!carouselRef.current) return
+
     setIsDragging(true)
     setStartX(e.touches[0].pageX - carouselRef.current.offsetLeft)
     setScrollLeft(carouselRef.current.scrollLeft)
@@ -189,6 +192,7 @@ export default function TourPackagesSection() {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging || !carouselRef.current) return
+
     const x = e.touches[0].pageX - carouselRef.current.offsetLeft
     const walk = (x - startX) * 2
     carouselRef.current.scrollLeft = scrollLeft - walk
@@ -196,6 +200,12 @@ export default function TourPackagesSection() {
 
   const handleTouchEnd = () => {
     setIsDragging(false)
+  }
+
+  // Generar texto giratorio basado en el idioma
+  const getSpinningText = () => {
+    const reserveText = t.reserveNow.toUpperCase()
+    return `${reserveText} • ${reserveText} • `
   }
 
   return (
@@ -211,10 +221,7 @@ export default function TourPackagesSection() {
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
-              <p className="text-sm md:text-base text-gray-600 body-text leading-relaxed">
-                Descubre los destinos más elegidos por nuestros viajeros. Tours únicos que combinan aventura, cultura y
-                naturaleza en experiencias inolvidables por todo el Perú.
-              </p>
+              <p className="text-sm md:text-base text-gray-600 body-text leading-relaxed">{t.discoverDestinations}</p>
             </motion.div>
 
             {/* Right Side - Title */}
@@ -226,19 +233,27 @@ export default function TourPackagesSection() {
               viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-5xl lg:text-6xl xl:text-7xl text-black leading-none brand-text">
-                Destinos más
+                {t.mostPopularDestinations}
                 <br />
-                <em className="italic text-peru-orange">Populares</em>
+                <em className="italic text-peru-orange">
+                  {language === "es"
+                    ? "Populares"
+                    : language === "en"
+                      ? "Destinations"
+                      : language === "fr"
+                        ? "Populaires"
+                        : "Reiseziele"}
+                </em>
               </h2>
               <div className="mt-2 lg:mt-4 flex flex-col lg:items-end">
                 <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wider body-text mb-2">
-                  EXPLORA LOS FAVORITOS
+                  {t.explorePopular}
                 </p>
                 <Link
                   href="/tours"
                   className="inline-flex items-center text-peru-orange hover:text-peru-orange/80 transition-colors text-sm font-medium"
                 >
-                  Ver todos los tours
+                  {t.viewAllTours}
                   <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -261,13 +276,13 @@ export default function TourPackagesSection() {
                 onClick={() => window.location.reload()}
                 className="bg-peru-orange text-white px-4 py-2 rounded hover:bg-peru-orange/90 transition-colors"
               >
-                Reintentar
+                {t.retry}
               </button>
             </div>
           </div>
         ) : tours.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-gray-500">No hay tours disponibles en este momento.</p>
+            <p className="text-gray-500">{t.noToursAvailable}</p>
           </div>
         ) : (
           <div
@@ -325,14 +340,14 @@ export default function TourPackagesSection() {
                   {tour.featured && (
                     <div className="absolute top-4 left-4 z-20">
                       <span className="bg-peru-gold text-white px-2 py-1 text-xs brand-text tracking-wider rounded">
-                        DESTACADO
+                        {t.featured}
                       </span>
                     </div>
                   )}
 
                   {/* Spinning Text - Solo aparece en hover */}
                   <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-2 group-hover:translate-x-0">
-                    <SpinningText />
+                    <SpinningText text={getSpinningText()} />
                   </div>
 
                   {/* Top Section - Título */}
@@ -379,14 +394,13 @@ export default function TourPackagesSection() {
                           {tour.category}
                         </span>
                       </div>
-
                       <div className="text-right">
                         <div className="text-white">
                           {tour.originalPrice && tour.originalPrice > tour.price && (
                             <span className="text-xs text-white/60 line-through block">S/{tour.originalPrice}</span>
                           )}
                           <span className="text-xl md:text-2xl lg:text-3xl font-bold brand-text">S/{tour.price}</span>
-                          <p className="text-xs text-white/70 body-text">por persona</p>
+                          <p className="text-xs text-white/70 body-text">{t.perPerson}</p>
                         </div>
                       </div>
                     </div>

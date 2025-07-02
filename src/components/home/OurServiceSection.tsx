@@ -3,61 +3,61 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 export default function OurServiceSection() {
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState("TAILOR-MADE")
 
   const tabs = [
-    "TAILOR-MADE",
-    "EXPERT GUIDES",
-    "PRICE PROMISE",
-    "FAMILY OPERATED",
-    "CARBON OFFSET",
-    "CHARITY COMMITMENT",
+    { key: "TAILOR-MADE", label: t.tailorMadeTab },
+    { key: "EXPERT GUIDES", label: t.expertGuidesTab },
+    { key: "PRICE PROMISE", label: t.pricePromiseTab },
+    { key: "FAMILY OPERATED", label: t.familyOperatedTab },
+    { key: "CARBON OFFSET", label: t.carbonOffsetTab },
+    { key: "CHARITY COMMITMENT", label: t.charityCommitmentTab },
   ]
 
   const tabContent = {
     "TAILOR-MADE": {
-      title: "Viajes a Medida",
-      description:
-        "Cada viaje está diseñado únicamente para ti, adaptándose a tus preferencias personales, intereses y estilo de viaje. Nuestro equipo experto crea itinerarios personalizados que generan experiencias inolvidables.",
+      title: t.tailorMadeTitle,
+      description: t.tailorMadeDescription,
       image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432254/machupicchu-turista-wta_itauck.jpg",
-      buttonText: "PLANIFICA TU VIAJE",
+      buttonText: t.tailorMadeButton,
     },
     "EXPERT GUIDES": {
-      title: "Guías Expertos",
-      description:
-        "Nuestros guías locales cuidadosamente seleccionados dan vida a los destinos con su profundo conocimiento, pasión y acceso exclusivo. Experimenta conexiones culturales auténticas y gemas ocultas que solo los locales conocen.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432254/recorrido-gria-turistas-machu-picchu-full_fvrlcn.jpg",
-      buttonText: "CONOCE NUESTROS GUÍAS",
+      title: t.expertGuidesTitle,
+      description: t.expertGuidesDescription,
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432254/recorrido-gria-turistas-machu-picchu-full_fvrlcn.jpg",
+      buttonText: t.expertGuidesButton,
     },
     "PRICE PROMISE": {
-      title: "Garantía de Precio",
-      description:
-        "Garantizamos precios transparentes sin costos ocultos. Si encuentras un viaje comparable a un precio menor, lo igualamos. Tu inversión va directamente a crear experiencias de viaje excepcionales.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432261/turismo-vivencial-la-comunidad-amaru-cusco-peru-inkayni-peru-tours_bggbj7.webp",
-      buttonText: "VER PRECIOS",
+      title: t.pricePromiseTitle,
+      description: t.pricePromiseDescription,
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432261/turismo-vivencial-la-comunidad-amaru-cusco-peru-inkayni-peru-tours_bggbj7.webp",
+      buttonText: t.pricePromiseButton,
     },
     "FAMILY OPERATED": {
-      title: "Empresa Familiar",
-      description:
-        "Como empresa familiar, brindamos cuidado personal y atención a cada detalle de tu viaje. Nuestro compromiso con la excelencia abarca generaciones, asegurando un servicio auténtico y cordial.",
+      title: t.familyOperatedTitle,
+      description: t.familyOperatedDescription,
       image: "https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=1000&auto=format&fit=crop",
-      buttonText: "NUESTRA HISTORIA",
+      buttonText: t.familyOperatedButton,
     },
     "CARBON OFFSET": {
-      title: "Compensación de Carbono",
-      description:
-        "Estamos comprometidos con el turismo responsable. Cada viaje incluye iniciativas de compensación de carbono, apoyando proyectos de reforestación y programas de energía renovable para minimizar el impacto ambiental.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
-      buttonText: "SOSTENIBILIDAD",
+      title: t.carbonOffsetTitle,
+      description: t.carbonOffsetDescription,
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
+      buttonText: t.carbonOffsetButton,
     },
     "CHARITY COMMITMENT": {
-      title: "Compromiso Benéfico",
-      description:
-        "Nos enorgullece ser el socio oficial de viajes de la Fundación ForRangers, apoyando sus esfuerzos críticos de conservación y protegiendo la vida silvestre en peligro de extinción.",
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432259/turista-fotografiando-machu-picchu-desde-casa-guardian-full_qsoegz.jpg",
-      buttonText: "CONOCE MÁS",
+      title: t.charityCommitmentTitle,
+      description: t.charityCommitmentDescription,
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432259/turista-fotografiando-machu-picchu-desde-casa-guardian-full_qsoegz.jpg",
+      buttonText: t.charityCommitmentButton,
     },
   }
 
@@ -75,11 +75,11 @@ export default function OurServiceSection() {
           viewport={{ once: true }}
         >
           <h2 className="text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-light mb-4 md:mb-8 brand-text">
-            <span className="text-xl md:text-3xl">→</span> NUESTROS SERVICIOS{" "}
+            <span className="text-xl md:text-3xl">→</span> {t.ourServices}{" "}
             <span className="text-xl md:text-3xl">←</span>
           </h2>
           <p className="text-base md:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto body-text">
-            Itinerarios a medida, creados por nuestros expertos
+            {t.ourServicesSubtitle}
           </p>
         </motion.div>
 
@@ -94,11 +94,11 @@ export default function OurServiceSection() {
           <div className="flex flex-wrap justify-center gap-3 md:gap-6 lg:gap-8 xl:gap-12 border-b border-gray-600 pb-4 md:pb-6">
             {tabs.map((tab, index) => (
               <motion.button
-                key={tab}
+                key={tab.key}
                 className={`text-sm md:text-base lg:text-lg font-medium tracking-wider transition-all duration-300 pb-2 md:pb-4 relative px-2 md:px-3 ${
-                  activeTab === tab ? "text-white" : "text-gray-400 hover:text-gray-200"
+                  activeTab === tab.key ? "text-white" : "text-gray-400 hover:text-gray-200"
                 }`}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => setActiveTab(tab.key)}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{
@@ -110,8 +110,8 @@ export default function OurServiceSection() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {tab}
-                {activeTab === tab && (
+                {tab.label}
+                {activeTab === tab.key && (
                   <motion.div
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"
                     layoutId="activeTab"
@@ -157,11 +157,9 @@ export default function OurServiceSection() {
             <h3 className="text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-light brand-text">
               {currentContent.title}
             </h3>
-
             <p className="text-base md:text-lg lg:text-xl xl:text-2xl text-gray-300 leading-relaxed body-text">
               {currentContent.description}
             </p>
-
             <motion.button
               className="border border-white px-6 md:px-10 lg:px-12 py-3 md:py-4 lg:py-5 text-sm md:text-base lg:text-lg font-medium tracking-wider hover:bg-white hover:text-peru-dark transition-all duration-300 brand-text"
               whileHover={{ scale: 1.05 }}

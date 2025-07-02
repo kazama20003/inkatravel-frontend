@@ -1,0 +1,76 @@
+# Robots.txt for Inka Travel Peru
+# https://cabanacondecuscobybus.com
+
+User-agent: *
+Allow: /
+Allow: /tours/
+Allow: /transport/
+Allow: /es/
+Allow: /en/
+Allow: /fr/
+Allow: /de/
+
+# Block admin and private areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /private/
+Disallow: /.well-known/
+
+# Block specific file types
+Disallow: *.json$
+Disallow: *.xml$
+Disallow: *.log$
+
+# Allow important assets
+Allow: /images/
+Allow: /icons/
+Allow: /favicon.ico
+Allow: /manifest.json
+
+# Specific rules for search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 3
+
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 2
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+# Sitemaps
+Sitemap: https://cabanacondecuscobybus.com/sitemap.xml
+Sitemap: https://cabanacondecuscobybus.com/sitemap-tours.xml
+Sitemap: https://cabanacondecuscobybus.com/sitemap-transport.xml
+Sitemap: https://cabanacondecuscobybus.com/sitemap-es.xml
+Sitemap: https://cabanacondecuscobybus.com/sitemap-en.xml
+Sitemap: https://cabanacondecuscobybus.com/sitemap-fr.xml
+Sitemap: https://cabanacondecuscobybus.com/sitemap-de.xml
+
+# Host directive
+Host: https://cabanacondecuscobybus.com

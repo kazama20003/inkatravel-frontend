@@ -2,23 +2,26 @@
 
 import { motion } from "framer-motion"
 import Image from "next/image"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 export default function DiscoverSection() {
+  const { t } = useLanguage()
+
   const steps = [
     {
       letter: "a",
-      title: "Planifica",
-      description: "Completa el formulario de consulta y comparte tu historia de viaje soñada.",
+      title: t.stepPlanTitle,
+      description: t.stepPlanDescription,
     },
     {
       letter: "b",
-      title: "Personaliza",
-      description: "Obtén itinerarios personalizados y comienza a planificar tu aventura perfecta.",
+      title: t.stepCustomizeTitle,
+      description: t.stepCustomizeDescription,
     },
     {
       letter: "c",
-      title: "Disfruta",
-      description: "Vive experiencias únicas del 100% de los destinos más increíbles del Perú.",
+      title: t.stepEnjoyTitle,
+      description: t.stepEnjoyDescription,
     },
   ]
 
@@ -38,12 +41,15 @@ export default function DiscoverSection() {
             <div className="space-y-6 md:space-y-8 lg:space-y-10 max-w-xl">
               {/* Main Title */}
               <div className="space-y-3 md:space-y-4">
-                <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black  leading-none tracking-tight">
-                  Cómo <em>Funciona</em>
+                <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black leading-none tracking-tight">
+                  {t.howItWorks.split(" ").map((word, index) => (
+                    <span key={index}>
+                      {index === 1 ? <em>{word}</em> : word}
+                      {index < t.howItWorks.split(" ").length - 1 && " "}
+                    </span>
+                  ))}
                 </h2>
-                <p className="text-base md:text-lg lg:text-xl ">
-                  Tres simples pasos para comenzar tu aventura
-                </p>
+                <p className="text-base md:text-lg lg:text-xl">{t.howItWorksSubtitle}</p>
               </div>
 
               {/* Steps List */}
@@ -83,19 +89,69 @@ export default function DiscoverSection() {
                 viewport={{ once: true }}
               >
                 <div className="space-y-2 md:space-y-3">
-                  <p className="text-xl md:text-2xl lg:text-3xl xl:text-4xlleading-tight">
-                    No <em>esperes</em>—comienza tu aventura como
+                  <p className="text-xl md:text-2xl lg:text-3xl xl:text-4xl leading-tight">
+                    {t.dontWaitText1.split("esperes").length > 1 ? (
+                      <>
+                        {t.dontWaitText1.split("esperes")[0]}
+                        <em>esperes</em>
+                        {t.dontWaitText1.split("esperes")[1]}
+                      </>
+                    ) : t.dontWaitText1.split("wait").length > 1 ? (
+                      <>
+                        {t.dontWaitText1.split("wait")[0]}
+                        <em>wait</em>
+                        {t.dontWaitText1.split("wait")[1]}
+                      </>
+                    ) : t.dontWaitText1.split("attendez").length > 1 ? (
+                      <>
+                        {t.dontWaitText1.split("attendez")[0]}
+                        <em>attendez</em>
+                        {t.dontWaitText1.split("attendez")[1]}
+                      </>
+                    ) : t.dontWaitText1.split("Warten").length > 1 ? (
+                      <>
+                        {t.dontWaitText1.split("Warten")[0]}
+                        <em>Warten</em>
+                        {t.dontWaitText1.split("Warten")[1]}
+                      </>
+                    ) : (
+                      t.dontWaitText1
+                    )}
                   </p>
-                  <p className="text-xl md:text-2xl lg:text-3xl xl:text-4xlleading-tight">
-                    viajero de próximo nivel hoy. Tu experiencia
-                  </p>
-                  <p className="text-xl md:text-2xl lg:text-3xl xl:text-4xlleading-tight">
-                    merece lo mejor, y tú mereces <em>crecer</em> con nosotros.
+                  <p className="text-xl md:text-2xl lg:text-3xl xl:text-4xl leading-tight">{t.dontWaitText2}</p>
+                  <p className="text-xl md:text-2xl lg:text-3xl xl:text-4xl leading-tight">
+                    {t.dontWaitText3.split("crecer").length > 1 ? (
+                      <>
+                        {t.dontWaitText3.split("crecer")[0]}
+                        <em>crecer</em>
+                        {t.dontWaitText3.split("crecer")[1]}
+                      </>
+                    ) : t.dontWaitText3.split("grow").length > 1 ? (
+                      <>
+                        {t.dontWaitText3.split("grow")[0]}
+                        <em>grow</em>
+                        {t.dontWaitText3.split("grow")[1]}
+                      </>
+                    ) : t.dontWaitText3.split("grandir").length > 1 ? (
+                      <>
+                        {t.dontWaitText3.split("grandir")[0]}
+                        <em>grandir</em>
+                        {t.dontWaitText3.split("grandir")[1]}
+                      </>
+                    ) : t.dontWaitText3.split("wachsen").length > 1 ? (
+                      <>
+                        {t.dontWaitText3.split("wachsen")[0]}
+                        <em>wachsen</em>
+                        {t.dontWaitText3.split("wachsen")[1]}
+                      </>
+                    ) : (
+                      t.dontWaitText3
+                    )}
                   </p>
                 </div>
 
                 <button className="bg-black text-white px-6 md:px-8 py-3 md:py-4 text-sm md:text-base font-medium uppercase tracking-wider hover:bg-peru-dark transition-colors duration-300">
-                  Comenzar Aventura
+                  {t.startAdventure}
                 </button>
               </motion.div>
             </div>
@@ -111,7 +167,7 @@ export default function DiscoverSection() {
           >
             <Image
               src="https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432254/recorrido-gria-turistas-machu-picchu-full_fvrlcn.jpg"
-              alt="Aventurero contemplando cascada en la selva peruana"
+              alt={t.adventurerImageAlt}
               fill
               className="object-cover"
             />

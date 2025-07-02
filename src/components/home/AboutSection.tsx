@@ -1,13 +1,16 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 export default function AboutSection() {
+  const { t } = useLanguage()
+
   const stats = [
     {
       id: 1,
-      title: "ATOL",
-      subtitle: "NO 12034",
+      title: t.atolTitle,
+      subtitle: t.atolSubtitle,
       icon: (
         <svg
           width="20"
@@ -28,8 +31,8 @@ export default function AboutSection() {
     },
     {
       id: 2,
-      title: "CERO",
-      subtitle: "CARGOS EXTRA",
+      title: t.zeroTitle,
+      subtitle: t.zeroSubtitle,
       icon: (
         <svg
           width="20"
@@ -46,8 +49,8 @@ export default function AboutSection() {
     },
     {
       id: 3,
-      title: "100%",
-      subtitle: "COMPENSACIÓN CARBONO",
+      title: t.carbonTitle,
+      subtitle: t.carbonSubtitle,
       icon: (
         <svg
           width="20"
@@ -94,8 +97,7 @@ export default function AboutSection() {
           viewport={{ once: true }}
         >
           <p className="text-lg md:text-2xl lg:text-3xl xl:text-4xl text-peru-dark leading-relaxed max-w-5xl mx-auto body-text px-4">
-            Peru Travel es una empresa de viajes de lujo galardonada que se especializa en viajes a medida, lunas de
-            miel y vacaciones familiares por Perú, América del Sur y más allá.
+            {t.aboutDescription}
           </p>
         </motion.div>
 

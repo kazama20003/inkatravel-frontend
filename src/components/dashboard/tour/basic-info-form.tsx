@@ -113,9 +113,13 @@ export function BasicInfoForm({ data, onChange }: BasicInfoFormProps) {
               <SelectContent>
                 <SelectItem value="Aventura">Aventura</SelectItem>
                 <SelectItem value="Cultural">Cultural</SelectItem>
-                <SelectItem value="Relax">Relax</SelectItem>
+                <SelectItem value="Relajación">Relajación</SelectItem>
                 <SelectItem value="Naturaleza">Naturaleza</SelectItem>
+                <SelectItem value="Trekking">Trekking</SelectItem>
+                <SelectItem value="Panoramico">Panoramico</SelectItem>
+                <SelectItem value="Transporte Turistico">Transporte Turistico</SelectItem>
               </SelectContent>
+
             </Select>
           </div>
         </CardContent>

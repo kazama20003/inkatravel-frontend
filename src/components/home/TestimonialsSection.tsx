@@ -2,46 +2,48 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 export default function TestimonialsSection() {
+  const { t } = useLanguage()
   const [currentIndex, setCurrentIndex] = useState(0)
 
   const testimonials = [
     {
       id: 1,
       rating: 5,
-      text: "No podría recomendar Peru Travel más altamente - tuvimos las vacaciones más increíbles - cada detalle había sido pensado y siempre estuvieron disponibles para responder cualquier pregunta de inmediato. Servicio muy personal.",
-      name: "Camila",
+      text: t.testimonial1,
+      name: t.testimonialName1,
     },
     {
       id: 2,
       rating: 5,
-      text: "Quedé impresionado por nuestro safari en Tanzania, nunca esperé que fuera tan bueno - superó totalmente mis expectativas y fue todo sin complicaciones. Nuestro guía también fue absolutamente increíble. ¡No puedo esperar al próximo año!",
-      name: "Jeremy",
+      text: t.testimonial2,
+      name: t.testimonialName2,
     },
     {
       id: 3,
       rating: 5,
-      text: "Fantástico servicio al cliente. Equipo súper amigable y ninguna pregunta sin respuesta y ninguna solicitud demasiado pequeña. Realmente aprecié cómo coordinaron a mi familia durante toda la fase de planificación. Gracias Peru Travel.",
-      name: "Jamie",
+      text: t.testimonial3,
+      name: t.testimonialName3,
     },
     {
       id: 4,
       rating: 5,
-      text: "La atención al detalle fue increíble. Desde el momento en que aterrizamos hasta nuestra partida, todo estaba perfectamente organizado. Las experiencias locales que organizaron fueron auténticas e inolvidables.",
-      name: "Sarah",
+      text: t.testimonial4,
+      name: t.testimonialName4,
     },
     {
       id: 5,
       rating: 5,
-      text: "Peru Travel hizo nuestra luna de miel absolutamente perfecta. Los toques románticos que agregaron a lo largo de nuestro viaje lo hicieron tan especial. Nos sentimos verdaderamente cuidados en cada paso del camino.",
-      name: "Michael",
+      text: t.testimonial5,
+      name: t.testimonialName5,
     },
     {
       id: 6,
       rating: 5,
-      text: "Profesional, conocedor y genuinamente apasionado por los viajes. Escucharon nuestras necesidades y crearon un itinerario que estaba más allá de nuestros sueños más salvajes. ¡Altamente recomendado!",
-      name: "Emma",
+      text: t.testimonial6,
+      name: t.testimonialName6,
     },
   ]
 
@@ -91,7 +93,7 @@ export default function TestimonialsSection() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl md:text-4xl lg:text-5xl text-gray-900 mb-8">→ From our travellers ←</h2>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl text-gray-900 mb-8">→ {t.fromOurTravellers} ←</h2>
         </motion.div>
 
         {/* Testimonials Grid */}
