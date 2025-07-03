@@ -91,17 +91,23 @@ export interface CreateOrderDto {
 }
 
 export interface UpdateOrderDto {
-  tour?: string
-  customer?: Customer
-  startDate?: string
-  people?: number
+  items?: OrderItemDto[]
+  customer?: CustomerInfoDto
   totalPrice?: number
   paymentMethod?: string
   notes?: string
   discountCodeUsed?: string
   user?: string
 }
-
+// DTO para actualizar órdenes con múltiples items
+export interface UpdateMultiOrderDto {
+  items?: OrderItemDto[]
+  customer?: CustomerInfoDto
+  totalPrice?: number
+  paymentMethod?: string
+  notes?: string
+  discountCodeUsed?: string
+}
 // Interfaces para selección
 export interface TourSelectionOption {
   _id: string

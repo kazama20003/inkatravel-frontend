@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,75 +17,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Edit, Calendar, Users, DollarSign } from "lucide-react"
-import { api } from "@/lib/axiosInstance"
 import { toast } from "sonner"
-
-interface TourSelectionOption {
-  _id: string
-  title: string
-  price: number
-  duration: string
-  region: string
-}
-
-interface UserOption {
-  _id: string
-  fullName: string
-}
-
-interface CustomerInfo {
-  fullName: string
-  email: string
-  phone: string
-  nationality: string
-}
-
-interface UpdateOrderDto {
-  tour: string
-  customer: CustomerInfo
-  startDate: string
-  people: number
-  totalPrice: number
-  paymentMethod: string
-  notes: string
-  discountCodeUsed: string
-  user: string
-}
-
-interface TourInfo {
-  _id: string
-  title: string
-  subtitle: string
-  imageUrl: string
-  price: number
-  duration: string
-  region: string
-}
-
-interface UserInfo {
-  _id: string
-  fullName: string
-  email: string
-}
-
-interface Order {
-  _id: string
-  tour: TourInfo
-  customer: CustomerInfo
-  startDate: string
-  people: number
-  totalPrice: number
-  paymentMethod?: string
-  notes?: string
-  discountCodeUsed?: string
-  user?: UserInfo
-  status: string
-  createdAt: string
-}
-
-interface ApiResponse<T> {
-  data: T
-}
+import { getToursForSelection, getUsers, updateOrder } from "@/lib/orders-api"
+import type { TourSelectionOption, UserOption, Order, UpdateOrderDto } from "@/types/order"
 
 interface OrderEditDialogProps {
   trigger?: React.ReactNode
@@ -101,16 +34,27 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
   const [users, setUsers] = useState<UserOption[]>([])
   const [selectedTour, setSelectedTour] = useState<TourSelectionOption | null>(null)
 
+  // Validar que el tour existe antes de acceder a sus propiedades
+  const tourId = order.tour?._id || ""
+  const tourPrice = order.tour?.price || 0
+
   const [formData, setFormData] = useState<UpdateOrderDto>({
-    tour: order.tour._id,
+    items: [
+      {
+        tour: tourId,
+        startDate: order.startDate,
+        people: order.people,
+        pricePerPerson: tourPrice,
+        total: order.totalPrice,
+        notes: order.notes || "",
+      },
+    ],
     customer: {
-      fullName: order.customer.fullName,
-      email: order.customer.email,
-      phone: order.customer.phone || "",
-      nationality: order.customer.nationality || "",
+      fullName: order.customer?.fullName || "",
+      email: order.customer?.email || "",
+      phone: order.customer?.phone || "",
+      nationality: order.customer?.nationality || "",
     },
-    startDate: order.startDate,
-    people: order.people,
     totalPrice: order.totalPrice,
     paymentMethod: order.paymentMethod || "",
     notes: order.notes || "",
@@ -118,88 +62,93 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
     user: order.user?._id || "",
   })
 
-  const fetchTours = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
-      const response = await api.get<ApiResponse<TourSelectionOption[]>>("/tours")
-      const toursData = response.data.data || response.data
-      const toursOptions = Array.isArray(toursData)
-        ? toursData.map((tour) => ({
-            _id: tour._id,
-            title: tour.title,
-            price: tour.price,
-            duration: tour.duration,
-            region: tour.region,
-          }))
-        : []
-      setTours(toursOptions)
+      const [toursData, usersData] = await Promise.all([getToursForSelection(), getUsers()])
 
-      // Set selected tour
-      const currentTour = toursOptions.find((t: TourSelectionOption) => t._id === order.tour._id)
-      setSelectedTour(currentTour || null)
-    } catch (error) {
-      console.error("Error fetching tours:", error)
-      toast.error("Error al cargar los tours")
-    }
-  }, [order.tour._id])
+      setTours(toursData)
+      setUsers(usersData)
 
-  const fetchUsers = useCallback(async () => {
-    try {
-      const response = await api.get<ApiResponse<UserOption[]>>("/users/names")
-      const usersData = response.data.data || response.data
-      setUsers(Array.isArray(usersData) ? usersData : [])
+      // Set selected tour - validar que tourId existe
+      if (tourId) {
+        const currentTour = toursData.find((t: TourSelectionOption) => t._id === tourId)
+        setSelectedTour(currentTour || null)
+      }
     } catch (error) {
-      console.error("Error fetching users:", error)
-      toast.error("Error al cargar los usuarios")
+      console.error("Error loading data:", error)
+      toast.error("Error al cargar los datos")
     }
-  }, [])
+  }, [tourId])
 
   useEffect(() => {
     if (open) {
-      fetchTours()
-      fetchUsers()
+      loadData()
     }
-  }, [open, fetchTours, fetchUsers])
+  }, [open, loadData])
+
+  // Extract dependency to avoid complex expression
+  const itemsPeople = formData.items?.[0]?.people || 0
 
   useEffect(() => {
-    if (selectedTour && formData.people > 0) {
+    if (selectedTour && itemsPeople > 0) {
+      const newTotal = selectedTour.price * itemsPeople
       setFormData((prev) => ({
         ...prev,
-        totalPrice: selectedTour.price * formData.people,
+        items: [
+          {
+            ...prev.items![0],
+            pricePerPerson: selectedTour.price,
+            total: newTotal,
+          },
+        ],
+        totalPrice: newTotal,
       }))
     }
-  }, [selectedTour, formData.people])
+  }, [selectedTour, itemsPeople])
 
   const handleTourChange = (tourId: string) => {
     const tour = tours.find((t) => t._id === tourId)
     setSelectedTour(tour || null)
+    const people = formData.items?.[0]?.people || 1
+    const pricePerPerson = tour?.price || 0
+    const total = pricePerPerson * people
+
     setFormData((prev) => ({
       ...prev,
-      tour: tourId,
-      totalPrice: tour && prev.people ? tour.price * prev.people : prev.totalPrice,
+      items: [
+        {
+          ...prev.items![0],
+          tour: tourId,
+          pricePerPerson,
+          total,
+        },
+      ],
+      totalPrice: total,
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.tour || !formData.customer.fullName || !formData.customer.email || !formData.startDate) {
+    if (
+      !formData.items?.[0]?.tour ||
+      !formData.customer?.fullName ||
+      !formData.customer?.email ||
+      !formData.items?.[0]?.startDate
+    ) {
       toast.error("Por favor completa todos los campos obligatorios")
       return
     }
 
     try {
       setLoading(true)
-      await api.patch(`/orders/${order._id}`, formData)
+      await updateOrder(order._id, formData)
       toast.success("Reserva actualizada exitosamente")
       onOrderUpdated()
       setOpen(false)
     } catch (error) {
       console.error("Error updating order:", error)
-      const errorMessage =
-        error instanceof Error && "response" in error
-          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
-          : "Error al actualizar la reserva"
-      toast.error(errorMessage || "Error al actualizar la reserva")
+      toast.error("Error al actualizar la reserva")
     } finally {
       setLoading(false)
     }
@@ -207,8 +156,39 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
 
   // Format date for datetime-local input
   const formatDateForInput = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toISOString().slice(0, 16)
+    try {
+      const date = new Date(dateString)
+      return date.toISOString().slice(0, 16)
+    } catch {
+      return ""
+    }
+  }
+
+  // Si no hay tour, mostrar mensaje de error
+  if (!order.tour) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button variant="outline" size="sm" disabled>
+              <Edit className="mr-2 h-4 w-4" />
+              Editar
+            </Button>
+          )}
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Error</DialogTitle>
+            <DialogDescription>
+              No se puede editar esta reserva porque no tiene información del tour asociado.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setOpen(false)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   return (
@@ -228,10 +208,10 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Selección de Tour */}
+          {/* Tour Selection */}
           <div className="space-y-2">
             <Label htmlFor="tour">Tour *</Label>
-            <Select value={formData.tour} onValueChange={handleTourChange}>
+            <Select value={formData.items?.[0]?.tour || ""} onValueChange={handleTourChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un tour" />
               </SelectTrigger>
@@ -250,7 +230,7 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
             </Select>
           </div>
 
-          {/* Información del Cliente */}
+          {/* Customer Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Información del Cliente</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -258,11 +238,16 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
                 <Label htmlFor="fullName">Nombre Completo *</Label>
                 <Input
                   id="fullName"
-                  value={formData.customer.fullName}
+                  value={formData.customer?.fullName || ""}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      customer: { ...prev.customer, fullName: e.target.value },
+                      customer: {
+                        fullName: e.target.value,
+                        email: prev.customer?.email || "",
+                        phone: prev.customer?.phone || "",
+                        nationality: prev.customer?.nationality || "",
+                      },
                     }))
                   }
                   placeholder="Nombre completo del cliente"
@@ -273,11 +258,16 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
                 <Input
                   id="email"
                   type="email"
-                  value={formData.customer.email}
+                  value={formData.customer?.email || ""}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      customer: { ...prev.customer, email: e.target.value },
+                      customer: {
+                        fullName: prev.customer?.fullName || "",
+                        email: e.target.value,
+                        phone: prev.customer?.phone || "",
+                        nationality: prev.customer?.nationality || "",
+                      },
                     }))
                   }
                   placeholder="email@ejemplo.com"
@@ -287,11 +277,16 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
                 <Label htmlFor="phone">Teléfono</Label>
                 <Input
                   id="phone"
-                  value={formData.customer.phone}
+                  value={formData.customer?.phone || ""}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      customer: { ...prev.customer, phone: e.target.value },
+                      customer: {
+                        fullName: prev.customer?.fullName || "",
+                        email: prev.customer?.email || "",
+                        phone: e.target.value,
+                        nationality: prev.customer?.nationality || "",
+                      },
                     }))
                   }
                   placeholder="+51 999 999 999"
@@ -301,11 +296,16 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
                 <Label htmlFor="nationality">Nacionalidad</Label>
                 <Input
                   id="nationality"
-                  value={formData.customer.nationality}
+                  value={formData.customer?.nationality || ""}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      customer: { ...prev.customer, nationality: e.target.value },
+                      customer: {
+                        fullName: prev.customer?.fullName || "",
+                        email: prev.customer?.email || "",
+                        phone: prev.customer?.phone || "",
+                        nationality: e.target.value,
+                      },
                     }))
                   }
                   placeholder="PE, US, BR, etc."
@@ -314,7 +314,7 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
             </div>
           </div>
 
-          {/* Detalles de la Reserva */}
+          {/* Booking Details */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Detalles de la Reserva</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -325,8 +325,18 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
                   <Input
                     id="startDate"
                     type="datetime-local"
-                    value={formData.startDate ? formatDateForInput(formData.startDate) : ""}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, startDate: e.target.value }))}
+                    value={formData.items?.[0]?.startDate ? formatDateForInput(formData.items[0].startDate) : ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        items: [
+                          {
+                            ...prev.items![0],
+                            startDate: e.target.value,
+                          },
+                        ],
+                      }))
+                    }
                     className="pl-10"
                   />
                 </div>
@@ -339,8 +349,24 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
                     id="people"
                     type="number"
                     min="1"
-                    value={formData.people}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, people: Number.parseInt(e.target.value) || 1 }))}
+                    value={formData.items?.[0]?.people || 1}
+                    onChange={(e) => {
+                      const people = Number.parseInt(e.target.value) || 1
+                      const pricePerPerson = selectedTour?.price || formData.items?.[0]?.pricePerPerson || 0
+                      const total = pricePerPerson * people
+
+                      setFormData((prev) => ({
+                        ...prev,
+                        items: [
+                          {
+                            ...prev.items![0],
+                            people,
+                            total,
+                          },
+                        ],
+                        totalPrice: total,
+                      }))
+                    }}
                     className="pl-10"
                   />
                 </div>
@@ -353,7 +379,7 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
                     id="totalPrice"
                     type="number"
                     step="0.01"
-                    value={formData.totalPrice}
+                    value={formData.totalPrice || 0}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, totalPrice: Number.parseFloat(e.target.value) || 0 }))
                     }
@@ -364,7 +390,7 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
             </div>
           </div>
 
-          {/* Estado y Información Adicional */}
+          {/* Additional Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Información Adicional</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -390,7 +416,7 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
               <div className="space-y-2">
                 <Label htmlFor="user">Asignar a Usuario</Label>
                 <Select
-                  value={formData.user}
+                  value={formData.user || ""}
                   onValueChange={(value) => setFormData((prev) => ({ ...prev, user: value }))}
                 >
                   <SelectTrigger>
@@ -419,8 +445,18 @@ export function OrderEditDialog({ trigger, order, onOrderUpdated }: OrderEditDia
               <Label htmlFor="notes">Notas</Label>
               <Textarea
                 id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                value={formData.items?.[0]?.notes || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    items: [
+                      {
+                        ...prev.items![0],
+                        notes: e.target.value,
+                      },
+                    ],
+                  }))
+                }
                 placeholder="Notas adicionales sobre la reserva..."
                 rows={3}
               />

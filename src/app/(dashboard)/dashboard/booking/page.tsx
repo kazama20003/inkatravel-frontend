@@ -44,13 +44,13 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from "date-fns"
 import { es } from "date-fns/locale"
-import type { Order, OrdersQueryParams } from "@/types/order"
-import { getOrders, deleteOrder } from "@/lib/orders-api"
-import { OrderFormDialog } from "@/components/booking/order-form-dialog"
 import Image from "next/image"
+import { OrderFormDialog } from "@/components/booking/order-form-dialog"
 import { OrderEditDialog } from "@/components/booking/order-edit-dialog"
+import { getOrders, deleteOrder } from "@/lib/orders-api"
+import type { Order, OrdersQueryParams } from "@/types/order"
 
-// Función helper para formatear precios de forma segura
+// Utility functions
 const formatPrice = (price: number | undefined | null): string => {
   if (price === undefined || price === null || isNaN(price)) {
     return "0"
@@ -58,7 +58,6 @@ const formatPrice = (price: number | undefined | null): string => {
   return price.toLocaleString()
 }
 
-// Función helper para obtener precio seguro
 const getSafePrice = (price: number | undefined | null): number => {
   if (price === undefined || price === null || isNaN(price)) {
     return 0
@@ -69,7 +68,7 @@ const getSafePrice = (price: number | undefined | null): number => {
 export default function ReservasPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentPage, ] = useState(1)
+  const [currentPage] = useState(1)
   const [, setTotalPages] = useState(1)
   const [totalOrders, setTotalOrders] = useState(0)
   const [searchTerm, setSearchTerm] = useState("")
@@ -93,18 +92,10 @@ export default function ReservasPage() {
       if (searchTerm) params.search = searchTerm
       if (statusFilter && statusFilter !== "all") params.status = statusFilter
 
-      console.log("Fetching orders with params:", params) // Debug
-
       const response = await getOrders(params)
 
-      console.log("Orders response:", response) // Debug
-
-      // Verificar que la respuesta tenga la estructura esperada
       if (response && response.data && Array.isArray(response.data)) {
         setOrders(response.data)
-        console.log("Orders set:", response.data.length) // Debug
-
-        // Verificar que meta existe antes de acceder a sus propiedades
         if (response.meta) {
           setTotalPages(response.meta.totalPages || 1)
           setTotalOrders(response.meta.total || 0)
@@ -113,8 +104,6 @@ export default function ReservasPage() {
           setTotalOrders(response.data.length)
         }
       } else {
-        // Si la respuesta no tiene la estructura esperada, establecer valores por defecto
-        console.warn("Respuesta inesperada de la API:", response)
         setOrders([])
         setTotalPages(1)
         setTotalOrders(0)
@@ -123,11 +112,7 @@ export default function ReservasPage() {
     } catch (error) {
       console.error("Error fetching orders:", error)
       setError("Error al cargar las reservas")
-      if (error instanceof Error && error.message.includes("tours")) {
-        setError("Error al cargar las reservas. El servidor devolvió tours en lugar de órdenes.")
-      }
       toast.error("Error al cargar las reservas")
-      // Set empty data on error to prevent crashes
       setOrders([])
       setTotalPages(1)
       setTotalOrders(0)
@@ -182,12 +167,11 @@ export default function ReservasPage() {
     }
   }
 
-  // Funciones del calendario
+  // Calendar functions
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
   const calendarDays = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
-  // Obtener órdenes para un día específico
   const getOrdersForDay = (day: Date) => {
     return orders.filter((order) => {
       try {
@@ -199,7 +183,6 @@ export default function ReservasPage() {
     })
   }
 
-  // Navegación del calendario
   const navigateMonth = (direction: "prev" | "next") => {
     if (direction === "prev") {
       setCurrentDate(subMonths(currentDate, 1))
@@ -208,7 +191,7 @@ export default function ReservasPage() {
     }
   }
 
-  // Estadísticas - con verificaciones de seguridad para precios
+  // Statistics
   const confirmedOrders = orders.filter((o) => o.status === "confirmed").length
   const createdOrders = orders.filter((o) => o.status === "created").length
   const completedOrders = orders.filter((o) => o.status === "completed").length
@@ -268,59 +251,26 @@ export default function ReservasPage() {
       </header>
 
       <div className="flex flex-1 flex-col gap-4 sm:gap-6 p-4 sm:p-6">
-        {/* Error Alert - Mejorado */}
+        {/* Error Alert */}
         {error && (
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-4">
               <div className="flex items-start gap-3 text-red-800">
                 <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <h4 className="font-semibold text-sm mb-2">❌ Problema del Backend Detectado</h4>
+                  <h4 className="font-semibold text-sm mb-2">❌ Error del Sistema</h4>
                   <p className="text-sm mb-3">{error}</p>
-
-                  {error.includes("tours") && (
-                    <div className="bg-red-100 p-3 rounded-lg text-xs space-y-2">
-                      <p>
-                        <strong>🔍 Diagnóstico:</strong>
-                      </p>
-                      <ul className="list-disc list-inside space-y-1 ml-2">
-                        <li>
-                          El endpoint <code>/orders</code> está devolviendo datos de tours
-                        </li>
-                        <li>Debería devolver datos de órdenes/reservas</li>
-                        <li>Verificar la configuración del controlador en el backend</li>
-                      </ul>
-
-                      <p>
-                        <strong>🛠️ Solución requerida en el backend:</strong>
-                      </p>
-                      <ul className="list-disc list-inside space-y-1 ml-2">
-                        <li>
-                          Verificar que <code>GET /orders</code> llame al controlador correcto
-                        </li>
-                        <li>
-                          Asegurar que devuelva órdenes con estructura:{" "}
-                          <code>{`{customer, items, totalPrice, status}`}</code>
-                        </li>
-                        <li>
-                          No debe devolver tours con estructura: <code>{`{title, subtitle, price, duration}`}</code>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={fetchOrders}>
-                    <RefreshCw className="h-4 w-4 mr-1" />
-                    Reintentar
-                  </Button>
-                </div>
+                <Button variant="outline" size="sm" onClick={fetchOrders}>
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Reintentar
+                </Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Estadísticas */}
+        {/* Statistics */}
         <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -332,6 +282,7 @@ export default function ReservasPage() {
               <p className="text-xs text-muted-foreground">{format(currentDate, "MMM yyyy", { locale: es })}</p>
             </CardContent>
           </Card>
+
           <Card className="border-l-4 border-l-emerald-500">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">Confirmadas</CardTitle>
@@ -342,6 +293,7 @@ export default function ReservasPage() {
               <p className="text-xs text-muted-foreground">+{completedOrders} completadas</p>
             </CardContent>
           </Card>
+
           <Card className="border-l-4 border-l-amber-500">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">Pendientes</CardTitle>
@@ -352,6 +304,7 @@ export default function ReservasPage() {
               <p className="text-xs text-muted-foreground">Requieren atención</p>
             </CardContent>
           </Card>
+
           <Card className="border-l-4 border-l-green-500 col-span-2 lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">Ingresos</CardTitle>
@@ -365,7 +318,7 @@ export default function ReservasPage() {
         </div>
 
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-4">
-          {/* Calendario/Lista principal */}
+          {/* Main Calendar/List */}
           <Card className="lg:col-span-3">
             <CardHeader className="pb-4">
               <div className="flex flex-col gap-4">
@@ -401,7 +354,7 @@ export default function ReservasPage() {
                   </div>
                 </div>
 
-                {/* Controles del calendario */}
+                {/* Calendar controls */}
                 {viewMode === "calendar" && (
                   <div className="flex items-center justify-between">
                     <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")}>
@@ -418,7 +371,7 @@ export default function ReservasPage() {
                   </div>
                 )}
 
-                {/* Filtros para vista lista */}
+                {/* List view filters */}
                 {viewMode === "list" && (
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <div className="relative flex-1">
@@ -450,9 +403,9 @@ export default function ReservasPage() {
 
             <CardContent className="p-0">
               {viewMode === "calendar" ? (
-                // Vista de Calendario
+                // Calendar View
                 <div className="p-3 sm:p-6">
-                  {/* Encabezados de días */}
+                  {/* Day headers */}
                   <div className="grid grid-cols-7 gap-1 mb-4">
                     {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map((day) => (
                       <div
@@ -465,7 +418,7 @@ export default function ReservasPage() {
                     ))}
                   </div>
 
-                  {/* Días del calendario */}
+                  {/* Calendar days */}
                   <div className="grid grid-cols-7 gap-1">
                     {calendarDays.map((day) => {
                       const dayOrders = getOrdersForDay(day)
@@ -495,7 +448,7 @@ export default function ReservasPage() {
                           </div>
 
                           <div className="space-y-1">
-                            {/* Mostrar órdenes visibles */}
+                            {/* Show visible orders */}
                             {(isExpanded ? dayOrders : dayOrders.slice(0, maxVisible)).map((order) => (
                               <div
                                 key={order._id}
@@ -522,27 +475,29 @@ export default function ReservasPage() {
                                   <span className="text-xs">S/{formatPrice(order.totalPrice)}</span>
                                 </div>
 
-                                {/* Botón de editar en hover - Solo visible en hover */}
-                                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <OrderEditDialog
-                                    order={order}
-                                    onOrderUpdated={fetchOrders}
-                                    trigger={
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-5 w-5 p-0 bg-white/90 hover:bg-white shadow-sm"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        <Edit className="h-3 w-3" />
-                                      </Button>
-                                    }
-                                  />
-                                </div>
+                                {/* Edit button on hover - Solo mostrar si el tour existe */}
+                                {order.tour && (
+                                  <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <OrderEditDialog
+                                      order={order}
+                                      onOrderUpdated={fetchOrders}
+                                      trigger={
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-5 w-5 p-0 bg-white/90 hover:bg-white shadow-sm"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </Button>
+                                      }
+                                    />
+                                  </div>
+                                )}
                               </div>
                             ))}
 
-                            {/* Botón para mostrar más órdenes */}
+                            {/* Show more button */}
                             {dayOrders.length > maxVisible && (
                               <div
                                 className="text-xs text-center text-muted-foreground py-1 bg-muted/50 rounded cursor-pointer hover:bg-muted/70 transition-colors flex items-center justify-center gap-1"
@@ -558,7 +513,7 @@ export default function ReservasPage() {
                     })}
                   </div>
 
-                  {/* Mensaje si no hay órdenes */}
+                  {/* Empty state */}
                   {orders.length === 0 && !loading && !error && (
                     <div className="text-center py-8 text-muted-foreground">
                       <CalendarIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
@@ -566,39 +521,14 @@ export default function ReservasPage() {
                       <p className="text-xs">Las reservas aparecerán aquí cuando se creen</p>
                     </div>
                   )}
-
-                  {/* Mensaje si hay error del backend */}
-                  {orders.length === 0 && !loading && error && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-30 text-red-400" />
-                      <p className="text-sm font-medium mb-1">No se pueden cargar las reservas</p>
-                      <p className="text-xs">Problema del backend detectado</p>
-                      <Button variant="outline" size="sm" onClick={fetchOrders} className="mt-3">
-                        <RefreshCw className="h-4 w-4 mr-1" />
-                        Reintentar
-                      </Button>
-                    </div>
-                  )}
                 </div>
               ) : (
-                // Vista de Lista
+                // List View
                 <ScrollArea className="h-[400px] sm:h-[600px]">
                   <div className="space-y-3 sm:space-y-4 p-3 sm:p-6">
                     {orders.length === 0 ? (
-                      <div className="text-center py-8">
-                        {error ? (
-                          <div className="text-muted-foreground">
-                            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-30 text-red-400" />
-                            <p className="text-sm font-medium mb-1">No se pueden cargar las reservas</p>
-                            <p className="text-xs">Problema del backend detectado</p>
-                            <Button variant="outline" size="sm" onClick={fetchOrders} className="mt-3">
-                              <RefreshCw className="h-4 w-4 mr-1" />
-                              Reintentar
-                            </Button>
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground">No hay reservas disponibles</p>
-                        )}
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No hay reservas disponibles</p>
                       </div>
                     ) : (
                       orders.map((order) => (
@@ -639,7 +569,6 @@ export default function ReservasPage() {
                                     {getStatusText(order.status)}
                                   </Badge>
                                 </div>
-
                                 <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
                                   <div className="flex items-center gap-1">
                                     <CalendarIcon className="h-3 w-3 text-muted-foreground" />
@@ -664,20 +593,22 @@ export default function ReservasPage() {
                                 </div>
                               </div>
                             </div>
-
                             <div className="flex justify-end gap-2 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t">
                               <Button variant="ghost" size="sm">
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <OrderEditDialog
-                                order={order}
-                                onOrderUpdated={fetchOrders}
-                                trigger={
-                                  <Button variant="ghost" size="sm">
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                }
-                              />
+                              {/* Solo mostrar botón de editar si el tour existe */}
+                              {order.tour && (
+                                <OrderEditDialog
+                                  order={order}
+                                  onOrderUpdated={fetchOrders}
+                                  trigger={
+                                    <Button variant="ghost" size="sm">
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  }
+                                />
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -699,7 +630,7 @@ export default function ReservasPage() {
             </CardContent>
           </Card>
 
-          {/* Panel de detalles - Responsive */}
+          {/* Details Panel */}
           <Card className="lg:sticky lg:top-6">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -715,7 +646,7 @@ export default function ReservasPage() {
               {selectedOrder ? (
                 <ScrollArea className="h-[300px] sm:h-[500px] pr-4">
                   <div className="space-y-3 sm:space-y-4">
-                    {/* Header del cliente */}
+                    {/* Customer header */}
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                         <AvatarFallback className="text-xs sm:text-sm">
@@ -742,7 +673,7 @@ export default function ReservasPage() {
                       </div>
                     </div>
 
-                    {/* Información del tour */}
+                    {/* Tour information */}
                     {selectedOrder.tour && (
                       <div className="space-y-2 sm:space-y-3">
                         <div className="relative w-full h-20 sm:h-24">
@@ -754,7 +685,6 @@ export default function ReservasPage() {
                             className="object-cover rounded-lg"
                           />
                         </div>
-
                         <div>
                           <h4 className="font-semibold text-xs sm:text-sm mb-1">{selectedOrder.tour.title}</h4>
                           {selectedOrder.tour.subtitle && (
@@ -775,49 +705,17 @@ export default function ReservasPage() {
                               <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                               <span>Precio base: S/{formatPrice(selectedOrder.tour.price)}</span>
                             </div>
-                            {selectedOrder.tour.category && (
-                              <div className="flex items-center gap-1">
-                                <span className="text-muted-foreground">Categoría:</span>
-                                <Badge variant="secondary" className="text-xs">
-                                  {selectedOrder.tour.category}
-                                </Badge>
-                              </div>
-                            )}
-                            {selectedOrder.tour.difficulty && (
-                              <div className="flex items-center gap-1">
-                                <span className="text-muted-foreground">Dificultad:</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {selectedOrder.tour.difficulty}
-                                </Badge>
-                              </div>
-                            )}
                           </div>
                         </div>
-
-                        {/* Highlights del tour */}
-                        {selectedOrder.tour.highlights && selectedOrder.tour.highlights.length > 0 && (
-                          <div className="space-y-1">
-                            <h6 className="font-medium text-xs text-muted-foreground">DESTACADOS</h6>
-                            <ul className="text-xs space-y-1">
-                              {selectedOrder.tour.highlights.slice(0, 3).map((highlight, index) => (
-                                <li key={index} className="flex items-start gap-1">
-                                  <span className="text-green-500 mt-0.5">•</span>
-                                  <span>{highlight}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
                       </div>
                     )}
 
-                    {/* Información de la reserva */}
+                    {/* Booking details */}
                     <div className="space-y-2 sm:space-y-3 border-t pt-2 sm:pt-3">
                       <h5 className="font-semibold text-xs sm:text-sm text-muted-foreground">DETALLES DE LA RESERVA</h5>
-
                       <div className="grid grid-cols-1 gap-2 sm:gap-3">
                         <div className="flex items-center gap-2">
-                          <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                          <CalendarIcon className="h-3 w-3 text-muted-foreground" />
                           <div className="flex-1">
                             <p className="font-medium text-xs sm:text-sm">Fecha de inicio</p>
                             <p className="text-xs text-muted-foreground">
@@ -827,9 +725,8 @@ export default function ReservasPage() {
                             </p>
                           </div>
                         </div>
-
                         <div className="flex items-center gap-2">
-                          <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                          <Users className="h-3 w-3 text-muted-foreground" />
                           <div className="flex-1">
                             <p className="font-medium text-xs sm:text-sm">{selectedOrder.people || 0} personas</p>
                             <p className="text-xs text-muted-foreground">
@@ -837,25 +734,14 @@ export default function ReservasPage() {
                             </p>
                           </div>
                         </div>
-
-                        {selectedOrder.paymentMethod && (
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                            <div className="flex-1">
-                              <p className="font-medium text-xs sm:text-sm">Método de pago</p>
-                              <p className="text-xs text-muted-foreground capitalize">{selectedOrder.paymentMethod}</p>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
 
-                    {/* Información del cliente */}
+                    {/* Customer information */}
                     <div className="space-y-2 sm:space-y-3 border-t pt-2 sm:pt-3">
                       <h5 className="font-semibold text-xs sm:text-sm text-muted-foreground">
                         INFORMACIÓN DEL CLIENTE
                       </h5>
-
                       <div className="space-y-1 sm:space-y-2">
                         <div className="flex items-center gap-2 text-xs">
                           <User className="h-3 w-3 text-muted-foreground" />
@@ -864,7 +750,6 @@ export default function ReservasPage() {
                             <span className="ml-1">{selectedOrder.customer?.fullName || "No especificado"}</span>
                           </div>
                         </div>
-
                         <div className="flex items-center gap-2 text-xs">
                           <Mail className="h-3 w-3 text-muted-foreground" />
                           <div className="flex-1">
@@ -872,7 +757,6 @@ export default function ReservasPage() {
                             <span className="ml-1 break-all">{selectedOrder.customer?.email || "No especificado"}</span>
                           </div>
                         </div>
-
                         {selectedOrder.customer?.phone && (
                           <div className="flex items-center gap-2 text-xs">
                             <Phone className="h-3 w-3 text-muted-foreground" />
@@ -882,71 +766,24 @@ export default function ReservasPage() {
                             </div>
                           </div>
                         )}
-
-                        {selectedOrder.customer?.nationality && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <MapPin className="h-3 w-3 text-muted-foreground" />
-                            <div className="flex-1">
-                              <span className="font-medium">Nacionalidad:</span>
-                              <span className="ml-1">{selectedOrder.customer.nationality}</span>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
 
-                    {/* Notas */}
-                    {selectedOrder.notes && (
-                      <div className="space-y-2 border-t pt-2 sm:pt-3">
-                        <h5 className="font-semibold text-xs sm:text-sm text-muted-foreground">NOTAS ESPECIALES</h5>
-                        <div className="text-xs text-muted-foreground bg-muted/50 p-2 sm:p-3 rounded-lg">
-                          <p>{selectedOrder.notes}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Información de fechas del sistema */}
-                    <div className="space-y-2 border-t pt-2 sm:pt-3">
-                      <h5 className="font-semibold text-xs sm:text-sm text-muted-foreground">
-                        INFORMACIÓN DEL SISTEMA
-                      </h5>
-
-                      <div className="grid grid-cols-1 gap-1 sm:gap-2 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Creada:</span>
-                          <span>
-                            {selectedOrder.createdAt
-                              ? format(new Date(selectedOrder.createdAt), "dd/MM/yy", { locale: es })
-                              : "N/A"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Actualizada:</span>
-                          <span>
-                            {selectedOrder.updatedAt
-                              ? format(new Date(selectedOrder.updatedAt), "dd/MM/yy", { locale: es })
-                              : "N/A"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">ID:</span>
-                          <span className="font-mono text-xs truncate">{selectedOrder._id.slice(-8)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Acciones */}
+                    {/* Actions */}
                     <div className="flex flex-col sm:flex-row gap-2 pt-3 sm:pt-4 border-t">
-                      <OrderEditDialog
-                        order={selectedOrder}
-                        onOrderUpdated={fetchOrders}
-                        trigger={
-                          <Button size="sm" className="flex-1 text-xs sm:text-sm">
-                            Editar
-                          </Button>
-                        }
-                      />
-                      <Button variant="outline" size="sm" className="flex-1 text-xs sm:text-sm">
+                      {/* Solo mostrar botón de editar si el tour existe */}
+                      {selectedOrder.tour && (
+                        <OrderEditDialog
+                          order={selectedOrder}
+                          onOrderUpdated={fetchOrders}
+                          trigger={
+                            <Button size="sm" className="flex-1 text-xs sm:text-sm">
+                              Editar
+                            </Button>
+                          }
+                        />
+                      )}
+                      <Button variant="outline" size="sm" className="flex-1 text-xs sm:text-sm bg-transparent">
                         Imprimir
                       </Button>
                     </div>

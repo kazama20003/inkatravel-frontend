@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,44 +17,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Calendar, Users, DollarSign } from "lucide-react"
-import { api } from "@/lib/axiosInstance"
 import { toast } from "sonner"
-
-interface TourSelectionOption {
-  _id: string
-  title: string
-  price: number
-  duration: string
-  region: string
-}
-
-interface UserOption {
-  _id: string
-  fullName: string
-}
-
-interface CustomerInfo {
-  fullName: string
-  email: string
-  phone: string
-  nationality: string
-}
-
-interface CreateOrderDto {
-  tour: string
-  customer: CustomerInfo
-  startDate: string
-  people: number
-  totalPrice: number
-  paymentMethod: string
-  notes: string
-  discountCodeUsed: string
-  user: string
-}
-
-interface ApiResponse<T> {
-  data: T
-}
+import { getToursForSelection, createOrder } from "@/lib/orders-api"
+import type { TourSelectionOption, CreateMultiOrderDto } from "@/types/order"
 
 interface OrderFormDialogProps {
   trigger?: React.ReactNode
@@ -66,106 +30,121 @@ export function OrderFormDialog({ trigger, onOrderCreated }: OrderFormDialogProp
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [tours, setTours] = useState<TourSelectionOption[]>([])
-  const [users, setUsers] = useState<UserOption[]>([])
   const [selectedTour, setSelectedTour] = useState<TourSelectionOption | null>(null)
-
-  const [formData, setFormData] = useState<CreateOrderDto>({
-    tour: "",
+  const [formData, setFormData] = useState<CreateMultiOrderDto>({
+    items: [
+      {
+        tour: "",
+        startDate: "",
+        people: 1,
+        pricePerPerson: 0,
+        total: 0,
+        notes: "",
+      },
+    ],
     customer: {
       fullName: "",
       email: "",
       phone: "",
       nationality: "",
     },
-    startDate: "",
-    people: 1,
     totalPrice: 0,
     paymentMethod: "",
     notes: "",
     discountCodeUsed: "",
-    user: "",
   })
 
-  const fetchTours = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
-      const response = await api.get<ApiResponse<TourSelectionOption[]>>("/tours")
-      const toursData = response.data.data || response.data
-      setTours(
-        Array.isArray(toursData)
-          ? toursData.map((tour) => ({
-              _id: tour._id,
-              title: tour.title,
-              price: tour.price,
-              duration: tour.duration,
-              region: tour.region,
-            }))
-          : [],
-      )
+      const toursData = await getToursForSelection()
+      setTours(toursData)
     } catch (error) {
-      console.error("Error fetching tours:", error)
-      toast.error("Error al cargar los tours")
-    }
-  }, [])
-
-  const fetchUsers = useCallback(async () => {
-    try {
-      const response = await api.get<ApiResponse<UserOption[]>>("/users/names")
-      const usersData = response.data.data || response.data
-      setUsers(Array.isArray(usersData) ? usersData : [])
-    } catch (error) {
-      console.error("Error fetching users:", error)
-      toast.error("Error al cargar los usuarios")
+      console.error("Error loading data:", error)
+      toast.error("Error al cargar los datos")
     }
   }, [])
 
   useEffect(() => {
     if (open) {
-      fetchTours()
-      fetchUsers()
+      loadData()
     }
-  }, [open, fetchTours, fetchUsers])
+  }, [open, loadData])
+
+  // Extract dependency to avoid complex expression
+  const itemsPeople = formData.items[0]?.people || 0
 
   useEffect(() => {
-    if (selectedTour && formData.people > 0) {
+    if (selectedTour && itemsPeople > 0) {
+      const newTotal = selectedTour.price * itemsPeople
       setFormData((prev) => ({
         ...prev,
-        totalPrice: selectedTour.price * formData.people,
+        items: [
+          {
+            ...prev.items[0],
+            pricePerPerson: selectedTour.price,
+            total: newTotal,
+          },
+        ],
+        totalPrice: newTotal,
       }))
     }
-  }, [selectedTour, formData.people])
+  }, [selectedTour, itemsPeople])
 
   const handleTourChange = (tourId: string) => {
     const tour = tours.find((t) => t._id === tourId)
     setSelectedTour(tour || null)
+    const people = formData.items[0]?.people || 1
+    const pricePerPerson = tour?.price || 0
+    const total = pricePerPerson * people
+
     setFormData((prev) => ({
       ...prev,
-      tour: tourId,
-      totalPrice: tour ? tour.price * prev.people : 0,
+      items: [
+        {
+          ...prev.items[0],
+          tour: tourId,
+          pricePerPerson,
+          total,
+        },
+      ],
+      totalPrice: total,
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.tour || !formData.customer.fullName || !formData.customer.email || !formData.startDate) {
+    if (
+      !formData.items[0].tour ||
+      !formData.customer.fullName ||
+      !formData.customer.email ||
+      !formData.items[0].startDate
+    ) {
       toast.error("Por favor completa todos los campos obligatorios")
       return
     }
 
     try {
       setLoading(true)
-      await api.post("/orders", formData)
+      // Convertir CreateMultiOrderDto a CreateOrderDto para la API
+      const orderData = {
+        tour: formData.items[0].tour,
+        customer: formData.customer,
+        startDate: formData.items[0].startDate,
+        people: formData.items[0].people,
+        totalPrice: formData.totalPrice,
+        paymentMethod: formData.paymentMethod,
+        notes: formData.items[0].notes,
+        discountCodeUsed: formData.discountCodeUsed,
+      }
+      await createOrder(orderData)
       toast.success("Reserva creada exitosamente")
       onOrderCreated()
       setOpen(false)
       resetForm()
     } catch (error) {
       console.error("Error creating order:", error)
-      const errorMessage =
-        error instanceof Error && "response" in error
-          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
-          : "Error al crear la reserva"
-      toast.error(errorMessage || "Error al crear la reserva")
+      toast.error("Error al crear la reserva")
     } finally {
       setLoading(false)
     }
@@ -173,20 +152,26 @@ export function OrderFormDialog({ trigger, onOrderCreated }: OrderFormDialogProp
 
   const resetForm = () => {
     setFormData({
-      tour: "",
+      items: [
+        {
+          tour: "",
+          startDate: "",
+          people: 1,
+          pricePerPerson: 0,
+          total: 0,
+          notes: "",
+        },
+      ],
       customer: {
         fullName: "",
         email: "",
         phone: "",
         nationality: "",
       },
-      startDate: "",
-      people: 1,
       totalPrice: 0,
       paymentMethod: "",
       notes: "",
       discountCodeUsed: "",
-      user: "",
     })
     setSelectedTour(null)
   }
@@ -208,10 +193,10 @@ export function OrderFormDialog({ trigger, onOrderCreated }: OrderFormDialogProp
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Selección de Tour */}
+          {/* Tour Selection */}
           <div className="space-y-2">
             <Label htmlFor="tour">Tour *</Label>
-            <Select value={formData.tour} onValueChange={handleTourChange}>
+            <Select value={formData.items[0].tour} onValueChange={handleTourChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un tour" />
               </SelectTrigger>
@@ -230,7 +215,7 @@ export function OrderFormDialog({ trigger, onOrderCreated }: OrderFormDialogProp
             </Select>
           </div>
 
-          {/* Información del Cliente */}
+          {/* Customer Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Información del Cliente</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -294,7 +279,7 @@ export function OrderFormDialog({ trigger, onOrderCreated }: OrderFormDialogProp
             </div>
           </div>
 
-          {/* Detalles de la Reserva */}
+          {/* Booking Details */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Detalles de la Reserva</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -305,8 +290,13 @@ export function OrderFormDialog({ trigger, onOrderCreated }: OrderFormDialogProp
                   <Input
                     id="startDate"
                     type="datetime-local"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, startDate: e.target.value }))}
+                    value={formData.items[0].startDate}
+                    onChange={(e) =>
+                      setFormData((prev) => {
+                        const updatedItems = [{ ...prev.items[0], startDate: e.target.value }]
+                        return { ...prev, items: updatedItems }
+                      })
+                    }
                     className="pl-10"
                   />
                 </div>
@@ -319,8 +309,13 @@ export function OrderFormDialog({ trigger, onOrderCreated }: OrderFormDialogProp
                     id="people"
                     type="number"
                     min="1"
-                    value={formData.people}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, people: Number.parseInt(e.target.value) || 1 }))}
+                    value={formData.items[0].people}
+                    onChange={(e) =>
+                      setFormData((prev) => {
+                        const updatedItems = [{ ...prev.items[0], people: Number.parseInt(e.target.value) || 1 }]
+                        return { ...prev, items: updatedItems }
+                      })
+                    }
                     className="pl-10"
                   />
                 </div>
@@ -344,7 +339,7 @@ export function OrderFormDialog({ trigger, onOrderCreated }: OrderFormDialogProp
             </div>
           </div>
 
-          {/* Información Adicional */}
+          {/* Additional Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Información Adicional</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -367,24 +362,6 @@ export function OrderFormDialog({ trigger, onOrderCreated }: OrderFormDialogProp
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="user">Asignar a Usuario</Label>
-                <Select
-                  value={formData.user}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, user: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un usuario" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user._id} value={user._id}>
-                        {user.fullName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="discountCode">Código de Descuento</Label>
@@ -399,8 +376,13 @@ export function OrderFormDialog({ trigger, onOrderCreated }: OrderFormDialogProp
               <Label htmlFor="notes">Notas</Label>
               <Textarea
                 id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                value={formData.items[0].notes}
+                onChange={(e) =>
+                  setFormData((prev) => {
+                    const updatedItems = [{ ...prev.items[0], notes: e.target.value }]
+                    return { ...prev, items: updatedItems }
+                  })
+                }
                 placeholder="Notas adicionales sobre la reserva..."
                 rows={3}
               />
