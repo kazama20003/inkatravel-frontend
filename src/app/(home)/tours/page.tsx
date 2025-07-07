@@ -111,7 +111,7 @@ const FiltersPanel = ({
   isOpen: boolean
   onToggle: () => void
 }) => {
-  const categories: TourCategory[] = ["Aventura", "Cultural", "Relax", "Naturaleza"]
+  const categories: TourCategory[] = ["Aventura", "Cultural", "Naturaleza"]
   const difficulties: Difficulty[] = ["Facil", "Moderado", "Difícil"]
   const packageTypes: PackageType[] = ["Basico", "Premium"]
 
