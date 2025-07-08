@@ -1,8 +1,8 @@
 {
-  "name": "Inka Travel Peru - Tours y Transporte Turístico",
+  "name": "Inca Travel Peru - Tours y Transporte Turístico",
   "short_name": "Inka Travel",
   "id": "/?source=pwa",
-  "description": "Descubre Perú con Inka Travel Peru. Tours famosos, transporte Cabanaconde-Cusco, agencia de turismo líder.",
+  "description": "Descubre Perú con Inca Travel Peru. Tours famosos, transporte Cabanaconde-Cusco, agencia de turismo líder.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -96,7 +96,7 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Página principal de Inka Travel Peru"
+      "label": "Página principal de Inca Travel Peru"
     },
     {
       "src": "/screenshot/mobile-tours.png",

@@ -8,8 +8,8 @@ import { LanguageProvider } from "@/contexts/LanguageContext"
 export const metadata: Metadata = {
   metadataBase: new URL("https://cabanacondecuscobybus.com"),
   title: {
-    default: "Inka Travel Peru - Agencia de Turismo | Tours Cusco, Cabanaconde, Arequipa",
-    template: "%s | Inka Travel Peru - Agencia de Turismo",
+    default: "Inca Travel Peru - Agencia de Turismo | Tours Cusco, Cabanaconde, Arequipa",
+    template: "%s | Inca Travel Peru - Agencia de Turismo",
   },
   description:
     "Agencia de turismo líder en Perú. Tours a Cusco, Cabanaconde, Arequipa, Machu Picchu. Transporte seguro Cabanaconde-Cusco. Paquetes turísticos, aventura y cultura peruana. Reserva online.",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     "tours arequipa",
     "machu picchu tours",
     "canyon colca tours",
-    "inka travel peru",
+    "inca travel peru",
     "turismo aventura peru",
     "paquetes turisticos peru",
     "transporte turistico peru",
@@ -31,9 +31,9 @@ export const metadata: Metadata = {
     "Cabanaconde transportes",
     "cabanaconde buss",
   ],
-  authors: [{ name: "Inka Travel Peru" }],
-  creator: "Inka Travel Peru",
-  publisher: "Inka Travel Peru",
+  authors: [{ name: "Inca Travel Peru" }],
+  creator: "Inca Travel Peru",
+  publisher: "Inca Travel Peru",
   formatDetection: {
     email: false,
     address: false,
@@ -44,8 +44,8 @@ export const metadata: Metadata = {
     locale: "es_PE",
     alternateLocale: ["en_US", "fr_FR", "de_DE"],
     url: "https://cabanacondecuscobybus.com",
-    siteName: "Inka Travel Peru",
-    title: "Inka Travel Peru - Agencia de Turismo | Tours Cusco, Cabanaconde, Arequipa",
+    siteName: "Inca Travel Peru",
+    title: "Inca Travel Peru - Agencia de Turismo | Tours Cusco, Cabanaconde, Arequipa",
     description:
       "Agencia de turismo líder en Perú. Tours a Cusco, Cabanaconde, Arequipa, Machu Picchu. Transporte seguro Cabanaconde-Cusco. Reserva online.",
     images: [
@@ -53,13 +53,13 @@ export const metadata: Metadata = {
         url: "/screenshot/image.png",
         width: 1200,
         height: 630,
-        alt: "Inka Travel Peru - Tours y Transporte en Perú",
+        alt: "Inca Travel Peru - Tours y Transporte en Perú",
       },
       {
         url: "/screenshot/image.png",
         width: 1200,
         height: 1200,
-        alt: "Inka Travel Peru - Agencia de Turismo",
+        alt: "Inca Travel Peru - Agencia de Turismo",
       },
     ],
   },
@@ -153,7 +153,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "TravelAgency",
-              name: "Inka Travel Peru",
+              name: "Inca Travel Peru",
               description:
                 "Agencia de turismo líder en Perú especializada en tours a Cusco, Cabanaconde, Arequipa y Machu Picchu",
               url: "https://cabanacondecuscobybus.com",
