@@ -158,7 +158,7 @@ export default function RootLayout({
                 "Agencia de turismo líder en Perú especializada en tours a Cusco, Cabanaconde, Arequipa y Machu Picchu",
               url: "https://cabanacondecuscobybus.com",
               logo: "https://cabanacondecuscobybus.com/logo.png",
-              image: "https://cabanacondecuscobybus.com/screenshot/principal.png",
+              image: "https://cabanacondecuscobybus.com/screenshot/image.png",
               telephone: "+51-996-407-040",
               email: "incatravelperu21@gmail.com",
               address: {
