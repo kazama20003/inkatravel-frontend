@@ -97,6 +97,7 @@ interface CreateFormTokenRequest {
   orderId: string
   customer: CustomerDto
   formAction: string
+  paymentForms: string[] // Add this required field
 }
 
 interface FormTokenResponse {
@@ -247,6 +248,7 @@ export default function TransportDetailPage() {
           billingLastName: "Doe", // Optional
         },
         formAction: "PAYMENT",
+        paymentForms: ["CARD"], // Add this required field
       }
 
       const response = await api.post<FormTokenResponse>("/payments/formtoken", payload)
