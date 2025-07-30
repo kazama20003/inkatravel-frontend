@@ -1,21 +1,20 @@
 "use client"
-
-import DynamicFrameLayout from "@/components/home/DynamicFrameLayout"
 import TourPackagesSection from "@/components/home/TourPackagesCarousel"
 import AboutSection from "@/components/home/AboutSection"
 import DiscoverSection from "@/components/home/DiscoverSection"
 import OurServiceSection from "@/components/home/OurServiceSection"
 import TestimonialsSection from "@/components/home/TestimonialsSection"
 import ContactSection from "@/components/home/ContactSection"
-import HeroSection from "@/components/home/herosectionPrincipal"
+import HeroSection from "@/components/home/hero-section"
+
+
 
 export default function HomePage() {
   return (
     <div className="w-full">
-      {/* First Section - Video Layout */}
-      <div className="min-h-screen w-full bg-black">
+        <div className="min-h-screen w-full">
         <HeroSection />
-      </div>
+    </div>
 
       {/* Second Section - Tour Packages Section */}
       <div className="min-h-screen w-full">
@@ -26,10 +25,6 @@ export default function HomePage() {
       <div className="min-h-screen w-full">
         <AboutSection />
       </div>
-      <div className="min-h-screen w-full bg-black">
-        <DynamicFrameLayout />
-      </div>
-
       {/* Fourth Section - Discover Section */}
       <div className="min-h-screen w-full">
         <DiscoverSection />

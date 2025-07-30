@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Globe } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image" // Import Image component
 import { usePathname } from "next/navigation"
 import { useLanguage } from "@/contexts/LanguageContext"
 
@@ -29,37 +30,29 @@ export default function AnimatedHeader({
   const lastScrollPosition = useRef<number>(0)
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
-
   // Usar el contexto de idioma
   const { language, setLanguage, t } = useLanguage()
-
   // Add this useEffect at the beginning of the component, after all useState declarations
   useEffect(() => {
     setMounted(true)
   }, [])
-
   // Track browser scroll position for non-home pages
   useEffect(() => {
     if (useCustomScroll) return // Don't track browser scroll on home page
-
     const handleScroll = () => {
       const currentScrollY = window.scrollY
       setBrowserIsScrollingDown(currentScrollY > lastScrollPosition.current)
       lastScrollPosition.current = currentScrollY
-
       // Calculate scroll position as percentage for header animation
       const scrollPercentage = Math.min(100, (currentScrollY / 300) * 100)
       setBrowserScrollPosition(scrollPercentage)
     }
-
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [useCustomScroll])
-
   // Use the appropriate scroll values based on the page
   const scrollPosition = useCustomScroll ? customScrollPosition : browserScrollPosition
   const isScrollingDown = useCustomScroll ? customIsScrollingDown : browserIsScrollingDown
-
   // Determine current section and colors
   useEffect(() => {
     if (useCustomScroll) {
@@ -81,10 +74,8 @@ export default function AnimatedHeader({
       // Browser scroll logic for other pages
       setCurrentSection("explore") // Default for other pages
     }
-
     setIsCompact(isScrollingDown && scrollPosition > 10)
   }, [scrollPosition, isScrollingDown, useCustomScroll])
-
   // Simplified color scheme using CSS variables
   const colors = {
     video: {
@@ -118,26 +109,43 @@ export default function AnimatedHeader({
       secondary: "var(--peru-orange)",
     },
   }
-
   const currentColors = colors[currentSection]
-
-  // Idiomas disponibles
+  // Idiomas disponibles con URLs de banderas
   const languages = [
-    { code: "ES", name: "Español", lang: "es" as const },
-    { code: "EN", name: "English", lang: "en" as const },
-    { code: "FR", name: "Français", lang: "fr" as const },
-    { code: "DE", name: "Deutsch", lang: "de" as const },
+    {
+      code: "ES",
+      name: "Español",
+      lang: "es" as const,
+      flagUrl:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1753815963/Flag_of_Peru__281825_E2_80_931884_29_b7d2jf.svg",
+    },
+    {
+      code: "EN",
+      name: "English",
+      lang: "en" as const,
+      flagUrl: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1753815974/Englis_ktl98f.png",
+    },
+    {
+      code: "FR",
+      name: "Français",
+      lang: "fr" as const,
+      flagUrl:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1753816016/66d81ab725414fff42aeefdf5fc79aa8-icono-de-idioma-de-la-bandera-de-italia_xhqtgc.png",
+    }, // User provided Italy flag for FR
+    {
+      code: "DE",
+      name: "Deutsch",
+      lang: "de" as const,
+      flagUrl: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1753816030/250px-Flag_of_Germany.svg_xry8ba.png",
+    },
   ]
-
   // Function to close all menus
   const closeAllMenus = () => {
     setIsMenuOpen(false)
     setIsLanguageMenuOpen(false)
   }
-
   // Function to check if a path is active
   const isActive = (path: string) => pathname === path
-
   // Close menu when clicking outside or on escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -145,7 +153,6 @@ export default function AnimatedHeader({
         closeAllMenus()
       }
     }
-
     const handleClickOutside = (e: MouseEvent) => {
       // Cerrar menú de idiomas al hacer clic fuera
       if (isLanguageMenuOpen) {
@@ -155,24 +162,20 @@ export default function AnimatedHeader({
         }
       }
     }
-
     if (isMenuOpen) {
       document.addEventListener("keydown", handleEscape)
       document.body.style.overflow = "hidden"
     } else {
       document.body.style.overflow = "unset"
     }
-
     document.addEventListener("keydown", handleEscape)
     document.addEventListener("mousedown", handleClickOutside)
-
     return () => {
       document.removeEventListener("keydown", handleEscape)
       document.removeEventListener("mousedown", handleClickOutside)
       document.body.style.overflow = "unset"
     }
   }, [isMenuOpen, isLanguageMenuOpen])
-
   if (!mounted) {
     return (
       <header className="fixed top-0 left-0 right-0 z-50 h-[120px]">
@@ -187,35 +190,45 @@ export default function AnimatedHeader({
               </Link>
             </div>
             <div className="flex items-center space-x-3">
-              <button className="px-3 py-2 rounded-full border border-peru-dark text-peru-dark">ES</button>
+              {/* Placeholder for language button with flag */}
+              <button className="px-3 py-2 rounded-full border border-peru-dark text-peru-dark flex items-center space-x-2">
+                <Image
+                  src={languages.find((l) => l.lang === language)?.flagUrl || "/placeholder.svg"}
+                  alt={`${language} flag`}
+                  width={16}
+                  height={16}
+                  className="rounded-full"
+                />
+                <span>ES</span>
+              </button>
               <button className="w-12 h-12 rounded-full border border-peru-dark text-peru-dark"></button>
               <a href="/login" className="px-4 py-2 rounded-full border border-peru-dark text-peru-dark">
-                INICIAR SESIÓN
+                {t.login}
               </a>
-              <button className="px-6 py-3 rounded-full border border-peru-dark text-peru-dark">RESERVAR</button>
+              <button className="px-6 py-3 rounded-full border border-peru-dark text-peru-dark">{t.reserve}</button>
             </div>
           </div>
           <div className="h-[60px]">
             <nav className="max-w-7xl mx-auto px-6 h-15 flex items-center justify-center">
               <div className="flex items-center">
                 <Link href="/" className="text-base font-medium px-6 py-3 brand-text text-peru-dark">
-                  DESTINOS
+                  {t.destinations}
                 </Link>
                 <div className="w-px h-6 bg-peru-dark/30"></div>
                 <Link href="/tours" className="text-base font-medium px-6 py-3 brand-text text-peru-dark">
-                  TOURS
+                  {t.tours}
                 </Link>
                 <div className="w-px h-6 bg-peru-dark/30"></div>
                 <Link href="/itineraries" className="text-base font-medium px-6 py-3 brand-text text-peru-dark">
-                  ITINERARIOS
+                  {t.itineraries}
                 </Link>
                 <div className="w-px h-6 bg-peru-dark/30"></div>
                 <Link href="/when-to-go" className="text-base font-medium px-6 py-3 brand-text text-peru-dark">
-                  CUÁNDO IR
+                  {t.whenToGo}
                 </Link>
                 <div className="w-px h-6 bg-peru-dark/30"></div>
                 <Link href="/about-us" className="text-base font-medium px-6 py-3 brand-text text-peru-dark">
-                  NOSOTROS
+                  {t.aboutUs}
                 </Link>
               </div>
             </nav>
@@ -223,14 +236,30 @@ export default function AnimatedHeader({
         </div>
         <div className="md:hidden">
           <div className="px-4 flex items-center justify-between h-[60px]">
-            <div className="w-12 h-12 rounded-full border-2 border-dotted border-peru-dark"></div>
+            <div className="w-12 h-12 rounded-full border-2 border-dotted flex items-center justify-center flex-shrink-0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
             <Link href="/" className="flex items-center">
               <span className="text-sm body-text mr-2 text-peru-dark">→</span>
               <span className="text-lg brand-text text-peru-dark">PERU TRAVEL</span>
               <span className="text-sm body-text ml-2 text-peru-dark">←</span>
             </Link>
-            <div className="flex items-center space-x-1">
-              <button className="px-2 py-2 rounded-full border border-peru-dark text-peru-dark">ES</button>
+            <div className="flex items-center space-x-1 flex-shrink-0">
+              {/* Placeholder for mobile language button with flag */}
+              <button className="px-2 py-2 rounded-full border border-peru-dark text-peru-dark flex items-center space-x-1">
+                <Image
+                  src={languages.find((l) => l.lang === language)?.flagUrl || "/placeholder.svg"}
+                  alt={`${language} flag`}
+                  width={14}
+                  height={14}
+                  className="rounded-full"
+                />
+                <span>ES</span>
+              </button>
               <a href="/login" className="w-10 h-10 rounded-full border-2 border-dotted border-peru-dark"></a>
               <button className="w-10 h-10 rounded-full border-2 border-dotted border-peru-dark"></button>
             </div>
@@ -239,7 +268,6 @@ export default function AnimatedHeader({
       </header>
     )
   }
-
   return (
     <>
       <motion.header
@@ -284,7 +312,6 @@ export default function AnimatedHeader({
                 <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </motion.button>
-
             {/* Center - Logo/Brand */}
             <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center">
               <Link href="/" onClick={closeAllMenus}>
@@ -308,6 +335,7 @@ export default function AnimatedHeader({
                     transition={{
                       duration: 0.4,
                       ease: [0.16, 1, 0.3, 1],
+                      delay: isCompact ? 0 : 0,
                     }}
                     style={{
                       color: currentColors.text,
@@ -318,7 +346,6 @@ export default function AnimatedHeader({
                     <span className="text-3xl brand-text">PERU TRAVEL</span>
                     <span className="text-lg body-text">←</span>
                   </motion.div>
-
                   {/* Compact "P" */}
                   <motion.div
                     className="flex items-center justify-center space-x-2 absolute top-0 left-0 right-0"
@@ -343,7 +370,6 @@ export default function AnimatedHeader({
                 </motion.div>
               </Link>
             </div>
-
             {/* Right - Language, Search and Reservar */}
             <div className="flex items-center space-x-3">
               {/* Language Selector */}
@@ -366,15 +392,21 @@ export default function AnimatedHeader({
                   transition={{ duration: 0.2 }}
                   onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
                 >
+                  <Image
+                    src={languages.find((l) => l.lang === language)?.flagUrl || "/placeholder.svg"}
+                    alt={`${language} flag`}
+                    width={16}
+                    height={16}
+                    className="rounded-full object-cover"
+                  />
                   <span className="text-sm font-medium brand-text">{language.toUpperCase()}</span>
                   <Globe size={14} />
                 </motion.button>
-
                 {/* Language Dropdown */}
                 <AnimatePresence>
                   {isLanguageMenuOpen && (
                     <motion.div
-                      className="absolute top-full right-0 mt-2 bg-white shadow-lg rounded-md overflow-hidden z-50 w-24"
+                      className="absolute top-full right-0 mt-2 bg-white shadow-lg rounded-md overflow-hidden z-50 w-28"
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -383,7 +415,7 @@ export default function AnimatedHeader({
                       {languages.map((lang) => (
                         <button
                           key={lang.code}
-                          className={`w-full text-center px-3 py-2 text-sm hover:bg-gray-100 transition-colors brand-text ${
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 transition-colors brand-text flex items-center space-x-2 ${
                             language === lang.lang ? "font-medium bg-gray-50" : ""
                           }`}
                           onClick={() => {
@@ -391,14 +423,20 @@ export default function AnimatedHeader({
                             setIsLanguageMenuOpen(false)
                           }}
                         >
-                          {lang.code}
+                          <Image
+                            src={lang.flagUrl || "/placeholder.svg"}
+                            alt={`${lang.name} flag`}
+                            width={16}
+                            height={16}
+                            className="rounded-full object-cover"
+                          />
+                          <span>{lang.name}</span>
                         </button>
                       ))}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-
               {/* Search Button */}
               <motion.button
                 className="w-12 h-12 rounded-full border flex items-center justify-center transition-all duration-300"
@@ -423,7 +461,6 @@ export default function AnimatedHeader({
                   <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </motion.button>
-
               {/* Login Button */}
               <motion.div
                 className="rounded-full"
@@ -468,7 +505,6 @@ export default function AnimatedHeader({
                   <span className="text-sm font-medium brand-text">{t.login}</span>
                 </Link>
               </motion.div>
-
               {/* Reservar Button */}
               <motion.div
                 className="rounded-full"
@@ -500,7 +536,6 @@ export default function AnimatedHeader({
               </motion.div>
             </div>
           </div>
-
           {/* Secondary Navigation */}
           <motion.div
             className="overflow-hidden"
@@ -534,7 +569,7 @@ export default function AnimatedHeader({
               <nav className="max-w-7xl mx-auto px-6 h-15 flex items-center justify-center">
                 <div className="flex items-center">
                   {[
-                    { name: t.destinations, path: "/" },
+                    { name: t.transport, path: "/transport" },
                     { name: t.tours, path: "/tours" },
                     { name: t.itineraries, path: "/itineraries" },
                     { name: t.whenToGo, path: "/when-to-go" },
@@ -588,7 +623,6 @@ export default function AnimatedHeader({
             </motion.div>
           </motion.div>
         </div>
-
         {/* Mobile Header */}
         <div className="md:hidden">
           <div className="px-4 flex items-center justify-between" style={{ height: "60px" }}>
@@ -610,7 +644,6 @@ export default function AnimatedHeader({
                 <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </motion.button>
-
             {/* Center - Logo/Brand */}
             <div className="flex-1 flex items-center justify-center px-6 min-w-0">
               <Link href="/" className="relative flex items-center justify-center" onClick={closeAllMenus}>
@@ -636,7 +669,6 @@ export default function AnimatedHeader({
                   <span className="text-lg brand-text">PERU TRAVEL</span>
                   <span className="text-sm body-text ml-2">←</span>
                 </motion.div>
-
                 {/* Compact "P" */}
                 <motion.div
                   className="flex items-center justify-center"
@@ -664,7 +696,6 @@ export default function AnimatedHeader({
                 </motion.div>
               </Link>
             </div>
-
             {/* Right - Actions */}
             <div className="flex items-center space-x-1 flex-shrink-0">
               {/* Language Selector */}
@@ -680,15 +711,21 @@ export default function AnimatedHeader({
                   transition={{ duration: 0.2 }}
                   onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
                 >
+                  <Image
+                    src={languages.find((l) => l.lang === language)?.flagUrl || "/placeholder.svg"}
+                    alt={`${language} flag`}
+                    width={14}
+                    height={14}
+                    className="rounded-full object-cover"
+                  />
                   <span className="text-xs brand-text">{language.toUpperCase()}</span>
                   <Globe size={10} />
                 </motion.button>
-
                 {/* Language Dropdown - Mobile */}
                 <AnimatePresence>
                   {isLanguageMenuOpen && (
                     <motion.div
-                      className="absolute top-full right-0 mt-1 bg-white shadow-lg rounded-md overflow-hidden z-50 w-16"
+                      className="absolute top-full right-0 mt-1 bg-white shadow-lg rounded-md overflow-hidden z-50 w-24"
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -697,7 +734,7 @@ export default function AnimatedHeader({
                       {languages.map((lang) => (
                         <button
                           key={lang.code}
-                          className={`w-full text-center px-1 py-1.5 text-xs hover:bg-gray-100 transition-colors brand-text ${
+                          className={`w-full text-left px-2 py-1.5 text-xs hover:bg-gray-100 transition-colors brand-text flex items-center space-x-1 ${
                             language === lang.lang ? "font-medium bg-gray-50" : ""
                           }`}
                           onClick={() => {
@@ -705,14 +742,20 @@ export default function AnimatedHeader({
                             setIsLanguageMenuOpen(false)
                           }}
                         >
-                          {lang.code}
+                          <Image
+                            src={lang.flagUrl || "/placeholder.svg"}
+                            alt={`${lang.name} flag`}
+                            width={14}
+                            height={14}
+                            className="rounded-full object-cover"
+                          />
+                          <span>{lang.name}</span>
                         </button>
                       ))}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-
               {/* Login Button - Mobile */}
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.2 }}>
                 <Link
@@ -744,7 +787,6 @@ export default function AnimatedHeader({
                   </svg>
                 </Link>
               </motion.div>
-
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.2 }}>
                 <Link
                   href="/checkout"
@@ -777,7 +819,6 @@ export default function AnimatedHeader({
           </div>
         </div>
       </motion.header>
-
       {/* Menu Overlay */}
       <AnimatePresence>
         {isMenuOpen && (
@@ -791,7 +832,6 @@ export default function AnimatedHeader({
               transition={{ duration: 0.3 }}
               onClick={() => setIsMenuOpen(false)}
             />
-
             {/* Menu Panel */}
             <motion.div
               className="fixed top-0 left-0 bottom-0 z-[100] bg-white shadow-2xl"
@@ -827,7 +867,6 @@ export default function AnimatedHeader({
                     </div>
                   </div>
                 </div>
-
                 {/* Right buttons */}
                 <div className="flex items-center space-x-3">
                   {/* Language Selector in Menu */}
@@ -836,11 +875,17 @@ export default function AnimatedHeader({
                       className="px-3 py-2 rounded-full border border-peru-green text-peru-green flex items-center space-x-2 hover:opacity-70 transition-opacity"
                       onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
                     >
+                      <Image
+                        src={languages.find((l) => l.lang === language)?.flagUrl || "/placeholder.svg"}
+                        alt={`${language} flag`}
+                        width={16}
+                        height={16}
+                        className="rounded-full object-cover"
+                      />
                       <span className="text-sm brand-text">{language.toUpperCase()}</span>
                       <Globe size={14} />
                     </button>
                   </div>
-
                   {/* Search */}
                   <button
                     className="w-12 h-12 rounded-full border border-peru-green text-peru-green flex items-center justify-center hover:opacity-70 transition-opacity"
@@ -851,7 +896,6 @@ export default function AnimatedHeader({
                       <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </button>
-
                   {/* Close */}
                   <button
                     className="w-12 h-12 rounded-full border-2 border-dotted border-peru-gold text-peru-gold flex items-center justify-center hover:opacity-70 transition-opacity"
@@ -864,7 +908,6 @@ export default function AnimatedHeader({
                   </button>
                 </div>
               </div>
-
               {/* Menu Content */}
               <div className="flex-1 overflow-y-auto">
                 <div className="p-6">
@@ -879,7 +922,7 @@ export default function AnimatedHeader({
                       {languages.map((lang) => (
                         <button
                           key={lang.code}
-                          className={`px-3 py-1 text-sm rounded-full transition-all brand-text ${
+                          className={`px-3 py-1 text-sm rounded-full transition-all brand-text flex items-center space-x-2 ${
                             language === lang.lang
                               ? "bg-peru-orange text-white"
                               : "border border-gray-300 text-gray-600 hover:border-peru-orange"
@@ -889,12 +932,18 @@ export default function AnimatedHeader({
                             closeAllMenus()
                           }}
                         >
-                          {lang.code}
+                          <Image
+                            src={lang.flagUrl || "/placeholder.svg"}
+                            alt={`${lang.name} flag`}
+                            width={16}
+                            height={16}
+                            className="rounded-full object-cover"
+                          />
+                          <span>{lang.name}</span>
                         </button>
                       ))}
                     </div>
                   </motion.div>
-
                   {/* Discover Section */}
                   <motion.div
                     className="mb-8"
@@ -903,11 +952,11 @@ export default function AnimatedHeader({
                     transition={{ delay: 0.2, duration: 0.5 }}
                   >
                     <h3 className="text-sm font-medium uppercase tracking-wider mb-4 body-text text-peru-dark/60">
-                      DESCUBRIR
+                      {t.discover}
                     </h3>
                     <nav className="space-y-4">
                       {[
-                        { name: t.destinations, hasArrow: true, href: "/" },
+                        { name: t.transport, hasArrow: true, href: "/transport" },
                         { name: t.tours, hasArrow: true, href: "/tours" },
                         { name: t.itineraries, hasArrow: true, href: "/itineraries" },
                         { name: t.whenToGo, hasArrow: true, href: "/when-to-go" },
@@ -926,7 +975,6 @@ export default function AnimatedHeader({
                       ))}
                     </nav>
                   </motion.div>
-
                   {/* Learn Section - Desktop only */}
                   <motion.div
                     className="hidden md:block mb-8"
@@ -935,10 +983,10 @@ export default function AnimatedHeader({
                     transition={{ delay: 0.7, duration: 0.5 }}
                   >
                     <h3 className="text-sm font-medium uppercase tracking-wider mb-4 body-text text-peru-green/60">
-                      APRENDER
+                      {t.learn}
                     </h3>
                     <nav className="space-y-4">
-                      {["POR QUÉ NOSOTROS", "BLOG", "SOSTENIBILIDAD", "CONTACTO"].map((item, index) => (
+                      {[t.whyUs, t.blog, t.sustainability, t.contact].map((item, index) => (
                         <motion.a
                           key={item}
                           href="#"
@@ -954,7 +1002,6 @@ export default function AnimatedHeader({
                     </nav>
                   </motion.div>
                 </div>
-
                 {/* Bottom Section */}
                 <motion.div
                   className="mt-auto p-6 border-t border-gray-200"
@@ -969,7 +1016,7 @@ export default function AnimatedHeader({
                   >
                     {t.reserve}
                   </Link>
-                  <p className="text-center body-text text-peru-dark/60">¡Hola! ¿Cómo podemos ayudarte?</p>
+                  <p className="text-center body-text text-peru-dark/60">{t.howCanWeHelp}</p>
                 </motion.div>
               </div>
             </motion.div>

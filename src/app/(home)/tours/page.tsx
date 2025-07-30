@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
@@ -7,6 +6,7 @@ import Link from "next/link"
 import { MapPin, Clock, Star, Users, AlertCircle, Search, Filter, X, ChevronDown } from "lucide-react"
 import { api } from "@/lib/axiosInstance"
 import type { Tour, TourCategory, Difficulty, PackageType } from "@/types/tour"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 // Interfaces para filtros
 interface TourFilters {
@@ -20,7 +20,9 @@ interface TourFilters {
 }
 
 // Componente para el texto circular giratorio
-const SpinningText = ({ text = "RESERVAR • RESERVAR • " }: { text?: string }) => {
+const SpinningText = ({ text }: { text?: string }) => {
+  const { t } = useLanguage()
+  const defaultText = `${t.reserve} • ${t.reserve} • `
   return (
     <div className="relative w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20">
       <motion.div
@@ -38,12 +40,11 @@ const SpinningText = ({ text = "RESERVAR • RESERVAR • " }: { text?: string }
           </defs>
           <text className="text-[5px] md:text-[6px] lg:text-[8px] fill-white font-medium tracking-wider brand-text">
             <textPath href="#circle" startOffset="0%">
-              {text}
+              {text || defaultText}
             </textPath>
           </text>
         </svg>
       </motion.div>
-
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-4 h-4 md:w-6 md:h-6 lg:w-8 lg:h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
           <svg
@@ -82,16 +83,17 @@ const LoadingSkeleton = () => {
 
 // Componente de Error State
 const ErrorState = ({ onRetry }: { onRetry: () => void }) => {
+  const { t } = useLanguage()
   return (
     <div className="flex flex-col items-center justify-center py-16">
       <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">Error al cargar los tours</h3>
-      <p className="text-gray-600 mb-4 text-center">No pudimos cargar los tours. Por favor, intenta nuevamente.</p>
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">{t.errorLoadingTours}</h3>
+      <p className="text-gray-600 mb-4 text-center">{t.errorLoadingToursMessage}</p>
       <button
         onClick={onRetry}
         className="bg-peru-orange text-white px-6 py-2 rounded-lg hover:bg-peru-orange/90 transition-colors"
       >
-        Reintentar
+        {t.retry}
       </button>
     </div>
   )
@@ -111,9 +113,42 @@ const FiltersPanel = ({
   isOpen: boolean
   onToggle: () => void
 }) => {
-  const categories: TourCategory[] = ["Aventura", "Cultural", "Naturaleza"]
+  const { t } = useLanguage()
+  const categories: TourCategory[] = [
+    "Aventura",
+    "Cultural",
+    "Naturaleza",
+    "Relajación",
+    "Trekking",
+    "Panoramico",
+    "Transporte Turistico",
+  ]
   const difficulties: Difficulty[] = ["Facil", "Moderado", "Difícil"]
   const packageTypes: PackageType[] = ["Basico", "Premium"]
+
+  const getTranslatedDifficulty = (diff: Difficulty) => {
+    switch (diff) {
+      case "Facil":
+        return t.difficultyFacil
+      case "Moderado":
+        return t.difficultyModerado
+      case "Difícil":
+        return t.difficultyDificil
+      default:
+        return diff
+    }
+  }
+
+  const getTranslatedPackageType = (type: PackageType) => {
+    switch (type) {
+      case "Basico":
+        return t.packageTypeBasico
+      case "Premium":
+        return t.packageTypePremium
+      default:
+        return type
+    }
+  }
 
   return (
     <div className="relative">
@@ -122,10 +157,9 @@ const FiltersPanel = ({
         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors shadow-sm"
       >
         <Filter size={16} />
-        <span className="text-sm font-medium hidden md:inline">Filtros</span>
+        <span className="text-sm font-medium hidden md:inline">{t.filters}</span>
         <ChevronDown size={14} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
-
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -136,22 +170,21 @@ const FiltersPanel = ({
             className="absolute top-12 right-0 md:left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80 max-w-[90vw]"
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-gray-900">Filtros de Búsqueda</h3>
+              <h3 className="font-semibold text-gray-900">{t.searchFilters}</h3>
               <button onClick={onToggle} className="text-gray-500 hover:text-gray-700 p-1">
                 <X size={16} />
               </button>
             </div>
-
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {/* Categoría */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.category}</label>
                 <select
                   value={filters.category || ""}
                   onChange={(e) => onFiltersChange({ category: (e.target.value as TourCategory) || undefined })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
                 >
-                  <option value="">Todas las categorías</option>
+                  <option value="">{t.allCategories}</option>
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
@@ -159,79 +192,74 @@ const FiltersPanel = ({
                   ))}
                 </select>
               </div>
-
               {/* Dificultad */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Dificultad</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.difficulty}</label>
                 <select
                   value={filters.difficulty || ""}
                   onChange={(e) => onFiltersChange({ difficulty: (e.target.value as Difficulty) || undefined })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
                 >
-                  <option value="">Todas las dificultades</option>
+                  <option value="">{t.allDifficulties}</option>
                   {difficulties.map((diff) => (
                     <option key={diff} value={diff}>
-                      {diff === "Facil" ? "Fácil" : diff}
+                      {getTranslatedDifficulty(diff)}
                     </option>
                   ))}
                 </select>
               </div>
-
               {/* Tipo de Paquete */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Paquete</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.packageType}</label>
                 <select
                   value={filters.packageType || ""}
                   onChange={(e) => onFiltersChange({ packageType: (e.target.value as PackageType) || undefined })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
                 >
-                  <option value="">Todos los tipos</option>
+                  <option value="">{t.allPackageTypes}</option>
                   {packageTypes.map((type) => (
                     <option key={type} value={type}>
-                      {type === "Basico" ? "Básico" : type}
+                      {getTranslatedPackageType(type)}
                     </option>
                   ))}
                 </select>
               </div>
-
               {/* Región */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Región</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.region}</label>
                 <input
                   type="text"
                   value={filters.region || ""}
                   onChange={(e) => onFiltersChange({ region: e.target.value || undefined })}
-                  placeholder="Ej: Cusco, Lima, Arequipa..."
+                  placeholder={t.regionPlaceholder}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
                 />
               </div>
-
               {/* Ubicación */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ubicación</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.location}</label>
                 <input
                   type="text"
                   value={filters.location || ""}
                   onChange={(e) => onFiltersChange({ location: e.target.value || undefined })}
-                  placeholder="Ej: Machu Picchu, Iquitos..."
+                  placeholder={t.locationPlaceholder}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
                 />
               </div>
             </div>
-
             {/* Botones */}
             <div className="flex gap-2 pt-4 border-t mt-4">
               <button
                 onClick={onClearFilters}
                 className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
               >
-                Limpiar
+                {t.clear}
               </button>
               <button
                 onClick={onToggle}
                 className="flex-1 px-4 py-2 bg-peru-orange text-white rounded-lg hover:bg-peru-orange/90 transition-colors text-sm"
               >
-                Aplicar
+                {t.apply}
               </button>
             </div>
           </motion.div>
@@ -242,13 +270,13 @@ const FiltersPanel = ({
 }
 
 export default function ToursPage() {
+  const { t, language } = useLanguage() // Use the language context
   const [tours, setTours] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalTours, setTotalTours] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-
   const [filters, setFilters] = useState<TourFilters>({
     page: 1,
     limit: 12,
@@ -257,13 +285,11 @@ export default function ToursPage() {
   // Función para construir query params
   const buildQueryParams = useCallback((filterParams: TourFilters) => {
     const params = new URLSearchParams()
-
     Object.entries(filterParams).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== "") {
         params.append(key, value.toString())
       }
     })
-
     return params.toString()
   }, [])
 
@@ -273,20 +299,19 @@ export default function ToursPage() {
       try {
         setLoading(true)
         setError(null)
-
         const queryString = buildQueryParams(filterParams)
-        const response = await api.get(`/tours${queryString ? `?${queryString}` : ""}`)
-
+        // Include language in the API call
+        const response = await api.get(`/tours?lang=${language}${queryString ? `&${queryString}` : ""}`)
         setTours(response.data.data || [])
         setTotalTours(response.data.total || response.data.data?.length || 0)
       } catch (err) {
         console.error("Error fetching tours:", err)
-        setError("Error al cargar los tours")
+        setError(t.errorLoadingTours) // Use translated error message
       } finally {
         setLoading(false)
       }
     },
-    [buildQueryParams, filters],
+    [buildQueryParams, filters, language, t.errorLoadingTours], // Add language and t.errorLoadingTours to dependencies
   )
 
   // Efecto para cargar tours cuando cambian los filtros con debounce
@@ -294,7 +319,6 @@ export default function ToursPage() {
     const timeoutId = setTimeout(() => {
       fetchTours(filters)
     }, 300) // Debounce de 300ms
-
     return () => clearTimeout(timeoutId)
   }, [filters, fetchTours])
 
@@ -320,7 +344,6 @@ export default function ToursPage() {
   // Filtrar tours por búsqueda local
   const filteredTours = useMemo(() => {
     if (!searchTerm) return tours
-
     return tours.filter(
       (tour) =>
         tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -362,7 +385,7 @@ export default function ToursPage() {
 
   // Función para formatear precio en soles
   const formatPrice = (price: number) => {
-    return `S/ ${price.toLocaleString("es-PE")}`
+    return `S/ ${price.toLocaleString(language === "es" ? "es-PE" : "en-US")}` // Use locale from language context
   }
 
   if (loading) {
@@ -417,13 +440,12 @@ export default function ToursPage() {
             className="mb-6"
           >
             <h1 className="text-2xl md:text-4xl lg:text-6xl font-light text-black leading-none brand-text">
-              Tours del Perú
+              {t.peruToursTitle}
             </h1>
             <p className="text-sm md:text-base lg:text-lg text-gray-600 mt-2 body-text max-w-2xl">
-              Descubre los destinos más increíbles del Perú ({totalTours} tours disponibles)
+              {t.peruToursSubtitle} ({totalTours} {totalTours === 1 ? t.toursFoundSingular : t.toursAvailable})
             </p>
           </motion.div>
-
           {/* Search and Filters */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -437,13 +459,12 @@ export default function ToursPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                 <input
                   type="text"
-                  placeholder="Buscar tours..."
+                  placeholder={t.searchToursPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm"
                 />
               </div>
-
               {/* Filters */}
               <FiltersPanel
                 filters={filters}
@@ -453,7 +474,6 @@ export default function ToursPage() {
                 onToggle={() => setFiltersOpen(!filtersOpen)}
               />
             </div>
-
             {/* Active Filters Display */}
             {(filters.category || filters.difficulty || filters.packageType || filters.region || filters.location) && (
               <motion.div
@@ -461,7 +481,7 @@ export default function ToursPage() {
                 animate={{ opacity: 1, height: "auto" }}
                 className="flex flex-wrap gap-2 mt-4"
               >
-                <span className="text-xs md:text-sm text-gray-600">Filtros activos:</span>
+                <span className="text-xs md:text-sm text-gray-600">{t.activeFilters}</span>
                 {filters.category && (
                   <span className="px-2 py-1 bg-peru-orange/10 text-peru-orange text-xs rounded-full flex items-center gap-1">
                     {filters.category}
@@ -475,7 +495,7 @@ export default function ToursPage() {
                 )}
                 {filters.difficulty && (
                   <span className="px-2 py-1 bg-peru-orange/10 text-peru-orange text-xs rounded-full flex items-center gap-1">
-                    {filters.difficulty === "Facil" ? "Fácil" : filters.difficulty}
+                    {filters.difficulty === "Facil" ? t.difficultyFacil : filters.difficulty}
                     <button
                       onClick={() => handleFiltersChange({ difficulty: undefined })}
                       className="hover:bg-peru-orange/20 rounded-full p-0.5"
@@ -486,7 +506,7 @@ export default function ToursPage() {
                 )}
                 {filters.packageType && (
                   <span className="px-2 py-1 bg-peru-orange/10 text-peru-orange text-xs rounded-full flex items-center gap-1">
-                    {filters.packageType === "Basico" ? "Básico" : filters.packageType}
+                    {filters.packageType === "Basico" ? t.packageTypeBasico : filters.packageType}
                     <button
                       onClick={() => handleFiltersChange({ packageType: undefined })}
                       className="hover:bg-peru-orange/20 rounded-full p-0.5"
@@ -520,7 +540,6 @@ export default function ToursPage() {
               </motion.div>
             )}
           </motion.div>
-
           {/* Results Count */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -529,22 +548,19 @@ export default function ToursPage() {
             className="mb-4"
           >
             <p className="text-sm md:text-base text-gray-600">
-              {filteredTours.length} {filteredTours.length === 1 ? "tour encontrado" : "tours encontrados"}
+              {filteredTours.length} {filteredTours.length === 1 ? t.toursFoundSingular : t.toursFoundPlural}
             </p>
           </motion.div>
         </div>
       </div>
-
       {/* Tours Grid */}
       <div className="px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           {filteredTours.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="text-4xl md:text-6xl mb-4">🏔️</div>
-              <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">No hay tours disponibles</h3>
-              <p className="text-sm md:text-base text-gray-600 text-center">
-                No encontramos tours que coincidan con tus filtros. Prueba ajustando los criterios de búsqueda.
-              </p>
+              <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">{t.noToursAvailableTitle}</h3>
+              <p className="text-sm md:text-base text-gray-600 text-center">{t.noToursAvailableMessage}</p>
             </div>
           ) : (
             <motion.div
@@ -575,7 +591,6 @@ export default function ToursPage() {
                         {/* Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                       </div>
-
                       {/* Category Badge */}
                       <div className="absolute top-3 left-3 z-20">
                         <div className="bg-white/95 backdrop-blur-sm px-2 md:px-3 py-1 md:py-1.5 rounded-lg flex items-center space-x-1 md:space-x-2">
@@ -583,21 +598,18 @@ export default function ToursPage() {
                           <span className="text-xs font-medium text-gray-800 brand-text">{tour.category}</span>
                         </div>
                       </div>
-
                       {/* Featured Badge */}
                       {tour.featured && (
                         <div className="absolute top-3 right-3 z-20">
                           <div className="bg-peru-gold text-white px-2 md:px-3 py-1 md:py-1.5 text-xs font-medium brand-text rounded-lg">
-                            DESTACADO
+                            {t.featuredTour}
                           </div>
                         </div>
                       )}
-
                       {/* Spinning Text - Aparece en hover */}
                       <div className="absolute top-12 md:top-16 right-3 z-20 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-2 group-hover:translate-x-0">
-                        <SpinningText />
+                        <SpinningText text={`${t.reserve} • ${t.reserve} • `} />
                       </div>
-
                       {/* Content */}
                       <div className="absolute inset-0 p-3 md:p-4 lg:p-6 flex flex-col justify-between z-10">
                         {/* Top Section - Title */}
@@ -609,11 +621,10 @@ export default function ToursPage() {
                             {truncateText(tour.subtitle, 60)}
                           </p>
                         </div>
-
                         {/* Middle Section - Lugares destacados (visible en hover) */}
                         <div className="flex-1 flex items-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
                           <div className="space-y-2">
-                            <p className="text-white/90 text-xs md:text-sm font-medium">Lugares destacados:</p>
+                            <p className="text-white/90 text-xs md:text-sm font-medium">{t.highlightedPlaces}</p>
                             <div className="flex flex-wrap gap-1">
                               {tour.highlights.slice(0, 3).map((highlight, idx) => (
                                 <span
@@ -627,7 +638,6 @@ export default function ToursPage() {
                             </div>
                           </div>
                         </div>
-
                         {/* Bottom Section - Tour Info */}
                         <div className="bg-black/60 backdrop-blur-sm p-3 md:p-4 lg:p-5 space-y-2 md:space-y-3 rounded-lg">
                           {/* Price and Duration */}
@@ -642,7 +652,7 @@ export default function ToursPage() {
                                 {formatPrice(tour.price)}
                               </span>
                               <span className="text-white/70 text-xs md:text-sm ml-1 md:ml-2 body-text">
-                                por persona
+                                {t.perPerson}
                               </span>
                             </div>
                             <div className="flex items-center text-white/90 text-xs md:text-sm">
@@ -650,7 +660,6 @@ export default function ToursPage() {
                               <span className="body-text">{tour.duration}</span>
                             </div>
                           </div>
-
                           {/* Location and Rating */}
                           <div className="flex justify-between items-center">
                             <div className="flex items-center text-white/90 text-xs md:text-sm">
@@ -664,7 +673,6 @@ export default function ToursPage() {
                               </span>
                             </div>
                           </div>
-
                           {/* Transport and Difficulty */}
                           <div className="flex justify-between items-center">
                             <div className="flex items-center text-white/90 text-xs md:text-sm">
@@ -672,27 +680,25 @@ export default function ToursPage() {
                               <span className="body-text">
                                 {tour.transportOptionIds.length > 0
                                   ? truncateText(tour.transportOptionIds[0].vehicle, 12)
-                                  : "Transporte"}
+                                  : t.transport}
                               </span>
                             </div>
                             <span
                               className={`px-2 py-1 text-xs brand-text rounded ${getDifficultyColor(tour.difficulty)}`}
                             >
-                              {tour.difficulty === "Facil" ? "Fácil" : tour.difficulty}
+                              {tour.difficulty === "Facil" ? t.difficultyFacil : tour.difficulty}
                             </span>
                           </div>
-
                           {/* Package Type */}
                           <div className="flex justify-center pt-1 md:pt-2">
                             <span
                               className={`px-2 md:px-3 py-1 text-xs brand-text rounded ${getPackageTypeColor(tour.packageType)}`}
                             >
-                              {tour.packageType === "Basico" ? "Básico" : tour.packageType}
+                              {tour.packageType === "Basico" ? t.packageTypeBasico : tour.packageType}
                             </span>
                           </div>
                         </div>
                       </div>
-
                       {/* Hover Effect */}
                       <div className="absolute inset-0 bg-peru-orange/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
                     </div>
@@ -703,7 +709,6 @@ export default function ToursPage() {
           )}
         </div>
       </div>
-
       {/* Pagination */}
       {totalTours > filters.limit && (
         <div className="px-4 md:px-8 py-6 md:py-8">
@@ -714,25 +719,22 @@ export default function ToursPage() {
                 disabled={filters.page === 1}
                 className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors text-sm"
               >
-                Anterior
+                {t.previous}
               </button>
-
               <span className="px-3 md:px-4 py-2 bg-peru-orange text-white rounded-lg text-sm">
-                Página {filters.page}
+                {t.page} {filters.page}
               </span>
-
               <button
                 onClick={() => handleFiltersChange({ page: filters.page + 1 })}
                 disabled={tours.length < filters.limit}
                 className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors text-sm"
               >
-                Siguiente
+                {t.next}
               </button>
             </div>
           </div>
         </div>
       )}
-
       {/* Bottom Spacing */}
       <div className="h-6 md:h-8 lg:h-12"></div>
     </div>

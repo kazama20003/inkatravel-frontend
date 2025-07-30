@@ -1,697 +1,1006 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Clock, MapPin, Users, Star, Phone, MessageCircle, CreditCard, Navigation } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
+import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { api } from "@/lib/axiosInstance"
+import Image from "next/image"
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  Clock,
+  Star,
+  MapPin,
+  Calendar,
+  Route,
+  Phone,
+  ShoppingCart,
+  MessageCircle,
+  ArrowRight,
+  Users,
+  Timer,
+  DollarSign,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Images,
+  Loader2,
+} from "lucide-react"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { isAxiosError } from "axios"
+import Link from "next/link"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog" // Import Dialog components
 
-// Tipos para la API de transporte
-interface TransportOption {
-  _id: string
-  type: "Basico" | "Premium"
-  vehicle: string
-  services: string[]
-  imageUrl: string
-  imageId?: string
-}
+// Exchange rate constant
+const USD_TO_PEN_RATE = 3.75
 
-interface RoutePoint {
-  _id?: string
+// Define the interface for route stops
+interface RouteStop {
   location: string
-  description?: string
+  description: string
   imageUrl?: string
   imageId?: string
+  stopTime?: string
 }
 
-interface ItineraryDay {
-  _id?: string
+// Define the interface for itinerary items
+interface ItineraryItem {
   day: number
   title: string
   description: string
-  activities: string[]
-  meals?: string[]
-  accommodation?: string
   imageUrl?: string
   imageId?: string
-  route: RoutePoint[]
+  route?: RouteStop[]
 }
 
-interface TransportTour {
+// Define the interface for the tour transport data
+interface TransportData {
   _id: string
   title: string
-  subtitle: string
-  imageUrl: string
-  imageId?: string
+  description: string
+  termsAndConditions: string
+  originCity: string
+  destinationCity: string
+  intermediateStops?: string[]
+  availableDays: string[]
+  departureTime?: string
+  arrivalTime?: string
+  durationInHours?: number
+  duration?: string
   price: number
-  originalPrice?: number
-  duration: string
-  rating: number
-  reviews: number
-  location: string
-  region: string
-  category: string
-  difficulty: "Facil" | "Moderado" | "Difícil"
-  packageType: "Basico" | "Premium"
-  highlights: string[]
-  featured?: boolean
-  transportOptionIds: TransportOption[]
-  itinerary?: ItineraryDay[]
-  includes?: string[]
-  notIncludes?: string[]
-  toBring?: string[]
-  conditions?: string[]
-  slug: string
+  rating?: number
+  vehicleId?: string
+  routeCode?: string
+  isActive?: boolean
+  slug?: string
+  itinerary?: ItineraryItem[]
+  imageUrl?: string
+  imageId?: string
   createdAt: string
   updatedAt: string
   __v: number
 }
 
-interface TransportApiResponse {
-  message: string
-  data: TransportTour[]
-  pagination: {
-    total: number
-    page: number
-    limit: number
-    totalPages: number
-  }
-}
-
-// Tipos para crear orden
-interface OrderItemDto {
-  tour: string
-  startDate: string
-  people: number
-  pricePerPerson: number
+interface ApiResponse {
+  data: TransportData[]
   total: number
-  notes?: string
 }
 
-interface CustomerInfoDto {
-  fullName: string
+// Interfaces for Izipay payment request
+interface CustomerDto {
   email: string
-  phone?: string
-  nationality?: string
+  billingFirstName?: string
+  billingLastName?: string
 }
 
-interface CreateOrderDto {
-  items: OrderItemDto[]
-  customer: CustomerInfoDto
-  totalPrice: number
-  paymentMethod?: string
-  notes?: string
-  discountCodeUsed?: string
+interface CreateFormTokenRequest {
+  amount: number // Amount in cents
+  currency: string
+  orderId: string
+  customer: CustomerDto
+  formAction: string
+}
+
+interface FormTokenResponse {
+  formToken: string
+  publicKey: string
 }
 
 export default function TransportDetailPage() {
-  const { t } = useLanguage()
   const params = useParams()
   const slug = params.slug as string
-  const [tour, setTour] = useState<TransportTour | null>(null)
+  const { t, language } = useLanguage()
+  const [transport, setTransport] = useState<TransportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedDate, setSelectedDate] = useState<string>("")
-  const [people, setPeople] = useState(1)
-  const [showBookingForm, setShowBookingForm] = useState(false)
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfoDto>({
-    fullName: "",
-    email: "",
-    phone: "",
-    nationality: "",
-  })
+  const [passengers, setPassengers] = useState(1)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false)
 
-  // Cargar datos del tour específico
+  // Payment state
+  const [formToken, setFormToken] = useState<string | null>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+
+  // Create comprehensive gallery images from transport data
+  const galleryImages = transport
+    ? [
+        // Main transport image
+        transport.imageUrl,
+        // Itinerary day images
+        ...(transport.itinerary?.map((day) => day.imageUrl) || []),
+        // Route stop images from all days
+        ...(transport.itinerary?.flatMap((day) => day.route?.map((stop) => stop.imageUrl) || []) || []),
+      ].filter((url): url is string => Boolean(url)) // Type-safe filter to remove undefined/null
+    : ["/placeholder.svg"]
+
+  // Helper function to get translated day names
+  const getTranslatedDay = (dayKey: string) => {
+    switch (dayKey.toLowerCase()) {
+      case "monday":
+        return t.monday
+      case "tuesday":
+        return t.tuesday
+      case "wednesday":
+        return t.wednesday
+      case "thursday":
+        return t.thursday
+      case "friday":
+        return t.friday
+      case "saturday":
+        return t.saturday
+      case "sunday":
+        return t.sunday
+      default:
+        return dayKey
+    }
+  }
+
   useEffect(() => {
-    const fetchTourData = async () => {
+    const fetchTransportDetails = async () => {
+      setLoading(true)
+      setError(null)
       try {
-        setLoading(true)
-        const response = await api.get<TransportApiResponse>("/tours/transport")
-        const tours = response.data.data || []
-        const foundTour = tours.find((t) => t.slug === slug)
-        setTour(foundTour || null)
-        setError(foundTour ? null : t.tourNotFound)
-      } catch (err) {
-        console.error("Error fetching tour data:", err)
-        setError(t.error)
+        const response = await api.get<ApiResponse>("/tour-transport", {
+          params: { lang: language },
+        })
+        const apiResponseData: ApiResponse = response.data
+        const foundTransport = apiResponseData.data.find((item: TransportData) => item.slug === slug)
+        if (foundTransport) {
+          setTransport(foundTransport)
+        } else {
+          setError(t.tourNotFound)
+        }
+      } catch (err: unknown) {
+        console.error("Error fetching transport details:", err)
+        let errorMessage = t.errorLoadingToursMessage
+        if (err instanceof Error) {
+          errorMessage = err.message
+        } else if (isAxiosError(err)) {
+          if (err.response?.data && typeof err.response.data === "object" && "message" in err.response.data) {
+            errorMessage = (err.response.data as { message: string }).message
+          } else if (err.message) {
+            errorMessage = err.message
+          }
+        }
+        setError(errorMessage)
       } finally {
         setLoading(false)
       }
     }
-
     if (slug) {
-      fetchTourData()
+      fetchTransportDetails()
     }
-  }, [slug, t])
+  }, [slug, language, t.tourNotFound, t.errorLoadingToursMessage])
 
-  // Función para obtener fechas disponibles con días correctos de la semana
-  const getAvailableDates = () => {
-    if (!tour) return []
+  // Effect to load Izipay script when modal opens and formToken is available
+  useEffect(() => {
+    if (showPaymentModal && formToken) {
+      const scriptId = "izipay-script"
+      if (document.getElementById(scriptId)) {
+        // If script already exists, re-initialize if necessary or just ensure form is rendered
+        // For Izipay, simply having the div with kr-form-token should be enough if script is loaded
+        return
+      }
 
-    const dates = []
-    const today = new Date()
-    const isChivayToCusco = tour.title.includes("CHIVAY - CUSCO") || tour.slug.includes("chivay-cusco")
+      const script = document.createElement("script")
+      script.id = scriptId
+      script.src = "https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
+      script.setAttribute("kr-public-key", process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY || "")
+      script.setAttribute("kr-post-url-success", process.env.NEXT_PUBLIC_IZIPAY_SUCCESS_URL || "")
+      script.setAttribute("kr-post-url-refused", process.env.NEXT_PUBLIC_IZIPAY_REFUSED_URL || "")
+      document.body.appendChild(script)
 
-    // Días de la semana: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
-    const availableDays = isChivayToCusco ? [1, 3, 5] : [2, 4, 6] // Lun/Mié/Vie vs Mar/Jue/Sáb
-
-    // Generar fechas para los próximos 60 días
-    for (let i = 0; i < 60; i++) {
-      const date = new Date(today)
-      date.setDate(today.getDate() + i)
-      if (availableDays.includes(date.getDay())) {
-        dates.push({
-          date: date.toISOString().split("T")[0],
-          display: date.toLocaleDateString(t.locale, {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-          }),
-          full: date.toLocaleDateString(t.locale, {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }),
-          dayName: date.toLocaleDateString(t.locale, { weekday: "long" }),
-        })
+      // Clean up script on unmount or when modal closes
+      return () => {
+        const existingScript = document.getElementById(scriptId)
+        if (existingScript) {
+          document.body.removeChild(existingScript)
+        }
       }
     }
+  }, [showPaymentModal, formToken])
 
-    return dates.slice(0, 15) // Mostrar solo las próximas 15 fechas disponibles
+  const handleWhatsAppContact = () => {
+    const message = `${t.consultWhatsApp}: ${transport?.title} - ${transport?.originCity} → ${transport?.destinationCity}`
+    const whatsappUrl = `https://wa.me/51987654321?text=${encodeURIComponent(message)}`
+    window.open(whatsappUrl, "_blank")
   }
 
-  // Función para convertir soles a dólares
-  const convertToUSD = (soles: number) => {
-    const exchangeRate = 3.8
-    return Math.round(soles / exchangeRate)
+  const handlePhoneCall = () => {
+    window.open("tel:+51987654321", "_self")
   }
 
-  // Función para formatear precio de manera más entendible
-  const formatPrice = (price: number) => {
-    return {
-      soles: `S/. ${Math.round(price).toLocaleString()}`,
-      dollars: `$${convertToUSD(price)}`,
-      solesNumber: Math.round(price),
-      dollarsNumber: convertToUSD(price),
-    }
-  }
+  const handleReserveNow = async () => {
+    if (!transport) return
 
-  // Función para crear orden
-  const handleCreateOrder = async () => {
-    if (!tour || !selectedDate || !customerInfo.fullName || !customerInfo.email) {
-      alert(t.completeRequiredFields)
-      return
-    }
+    setIsProcessingPayment(true)
+    setError(null)
 
     try {
-      const orderData: CreateOrderDto = {
-        items: [
-          {
-            tour: tour._id,
-            startDate: selectedDate,
-            people: people,
-            pricePerPerson: tour.price,
-            total: tour.price * people,
-            notes: `${t.reserve} ${tour.title}`,
-          },
-        ],
-        customer: customerInfo,
-        totalPrice: tour.price * people,
-        paymentMethod: "pending",
-        notes: `${t.booking} ${people} ${people > 1 ? t.passengers : t.passenger}`,
+      const totalAmountPEN = (transport.price * passengers * USD_TO_PEN_RATE).toFixed(0)
+      const payload: CreateFormTokenRequest = {
+        amount: Number.parseInt(totalAmountPEN) * 100, // Amount in cents
+        currency: "PEN",
+        orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`, // Unique order ID
+        customer: {
+          email: "client@correo.com", // Replace with actual user email
+          billingFirstName: "John", // Optional
+          billingLastName: "Doe", // Optional
+        },
+        formAction: "PAYMENT",
       }
 
-      const response = await api.post("/orders", orderData)
-      alert(t.orderCreatedSuccess)
-      setShowBookingForm(false)
-      console.log("Orden creada:", response.data)
-    } catch (err) {
-      console.error("Error creating order:", err)
-      alert(t.orderCreationError)
+      const response = await api.post<FormTokenResponse>("/payments/formtoken", payload)
+      setFormToken(response.data.formToken)
+      setShowPaymentModal(true)
+    } catch (err: unknown) {
+      console.error("Error generating payment form token:", err)
+      let errorMessage = t.errorProcessingPayment || "Error processing payment. Please try again."
+      if (isAxiosError(err)) {
+        if (err.response?.data && typeof err.response.data === "object" && "message" in err.response.data) {
+          errorMessage = (err.response.data as { message: string }).message
+        } else if (err.message) {
+          errorMessage = err.message
+        }
+      }
+      setError(errorMessage)
+    } finally {
+      setIsProcessingPayment(false)
     }
+  }
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length)
+  }
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length)
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <motion.div
-          className="w-16 h-16 border-4 border-gray-800 border-t-transparent rounded-full"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-        />
-      </div>
-    )
-  }
-
-  if (error || !tour) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">{error || t.tourNotFound}</p>
-          <Link
-            href="/"
-            className="bg-peru-orange text-white px-4 py-2 rounded hover:bg-peru-orange/90 transition-colors"
-          >
-            {t.backToHome}
-          </Link>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pt-20 md:pt-32">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-4 border-t-transparent border-blue-500"></div>
+          <p className="text-xl md:text-2xl text-white font-light">{t.loading}...</p>
         </div>
       </div>
     )
   }
 
-  const availableDates = getAvailableDates()
-  const totalPrice = tour.price * people
-  const formattedPrice = formatPrice(tour.price)
-  const formattedTotal = formatPrice(totalPrice)
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-red-900 via-red-800 to-red-900 pt-20 md:pt-32 px-4">
+        <p className="text-xl md:text-2xl text-white mb-6 text-center">{error}</p>
+        <Link
+          href="/"
+          className="px-6 md:px-8 py-3 md:py-4 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 transition-all duration-300 font-medium"
+        >
+          {t.backToHome}
+        </Link>
+      </div>
+    )
+  }
 
-  // Verificar si existe itinerary y obtener el primer elemento de forma segura
-  const firstItinerary = tour.itinerary && tour.itinerary.length > 0 ? tour.itinerary[0] : null
-  const routePoints = firstItinerary?.route || []
-
-  // Obtener días disponibles según la ruta
-  const getAvailableDaysText = () => {
-    const isChivayToCusco = tour.title.includes("CHIVAY - CUSCO") || tour.slug.includes("chivay-cusco")
-    return isChivayToCusco
-      ? `${t.monday} • ${t.wednesday} • ${t.friday}`
-      : `${t.tuesday} • ${t.thursday} • ${t.saturday}`
+  if (!transport) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-gray-800 to-slate-900 pt-20 md:pt-32">
+        <p className="text-xl md:text-2xl text-white font-light">{t.noToursAvailable}</p>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <div className="relative h-[60vh] overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      {/* Hero Section - Full Height on Mobile */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="relative h-screen md:h-[80vh] overflow-hidden"
+      >
         <Image
-          src={tour.imageUrl || "/placeholder.svg?height=600&width=1200&query=transport landscape"}
-          alt={tour.title}
+          src={transport.imageUrl || "/placeholder.svg"}
+          alt={transport.title}
           fill
           className="object-cover"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/20" />
-        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 lg:p-16">
-          <div className="max-w-7xl mx-auto">
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-              <div className="flex items-center gap-2 mb-4">
-                <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                <span className="text-white font-medium">{tour.rating}</span>
-                <span className="text-white/70">
-                  ({tour.reviews.toLocaleString()} {t.reviews})
-                </span>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
+        {/* Gallery Button */}
+        <button
+          onClick={() => setIsGalleryOpen(true)}
+          className="absolute top-20 md:top-32 right-4 md:right-6 bg-black/40 backdrop-blur-sm text-white p-2 md:p-3 rounded-full hover:bg-black/60 transition-all duration-300 z-10"
+        >
+          <Images size={20} className="md:w-6 md:h-6" />
+        </button>
+        {/* Hero Content */}
+        <div className="absolute inset-0 flex items-end">
+          <div className="w-full px-4 md:px-6 pb-8 md:pb-16 max-w-7xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-white"
+            >
+              <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-4">
+                {transport.rating && (
+                  <div className="flex items-center space-x-1 bg-yellow-500/20 px-2 md:px-3 py-1 rounded-full backdrop-blur-sm">
+                    <Star size={14} fill="currentColor" className="md:w-4 md:h-4 text-yellow-400" />
+                    <span className="text-xs md:text-sm font-semibold">{transport.rating}</span>
+                  </div>
+                )}
+                {transport.durationInHours && (
+                  <div className="flex items-center space-x-1 bg-blue-500/20 px-2 md:px-3 py-1 rounded-full backdrop-blur-sm">
+                    <Timer size={14} className="md:w-4 md:h-4 text-blue-400" />
+                    <span className="text-xs md:text-sm font-semibold">
+                      {transport.durationInHours} {t.hours}
+                    </span>
+                  </div>
+                )}
+                <div className="bg-green-500/20 px-2 md:px-3 py-1 rounded-full backdrop-blur-sm">
+                  <span className="text-xs md:text-sm font-semibold text-green-400">{t.transport}</span>
+                </div>
               </div>
-              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight">
-                {tour.title.replace("TRANSPORTE ", "").replace(" - ", " → ")}
+              <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-3 md:mb-4 leading-tight">
+                {transport.title}
               </h1>
-              <p className="text-lg md:text-xl text-white/90 mb-6 max-w-3xl">{tour.subtitle}</p>
-              <div className="flex flex-wrap gap-4 text-white">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  <span>{tour.duration}</span>
+              <p className="text-base md:text-xl lg:text-2xl font-light opacity-90 max-w-3xl mb-4 md:mb-6">
+                {transport.description}
+              </p>
+              {/* Route Preview - Responsive */}
+              <div className="flex items-center space-x-2 md:space-x-4 bg-black/30 backdrop-blur-sm rounded-xl md:rounded-2xl p-3 md:p-4 max-w-fit">
+                <div className="text-center">
+                  <div className="text-xs md:text-sm opacity-75">{t.originCity}</div>
+                  <div className="font-bold text-sm md:text-lg">{transport.originCity}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  <span>
-                    {tour.location} → {tour.region}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  <span>{t.unlimitedCapacity}</span>
+                <ArrowRight className="text-blue-400 md:w-6 md:h-6" size={20} />
+                <div className="text-center">
+                  <div className="text-xs md:text-sm opacity-75">{t.destinationCity}</div>
+                  <div className="font-bold text-sm md:text-lg">{transport.destinationCity}</div>
                 </div>
               </div>
             </motion.div>
           </div>
         </div>
-      </div>
-
+      </motion.div>
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-8 md:py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-          {/* Left Column - Details */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Route Map */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
+          {/* Left Column - Route Map & Details */}
+          <div className="lg:col-span-2 space-y-6 md:space-y-8">
+            {/* Route Map Visualization */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-xl border border-slate-200 dark:border-slate-700"
             >
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">{t.panoramicRoute}</h2>
-              {firstItinerary ? (
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">{firstItinerary.title}</h3>
-                  <p className="text-gray-600 mb-6">{firstItinerary.description}</p>
-
-                  {/* Route Points - Mejorado como mapa visual */}
-                  {routePoints.length > 0 ? (
-                    <div className="space-y-6">
-                      <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                        <Navigation className="w-5 h-5 text-peru-orange" />
-                        {t.stopsOnRoute}:
-                      </h4>
-                      <div className="relative">
-                        {/* Línea conectora */}
-                        <div className="absolute left-6 top-8 bottom-8 w-0.5 bg-gradient-to-b from-peru-orange via-peru-orange/60 to-peru-orange"></div>
-                        {routePoints.map((point, index) => (
-                          <motion.div
-                            key={point._id || index}
-                            className="relative flex gap-6 mb-8 last:mb-0"
-                            initial={{ opacity: 0, x: -20 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                            viewport={{ once: true }}
-                          >
-                            {/* Punto del mapa */}
-                            <div className="relative z-10 flex-shrink-0">
-                              <div className="w-12 h-12 bg-peru-orange text-white rounded-full flex items-center justify-center text-lg font-bold shadow-lg">
-                                {index + 1}
-                              </div>
-                              {/* Pulso animado */}
-                              <div className="absolute inset-0 w-12 h-12 bg-peru-orange rounded-full animate-ping opacity-20"></div>
-                            </div>
-
-                            {/* Contenido de la parada */}
-                            <div className="flex-1 bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow">
-                              <div className="flex flex-col md:flex-row gap-4">
-                                <div className="flex-1">
-                                  <h5 className="font-bold text-gray-900 text-lg mb-2">{point.location}</h5>
-                                  {point.description && (
-                                    <p className="text-gray-600 leading-relaxed mb-3">{point.description}</p>
-                                  )}
-                                  <div className="flex items-center gap-2 text-sm text-peru-orange font-medium">
-                                    <MapPin className="w-4 h-4" />
-                                    <span>
-                                      {t.stopOf} {index + 1} {t.stopOf} {routePoints.length}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* Imagen de la parada */}
-                                {point.imageUrl && (
-                                  <div className="flex-shrink-0 w-full md:w-32 h-24 md:h-20 rounded-lg overflow-hidden shadow-md">
-                                    <Image
-                                      src={point.imageUrl || "/placeholder.svg?height=80&width=128&query=landscape"}
-                                      alt={point.location}
-                                      width={128}
-                                      height={80}
-                                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
+              <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-slate-800 dark:text-slate-100 flex items-center">
+                <Route className="mr-2 md:mr-3 text-blue-500 md:w-7 md:h-7" size={24} />
+                {t.panoramicRoute}
+              </h2>
+              {/* Route Visualization - Mobile Optimized */}
+              <div className="relative">
+                {/* Route Line */}
+                <div className="absolute left-6 md:left-8 top-12 md:top-16 bottom-12 md:bottom-16 w-0.5 md:w-1 bg-gradient-to-b from-blue-500 via-purple-500 to-green-500 rounded-full"></div>
+                {/* Origin */}
+                <div className="flex items-center mb-6 md:mb-8">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg z-10">
+                    <MapPin size={18} className="md:w-6 md:h-6" />
+                  </div>
+                  <div className="ml-4 md:ml-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl md:rounded-2xl p-3 md:p-4 flex-1">
+                    <div className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium">
+                      {t.originCity}
+                    </div>
+                    <div className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100">
+                      {transport.originCity}
+                    </div>
+                    {transport.departureTime && (
+                      <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                        {t.departureTime}: <span className="font-semibold">{transport.departureTime}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* Intermediate Stops */}
+                {transport.intermediateStops && transport.intermediateStops.length > 0 && (
+                  <div className="mb-6 md:mb-8">
+                    <div className="flex items-center mb-3 md:mb-4">
+                      <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg z-10">
+                        <Route size={16} className="md:w-5 md:h-5" />
+                      </div>
+                      <div className="ml-4 md:ml-6">
+                        <div className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100">
+                          {t.stopsOnRoute}
+                        </div>
+                        <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                          {transport.intermediateStops.length}{" "}
+                          {transport.intermediateStops.length === 1 ? t.stopOf : t.stopsOnRoute}
+                        </div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Navigation className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>{t.routeInfoNotAvailable}</p>
+                    <div className="ml-16 md:ml-22 space-y-2">
+                      {transport.intermediateStops.map((stop, index) => (
+                        <div
+                          key={index}
+                          className="bg-purple-50 dark:bg-purple-900/20 rounded-lg md:rounded-xl p-2 md:p-3"
+                        >
+                          <div className="font-medium text-sm md:text-base text-slate-800 dark:text-slate-100">
+                            {stop}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
+                )}
+                {/* Destination */}
+                <div className="flex items-center">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg z-10">
+                    <MapPin size={18} className="md:w-6 md:h-6" />
+                  </div>
+                  <div className="ml-4 md:ml-6 bg-green-50 dark:bg-green-900/20 rounded-xl md:rounded-2xl p-3 md:p-4 flex-1">
+                    <div className="text-xs md:text-sm text-green-600 dark:text-green-400 font-medium">
+                      {t.destinationCity}
+                    </div>
+                    <div className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100">
+                      {transport.destinationCity}
+                    </div>
+                    {transport.arrivalTime && (
+                      <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                        {t.arrivalTime}: <span className="font-semibold">{transport.arrivalTime}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <div className="text-center py-8 text-gray-500">
-                    <Navigation className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>{t.routeInfoNotAvailable}</p>
+              </div>
+            </motion.div>
+            {/* Schedule & Availability - Mobile Optimized */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-xl border border-slate-200 dark:border-slate-700"
+            >
+              <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-slate-800 dark:text-slate-100 flex items-center">
+                <Calendar className="mr-2 md:mr-3 text-green-500 md:w-7 md:h-7" size={24} />
+                {t.schedulesAndAvailability}
+              </h2>
+              <div className="grid grid-cols-1 gap-4 md:gap-6">
+                {/* Schedule */}
+                <div className="bg-slate-50 dark:bg-slate-700 rounded-xl md:rounded-2xl p-4 md:p-6">
+                  <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-slate-800 dark:text-slate-100 flex items-center">
+                    <Clock className="mr-2 text-blue-500 md:w-5 md:h-5" size={18} />
+                    {t.schedule}
+                  </h3>
+                  <div className="space-y-2 md:space-y-3">
+                    {transport.departureTime && (
+                      <div className="flex justify-between">
+                        <span className="text-sm md:text-base text-slate-600 dark:text-slate-400">
+                          {t.departureTime}:
+                        </span>
+                        <span className="font-semibold text-sm md:text-base text-slate-800 dark:text-slate-100">
+                          {transport.departureTime}
+                        </span>
+                      </div>
+                    )}
+                    {transport.arrivalTime && (
+                      <div className="flex justify-between">
+                        <span className="text-sm md:text-base text-slate-600 dark:text-slate-400">
+                          {t.arrivalTime}:
+                        </span>
+                        <span className="font-semibold text-sm md:text-base text-slate-800 dark:text-slate-100">
+                          {transport.arrivalTime}
+                        </span>
+                      </div>
+                    )}
+                    {transport.durationInHours && (
+                      <div className="flex justify-between">
+                        <span className="text-sm md:text-base text-slate-600 dark:text-slate-400">{t.duration}:</span>
+                        <span className="font-semibold text-sm md:text-base text-slate-800 dark:text-slate-100">
+                          {transport.durationInHours} {t.hours}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-3 md:mt-4 p-2 md:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg md:rounded-xl">
+                    <p className="text-xs md:text-sm text-blue-700 dark:text-blue-300">💡 {t.arriveEarly}</p>
+                  </div>
+                </div>
+                {/* Available Days */}
+                <div className="bg-slate-50 dark:bg-slate-700 rounded-xl md:rounded-2xl p-4 md:p-6">
+                  <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-slate-800 dark:text-slate-100 flex items-center">
+                    <Calendar className="mr-2 text-purple-500 md:w-5 md:h-5" size={18} />
+                    {t.availableDays}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {transport.availableDays &&
+                    transport.availableDays.length > 0 &&
+                    !transport.availableDays.includes("all") ? (
+                      transport.availableDays.map((day, index) => (
+                        <span
+                          key={index}
+                          className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium"
+                        >
+                          {getTranslatedDay(day)}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium">
+                        {t.allDays}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-3 md:mt-4 p-2 md:p-3 bg-green-100 dark:bg-green-900/30 rounded-lg md:rounded-xl">
+                    <p className="text-xs md:text-sm text-green-700 dark:text-green-300">✅ {t.regularDepartures}</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+            {/* Terms and Conditions */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-xl border border-slate-200 dark:border-slate-700"
+            >
+              <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-slate-800 dark:text-slate-100">
+                {t.termsOfService}
+              </h2>
+              <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
+                {transport.termsAndConditions}
+              </p>
+            </motion.div>
+            {/* Itinerary Section - Enhanced */}
+            {transport.itinerary && transport.itinerary.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+                className="bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-xl border border-slate-200 dark:border-slate-700"
+              >
+                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-slate-800 dark:text-slate-100 flex items-center">
+                  <Calendar className="mr-2 md:mr-3 text-purple-500 md:w-7 md:h-7" size={24} />
+                  {t.itineraries}
+                </h2>
+                <div className="space-y-6 md:space-y-8">
+                  {transport.itinerary?.map((day, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      className="relative"
+                    >
+                      {/* Day Header */}
+                      <div className="flex items-start space-x-4 mb-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                            <span className="text-sm md:text-lg">{day.day}</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100 mb-2 leading-tight">
+                            {day.title}
+                          </h3>
+                          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
+                            {day.description}
+                          </p>
+                        </div>
+                      </div>
+                      {/* Day Image */}
+                      {day.imageUrl && (
+                        <motion.div
+                          className="mb-4 relative h-48 md:h-64 lg:h-72 rounded-xl md:rounded-2xl overflow-hidden shadow-lg group cursor-pointer"
+                          whileHover={{ scale: 1.02 }}
+                          transition={{ duration: 0.3 }}
+                          onClick={() => {
+                            const dayImageIndex = galleryImages.findIndex((img) => img === day.imageUrl)
+                            if (dayImageIndex !== -1) {
+                              setCurrentImageIndex(dayImageIndex)
+                              setIsGalleryOpen(true)
+                            }
+                          }}
+                        >
+                          <Image
+                            src={day.imageUrl || "/placeholder.svg"}
+                            alt={day.title}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <div className="absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <p className="text-sm font-medium bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
+                              {t.view} {day.title}
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+                      {/* Route Stops */}
+                      {day.route && day.route.length > 0 && (
+                        <div className="mt-4">
+                          <h4 className="font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center">
+                            <Route className="mr-2 text-blue-500" size={18} />
+                            {t.stopsOnRoute}
+                          </h4>
+                          <div className="space-y-4">
+                            {day.route?.map((stop, stopIndex) => (
+                              <motion.div
+                                key={stopIndex}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.4, delay: stopIndex * 0.1 }}
+                                className="bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-700 dark:to-blue-900/20 rounded-xl p-4 border border-slate-200 dark:border-slate-600"
+                              >
+                                <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                                  {/* Stop Info */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h5 className="font-medium text-slate-800 dark:text-slate-100 text-base md:text-lg">
+                                        📍 {stop.location}
+                                      </h5>
+                                      {stop.stopTime && (
+                                        <div className="flex items-center space-x-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
+                                          <Clock size={14} />
+                                          <span>{stop.stopTime}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
+                                      {stop.description}
+                                    </p>
+                                  </div>
+                                  {/* Stop Image */}
+                                  {stop.imageUrl && (
+                                    <motion.div
+                                      className="w-full lg:w-32 xl:w-40 h-24 lg:h-20 xl:h-24 relative rounded-lg overflow-hidden shadow-md group cursor-pointer flex-shrink-0"
+                                      whileHover={{ scale: 1.05 }}
+                                      transition={{ duration: 0.3 }}
+                                      onClick={() => {
+                                        const stopImageIndex = galleryImages.findIndex((img) => img === stop.imageUrl)
+                                        if (stopImageIndex !== -1) {
+                                          setCurrentImageIndex(stopImageIndex)
+                                          setIsGalleryOpen(true)
+                                        }
+                                      }}
+                                    >
+                                      <Image
+                                        src={stop.imageUrl || "/placeholder.svg"}
+                                        alt={stop.location}
+                                        fill
+                                        className="object-cover group-hover:scale-110 transition-transform duration-300"
+                                      />
+                                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                        <Images className="text-white" size={20} />
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {/* Connector Line (except for last item) */}
+                      {index < (transport.itinerary?.length || 0) - 1 && (
+                        <div className="flex justify-center mt-6 mb-2">
+                          <div className="w-0.5 h-8 bg-gradient-to-b from-purple-400 to-transparent rounded-full"></div>
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+                {/* Itinerary Summary */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.8 }}
+                  className="mt-8 p-4 md:p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-700"
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                          {transport.itinerary?.length || 0}
+                        </div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400">
+                          {(transport.itinerary?.length || 0) === 1 ? "Día" : "Días"}
+                        </div>
+                      </div>
+                      <div className="w-px h-8 bg-purple-300 dark:bg-purple-600"></div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                          {transport.itinerary?.reduce((total, day) => total + (day.route?.length || 0), 0) || 0}
+                        </div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400">Paradas</div>
+                      </div>
+                      {transport.durationInHours && (
+                        <>
+                          <div className="w-px h-8 bg-purple-300 dark:bg-purple-600"></div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                              {transport.durationInHours}h
+                            </div>
+                            <div className="text-xs text-slate-600 dark:text-slate-400">Duración</div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setIsGalleryOpen(true)}
+                      className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors duration-300"
+                    >
+                      <Images size={18} />
+                      <span className="text-sm font-medium">Ver Galería</span>
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </div>
+          {/* Right Column - Booking Panel - Mobile Optimized */}
+          <div className="lg:col-span-1">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="sticky top-24 md:top-40 bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-2xl border border-slate-200 dark:border-slate-700"
+            >
+              {/* Price Section */}
+              <div className="text-center mb-6 md:mb-8">
+                <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-slate-800 dark:text-slate-100">
+                  {t.priceUSD}
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center space-x-2">
+                    <DollarSign className="text-green-500 md:w-8 md:h-8" size={24} />
+                    <span className="text-3xl md:text-4xl font-bold text-green-600">{transport.price}</span>
+                    <span className="text-base md:text-lg text-slate-500">USD</span>
+                  </div>
+                  <div className="text-xl md:text-2xl font-semibold text-slate-600 dark:text-slate-400">
+                    S/ {(transport.price * USD_TO_PEN_RATE).toFixed(0)} PEN
+                  </div>
+                  <div className="text-xs md:text-sm text-slate-500">{t.perPerson}</div>
+                </div>
+              </div>
+              {/* Passenger Selection */}
+              <div className="mb-4 md:mb-6">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  {t.numberOfPassengers}
+                </label>
+                <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-700 rounded-xl p-3">
+                  <button
+                    onClick={() => setPassengers(Math.max(1, passengers - 1))}
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
+                  >
+                    -
+                  </button>
+                  <div className="flex items-center space-x-2">
+                    <Users size={18} className="md:w-5 md:h-5 text-slate-500" />
+                    <span className="text-lg md:text-xl font-semibold text-slate-800 dark:text-slate-100">
+                      {passengers}
+                    </span>
+                    <span className="text-xs md:text-sm text-slate-500">
+                      {passengers === 1 ? t.passenger : t.passengers}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setPassengers(passengers + 1)}
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              {/* Total Price */}
+              <div className="mb-6 md:mb-8 p-3 md:p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl md:rounded-2xl border border-blue-200 dark:border-blue-700">
+                <div className="text-center">
+                  <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mb-1">{t.totalToPay}</div>
+                  <div className="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400">
+                    ${(transport.price * passengers).toFixed(2)} USD
+                  </div>
+                  <div className="text-base md:text-lg text-slate-600 dark:text-slate-400">
+                    S/ {(transport.price * passengers * USD_TO_PEN_RATE).toFixed(0)} PEN
+                  </div>
+                </div>
+              </div>
+              {/* Action Buttons - Mobile Optimized */}
+              <div className="space-y-3 md:space-y-4">
+                {/* Reserve Button */}
+                <button
+                  onClick={handleReserveNow}
+                  disabled={isProcessingPayment}
+                  className="w-full py-3 md:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isProcessingPayment ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2" size={18} />
+                      <span>{t.processingPayment || "Processing..."}</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart size={18} className="md:w-5 md:h-5" />
+                      <span className="text-sm md:text-base">{t.reserveNow}</span>
+                    </>
+                  )}
+                </button>
+                {/* WhatsApp Button */}
+                <button
+                  onClick={handleWhatsAppContact}
+                  className="w-full py-3 md:py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+                >
+                  <MessageCircle size={18} className="md:w-5 md:h-5" />
+                  <span className="text-sm md:text-base">{t.consultWhatsApp}</span>
+                </button>
+                {/* Call Button */}
+                <button
+                  onClick={handlePhoneCall}
+                  className="w-full py-3 md:py-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+                >
+                  <Phone size={18} className="md:w-5 md:h-5" />
+                  <span className="text-sm md:text-base">{t.callNow}</span>
+                </button>
+              </div>
+              {/* Additional Info */}
+              <div className="mt-4 md:mt-6 p-3 md:p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl md:rounded-2xl border border-yellow-200 dark:border-yellow-700">
+                <p className="text-xs md:text-sm text-yellow-700 dark:text-yellow-300 text-center">
+                  ⚡ {t.availableNow} - {t.confirmReservation}
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+      {/* Image Gallery Modal */}
+      <AnimatePresence>
+        {isGalleryOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
+            onClick={() => setIsGalleryOpen(false)}
+          >
+            <div className="relative w-full max-w-6xl h-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+              {/* Close Button */}
+              <button
+                onClick={() => setIsGalleryOpen(false)}
+                className="absolute top-4 right-4 z-10 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+              >
+                <X size={24} />
+              </button>
+              {/* Navigation Buttons */}
+              {galleryImages.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </>
+              )}
+              {/* Main Image */}
+              <motion.div
+                key={currentImageIndex}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+                className="relative w-full h-full rounded-lg overflow-hidden"
+              >
+                <Image
+                  src={galleryImages[currentImageIndex] || "/placeholder.svg"}
+                  alt={`Gallery image ${currentImageIndex + 1}`}
+                  fill
+                  className="object-contain"
+                />
+                {/* Image Info Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
+                  <div className="text-white">
+                    <h3 className="text-lg md:text-xl font-bold mb-2">
+                      {currentImageIndex === 0
+                        ? transport?.title
+                        : `${transport?.title} - Imagen ${currentImageIndex + 1}`}
+                    </h3>
+                    <p className="text-sm md:text-base opacity-90">
+                      {currentImageIndex === 0
+                        ? transport?.description
+                        : `Parte del itinerario de ${transport?.originCity} a ${transport?.destinationCity}`}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+              {/* Image Counter */}
+              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full">
+                <span className="text-sm">
+                  {currentImageIndex + 1} / {galleryImages.length}
+                </span>
+              </div>
+              {/* Enhanced Thumbnail Strip */}
+              {galleryImages.length > 1 && (
+                <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-full overflow-x-auto">
+                  <div className="flex space-x-2 px-4 pb-2">
+                    {galleryImages.map((image, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentImageIndex(index)}
+                        className={`relative w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
+                          index === currentImageIndex
+                            ? "border-white shadow-lg scale-110"
+                            : "border-transparent opacity-60 hover:opacity-80"
+                        }`}
+                      >
+                        <Image
+                          src={image || "/placeholder.svg"}
+                          alt={`Thumbnail ${index + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                        {index === 0 && (
+                          <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
+                            Principal
+                          </div>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
-            </motion.section>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            {/* Schedule */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">{t.schedulesAndAvailability}</h2>
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-peru-orange" />
-                      {t.departureTime}
-                    </h3>
-                    <div className="text-2xl font-bold text-peru-orange mb-2">08:00 AM</div>
-                    <p className="text-gray-600 text-sm">{t.arriveEarly}</p>
-                  </div>
-
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <h3 className="font-semibold text-gray-900 mb-3">{t.availableDays}</h3>
-                    <div className="text-lg font-bold text-peru-orange mb-2">{getAvailableDaysText()}</div>
-                    <p className="text-gray-600 text-sm">{t.regularDepartures}</p>
-                  </div>
-                </div>
+      {/* Izipay Payment Modal */}
+      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+        <DialogContent className="sm:max-w-[425px] md:max-w-2xl lg:max-w-3xl p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle className="text-2xl font-bold text-center text-slate-800 dark:text-slate-100">
+              {t.completeYourPayment || "Complete Your Payment"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-6 pt-4">
+            {formToken ? (
+              <div className="kr-embedded" kr-form-token={formToken}>
+                {/* The Izipay form will be injected here by the script */}
               </div>
-            </motion.section>
-
-            {/* Includes/Not Includes */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {tour.includes && tour.includes.length > 0 && (
-                  <div className="bg-green-50 rounded-lg p-6 border border-green-200">
-                    <h3 className="font-semibold text-green-900 mb-4 text-lg">✅ {t.includes}</h3>
-                    <ul className="space-y-3">
-                      {tour.includes.map((item, index) => (
-                        <li key={index} className="flex items-start gap-3 text-green-800">
-                          <span className="text-green-600 mt-1 font-bold">✓</span>
-                          <span className="text-sm leading-relaxed">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {tour.notIncludes && tour.notIncludes.length > 0 && (
-                  <div className="bg-red-50 rounded-lg p-6 border border-red-200">
-                    <h3 className="font-semibold text-red-900 mb-4 text-lg">❌ {t.notIncludes}</h3>
-                    <ul className="space-y-3">
-                      {tour.notIncludes.map((item, index) => (
-                        <li key={index} className="flex items-start gap-3 text-red-800">
-                          <span className="text-red-600 mt-1 font-bold">✗</span>
-                          <span className="text-sm leading-relaxed">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10">
+                <Loader2 className="animate-spin text-blue-500 mb-4" size={32} />
+                <p className="text-slate-600 dark:text-slate-400">
+                  {t.loadingPaymentForm || "Loading payment form..."}
+                </p>
               </div>
-            </motion.section>
+            )}
           </div>
-
-          {/* Right Column - Booking */}
-          <div className="lg:col-span-1">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              viewport={{ once: true }}
-              className="sticky top-8"
-            >
-              <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-6">
-                {/* Price - Mejorado y más entendible */}
-                <div className="text-center mb-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4">
-                  {tour.originalPrice && tour.originalPrice > tour.price && (
-                    <div className="mb-2">
-                      <p className="text-gray-500 line-through text-lg">
-                        {formatPrice(tour.originalPrice).soles} / {formatPrice(tour.originalPrice).dollars}
-                      </p>
-                      <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">{t.offer}</span>
-                    </div>
-                  )}
-                  <div className="mb-2">
-                    <p className="text-3xl font-bold text-gray-900">{formattedPrice.soles}</p>
-                    <p className="text-xl font-semibold text-gray-600">{formattedPrice.dollars}</p>
-                  </div>
-                  <p className="text-gray-600 text-sm">{t.perPerson}</p>
-                </div>
-
-                {!showBookingForm ? (
-                  <div className="space-y-4">
-                    {/* Date Selection - Mejorado */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-3">📅 {t.selectAvailableDate}</label>
-                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto bg-gray-50 rounded-lg p-3">
-                        {availableDates.map((dateOption) => (
-                          <button
-                            key={dateOption.date}
-                            onClick={() => setSelectedDate(dateOption.date)}
-                            className={`p-3 text-sm rounded-lg border transition-all duration-200 ${
-                              selectedDate === dateOption.date
-                                ? "bg-peru-orange text-white border-peru-orange shadow-md transform scale-105"
-                                : "bg-white text-gray-700 border-gray-300 hover:border-peru-orange hover:bg-peru-orange/5"
-                            }`}
-                          >
-                            <div className="font-semibold">{dateOption.dayName}</div>
-                            <div className="text-xs opacity-90">{dateOption.display}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* People Selection - Sin límite */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">👥 {t.numberOfPassengers}</label>
-                      <div className="flex items-center gap-4 bg-gray-50 rounded-lg p-3">
-                        <button
-                          onClick={() => setPeople(Math.max(1, people - 1))}
-                          className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 font-bold text-lg"
-                        >
-                          -
-                        </button>
-                        <div className="flex-1 text-center">
-                          <span className="font-bold text-2xl text-gray-900">{people}</span>
-                          <p className="text-xs text-gray-600">{people > 1 ? t.passengers : t.passenger}</p>
-                        </div>
-                        <button
-                          onClick={() => setPeople(people + 1)}
-                          className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 font-bold text-lg"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Total - Más claro */}
-                    <div className="border-t pt-4 bg-gradient-to-r from-peru-orange/5 to-peru-orange/10 rounded-lg p-4">
-                      <div className="text-center">
-                        <p className="text-sm text-gray-600 mb-1">{t.totalToPay}:</p>
-                        <div className="text-2xl font-bold text-gray-900">{formattedTotal.soles}</div>
-                        <div className="text-lg font-semibold text-gray-600">{formattedTotal.dollars}</div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {formattedPrice.soles} × {people} {people > 1 ? t.passengers : t.passenger}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-3">
-                      <button
-                        onClick={() => setShowBookingForm(true)}
-                        disabled={!selectedDate}
-                        className="w-full bg-peru-orange text-white py-4 rounded-lg font-bold hover:bg-peru-orange/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
-                      >
-                        <CreditCard className="w-5 h-5" />
-                        {t.reserveNow}
-                      </button>
-                      <a
-                        href={`https://wa.me/51987654321?text=${t.contact}, ${tour.title} ${people} ${people > 1 ? t.passengers : t.passenger} ${selectedDate ? new Date(selectedDate).toLocaleDateString(t.locale) : ""}. ${t.totalToPay}: ${formattedTotal.soles} (${formattedTotal.dollars})`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <MessageCircle className="w-5 h-5" />
-                        {t.consultWhatsApp}
-                      </a>
-                      <a
-                        href="tel:+51987654321"
-                        className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Phone className="w-5 h-5" />
-                        {t.callNow}
-                      </a>
-                    </div>
-                  </div>
-                ) : (
-                  /* Booking Form */
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">📋 {t.passengerInfo}</h3>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t.fullName} *</label>
-                      <input
-                        type="text"
-                        value={customerInfo.fullName}
-                        onChange={(e) => setCustomerInfo({ ...customerInfo, fullName: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-peru-orange focus:ring-2 focus:ring-peru-orange/20"
-                        placeholder={t.fullName}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t.email} *</label>
-                      <input
-                        type="email"
-                        value={customerInfo.email}
-                        onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-peru-orange focus:ring-2 focus:ring-peru-orange/20"
-                        placeholder={t.email}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t.phone}</label>
-                      <input
-                        type="tel"
-                        value={customerInfo.phone}
-                        onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-peru-orange focus:ring-2 focus:ring-peru-orange/20"
-                        placeholder="+51 999 999 999"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t.nationality}</label>
-                      <input
-                        type="text"
-                        value={customerInfo.nationality}
-                        onChange={(e) => setCustomerInfo({ ...customerInfo, nationality: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-peru-orange focus:ring-2 focus:ring-peru-orange/20"
-                        placeholder={t.nationality}
-                      />
-                    </div>
-
-                    {/* Summary */}
-                    <div className="bg-gray-50 rounded-lg p-4 text-sm border">
-                      <h4 className="font-semibold text-gray-900 mb-2">📋 {t.reservationSummary}:</h4>
-                      <div className="space-y-1">
-                        <p>
-                          <strong>{t.date}:</strong>{" "}
-                          {selectedDate
-                            ? availableDates.find((d) => d.date === selectedDate)?.full || selectedDate
-                            : t.unavailable}
-                        </p>
-                        <p>
-                          <strong>{t.passengers}:</strong> {people}
-                        </p>
-                        <p>
-                          <strong>{t.totalToPay}:</strong> {formattedTotal.soles} ({formattedTotal.dollars})
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setShowBookingForm(false)}
-                        className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-                      >
-                        ← {t.backButton}
-                      </button>
-                      <button
-                        onClick={handleCreateOrder}
-                        className="flex-1 bg-peru-orange text-white py-2 rounded-lg font-semibold hover:bg-peru-orange/90 transition-colors"
-                      >
-                        {t.confirmReservation}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

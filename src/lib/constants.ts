@@ -1,0 +1,1 @@
+export const USD_TO_PEN_RATE = 3.8; // Example conversion rate, adjust as needed

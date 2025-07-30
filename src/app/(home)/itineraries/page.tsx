@@ -1,9 +1,9 @@
 "use client"
-
 import { useState } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { MapPin, Clock, Camera, Star, Users, Calendar, ArrowRight, CheckCircle } from "lucide-react"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 // Itinerarios informativos organizados por duración
 const itinerariesByDuration = {
@@ -18,7 +18,7 @@ const itinerariesByDuration = {
       duration: "3D/2N",
       difficulty: "Fácil" as const,
       tourType: "Premium" as const,
-      price: "desde $299",
+      price: "$299",
       rating: 4.8,
       destinations: ["Lima Centro", "Miraflores", "Barranco", "San Isidro"],
       highlights: ["Centro Histórico UNESCO", "Tour Gastronómico", "Museos de Clase Mundial", "Vida Nocturna"],
@@ -34,7 +34,7 @@ const itinerariesByDuration = {
       duration: "4D/3N",
       difficulty: "Moderado" as const,
       tourType: "Premium" as const,
-      price: "desde $449",
+      price: "$449",
       rating: 4.9,
       destinations: ["Cusco", "Valle Sagrado", "Pisac", "Ollantaytambo"],
       highlights: ["Qorikancha", "Sacsayhuamán", "Mercado de Pisac", "Fortaleza Ollantaytambo"],
@@ -50,7 +50,7 @@ const itinerariesByDuration = {
       duration: "4D/3N",
       difficulty: "Moderado" as const,
       tourType: "Clásico" as const,
-      price: "desde $389",
+      price: "$389",
       rating: 4.7,
       destinations: ["Arequipa", "Colca", "Chivay", "Yanque"],
       highlights: ["Monasterio Santa Catalina", "Cruz del Cóndor", "Aguas Termales", "Pueblos Tradicionales"],
@@ -68,11 +68,11 @@ const itinerariesByDuration = {
       duration: "7D/6N",
       difficulty: "Moderado" as const,
       tourType: "Premium" as const,
-      price: "desde $1,299",
+      price: "$1,299",
       rating: 4.9,
       destinations: ["Lima", "Cusco", "Aguas Calientes", "Valle Sagrado"],
       highlights: ["Machu Picchu", "Tren Vistadome", "Valle Sagrado", "Gastronomía Peruana"],
-      included: ["Hoteles 4*", "Vuelos domésticos", "Tren a Machu Picchu", "Tours guiados"],
+      included: ["Hoteles 4*", "Vuelos domésticos", "Tren Machu Picchu", "Tours guiados"],
     },
     {
       id: 5,
@@ -84,7 +84,7 @@ const itinerariesByDuration = {
       duration: "6D/5N",
       difficulty: "Fácil" as const,
       tourType: "Clásico" as const,
-      price: "desde $899",
+      price: "$899",
       rating: 4.6,
       destinations: ["Trujillo", "Chiclayo", "Lambayeque", "Huanchaco"],
       highlights: ["Señor de Sipán", "Chan Chan", "Huacas del Sol y Luna", "Playa Huanchaco"],
@@ -100,7 +100,7 @@ const itinerariesByDuration = {
       duration: "6D/5N",
       difficulty: "Moderado" as const,
       tourType: "Premium" as const,
-      price: "desde $1,199",
+      price: "$1,199",
       rating: 4.8,
       destinations: ["Iquitos", "Pacaya Samiria", "Río Ucayali", "Nauta"],
       highlights: ["Navegación Amazónica", "Observación de Delfines", "Comunidades Nativas", "Pesca de Pirañas"],
@@ -118,7 +118,7 @@ const itinerariesByDuration = {
       duration: "14D/13N",
       difficulty: "Moderado" as const,
       tourType: "Premium" as const,
-      price: "desde $2,899",
+      price: "$2,899",
       rating: 4.9,
       destinations: ["Lima", "Cusco", "Puno", "Arequipa", "Iquitos", "Paracas"],
       highlights: ["Líneas de Nazca", "Machu Picchu", "Lago Titicaca", "Amazonía", "Cañón del Colca"],
@@ -134,7 +134,7 @@ const itinerariesByDuration = {
       duration: "10D/9N",
       difficulty: "Difícil" as const,
       tourType: "Premium" as const,
-      price: "desde $1,899",
+      price: "$1,899",
       rating: 4.8,
       destinations: ["Cusco", "Ollantaytambo", "Choquequirao", "Aguas Calientes"],
       highlights: ["Choquequirao Trek", "Machu Picchu", "Camping Andino", "Paisajes Épicos"],
@@ -150,7 +150,7 @@ const itinerariesByDuration = {
       duration: "12D/11N",
       difficulty: "Moderado" as const,
       tourType: "Clásico" as const,
-      price: "desde $1,699",
+      price: "$1,699",
       rating: 4.7,
       destinations: ["Cusco", "Puno", "Ayacucho", "Huancayo", "Apurímac"],
       highlights: ["Convivencia Comunitaria", "Textilería Ancestral", "Ceremonias Andinas", "Medicina Tradicional"],
@@ -163,8 +163,8 @@ const durations = ["Corta Duración", "Duración Media", "Larga Duración"]
 
 export default function ItinerariesPage() {
   const [activeDuration, setActiveDuration] = useState("Corta Duración")
-
   const currentItineraries = itinerariesByDuration[activeDuration as keyof typeof itinerariesByDuration]
+  const { t } = useLanguage()
 
   return (
     <div className="min-h-screen bg-white">
@@ -174,57 +174,54 @@ export default function ItinerariesPage() {
         <div className="absolute inset-0">
           <Image
             src="https://res.cloudinary.com/dwvikvjrq/image/upload/v1748624876/banner_waz5ov.jpg"
-            alt="Perú Itinerarios"
+            alt={t.adventurerImageAlt}
             fill
             className="object-cover"
             priority
           />
           <div className="absolute inset-0 bg-black/50" />
         </div>
-
         {/* Hero Content */}
         <div className="relative z-10 text-center text-white px-4 max-w-6xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-light mb-6 brand-text leading-none">
-              Itinerarios
+              {t.itineraries}
               <br />
-              <span className="text-peru-gold">del Perú</span>
+              <span className="text-peru-gold">{t.peru}</span>
             </h1>
             <p className="text-xl md:text-2xl lg:text-3xl font-light mb-8 body-text max-w-4xl mx-auto leading-relaxed">
-              Rutas cuidadosamente diseñadas para descubrir los tesoros más increíbles del Perú
+              {t.itinerariesHeroSubtitle}
             </p>
             <motion.button
               className="px-8 py-4 bg-peru-orange text-white brand-text text-lg hover:bg-peru-orange/90 transition-all duration-300 group"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              EXPLORAR ITINERARIOS
+              {t.exploreItineraries}
               <ArrowRight className="inline-block ml-2 group-hover:translate-x-1 transition-transform" size={20} />
             </motion.button>
           </motion.div>
+          {/* Scroll Indicator */}
+          <motion.div
+            className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+          >
+            <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
+              <div className="w-1 h-3 bg-white rounded-full mt-2"></div>
+            </div>
+          </motion.div>
         </div>
-
-        {/* Scroll Indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-        >
-          <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white rounded-full mt-2"></div>
-          </div>
-        </motion.div>
       </section>
-
       {/* Stats Section */}
       <section className="py-16 md:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { number: "50+", label: "Itinerarios Únicos" },
-              { number: "15", label: "Años de Experiencia" },
-              { number: "10,000+", label: "Viajeros Felices" },
-              { number: "4.9", label: "Rating Promedio" },
+              { number: "50+", label: t.uniqueItineraries },
+              { number: "15", label: t.yearsOfExperience },
+              { number: "10,000+", label: t.happyTravelers },
+              { number: "4.9", label: t.averageRating },
             ].map((stat, index) => (
               <motion.div
                 key={index}
@@ -243,25 +240,22 @@ export default function ItinerariesPage() {
           </div>
         </div>
       </section>
-
       {/* Duration Selection */}
       <section className="py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <motion.div
-            className="text-center mb-12"
+            className="text-center mb-16"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-light text-black mb-6 brand-text">
-              Elige tu <span className="text-peru-orange">Aventura</span>
+              {t.chooseYourAdventure.split(" ")[0]}{" "}
+              <span className="text-peru-orange">{t.chooseYourAdventure.split(" ")[1]}</span>
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">
-              Desde escapadas de fin de semana hasta expediciones épicas, tenemos el itinerario perfecto para ti
-            </p>
+            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">{t.chooseAdventureSubtitle}</p>
           </motion.div>
-
           {/* Duration Tabs */}
           <motion.div
             className="flex justify-center mb-16"
@@ -271,7 +265,7 @@ export default function ItinerariesPage() {
             viewport={{ once: true }}
           >
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-0 bg-white shadow-lg rounded-lg p-2">
-              {durations.map((duration, ) => (
+              {durations.map((duration) => (
                 <motion.button
                   key={duration}
                   onClick={() => setActiveDuration(duration)}
@@ -290,7 +284,6 @@ export default function ItinerariesPage() {
           </motion.div>
         </div>
       </section>
-
       {/* Itineraries Grid */}
       <section className="pb-16 md:pb-24">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -318,7 +311,6 @@ export default function ItinerariesPage() {
                     className="object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
                   {/* Badges */}
                   <div className="absolute top-4 left-4 right-4 flex justify-between">
                     <span className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium brand-text flex items-center">
@@ -333,15 +325,13 @@ export default function ItinerariesPage() {
                       {itinerary.tourType}
                     </span>
                   </div>
-
                   {/* Price */}
                   <div className="absolute bottom-4 right-4">
                     <div className="bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg">
-                      <div className="text-xs text-gray-600 body-text">Desde</div>
+                      <div className="text-xs text-gray-600 body-text">{t.from}</div>
                       <div className="text-lg font-bold text-peru-orange brand-text">{itinerary.price}</div>
                     </div>
                   </div>
-
                   {/* Title */}
                   <div className="absolute bottom-4 left-4">
                     <h3 className="text-xl font-bold text-white brand-text mb-1">{itinerary.title}</h3>
@@ -351,15 +341,13 @@ export default function ItinerariesPage() {
                     </div>
                   </div>
                 </div>
-
                 {/* Content */}
                 <div className="p-6">
                   <h4 className="text-lg font-medium text-gray-800 brand-text mb-2">{itinerary.subtitle}</h4>
                   <p className="text-gray-600 body-text text-sm leading-relaxed mb-4">{itinerary.description}</p>
-
                   {/* Highlights */}
                   <div className="mb-4">
-                    <h5 className="text-sm font-medium text-gray-800 brand-text mb-2">Highlights principales:</h5>
+                    <h5 className="text-sm font-medium text-gray-800 brand-text mb-2">{t.mainHighlights}</h5>
                     <div className="space-y-1">
                       {itinerary.highlights.slice(0, 3).map((highlight, idx) => (
                         <div key={idx} className="flex items-center text-xs text-gray-600">
@@ -369,7 +357,6 @@ export default function ItinerariesPage() {
                       ))}
                     </div>
                   </div>
-
                   {/* Destinations */}
                   <div className="mb-4">
                     <div className="flex flex-wrap gap-1">
@@ -380,29 +367,33 @@ export default function ItinerariesPage() {
                       ))}
                       {itinerary.destinations.length > 3 && (
                         <span className="px-2 py-1 bg-peru-orange/10 text-peru-orange text-xs body-text rounded">
-                          +{itinerary.destinations.length - 3} más
+                          +{itinerary.destinations.length - 3}{" "}
+                          {t.plusMore.replace("{count}", (itinerary.destinations.length - 3).toString())}
                         </span>
                       )}
                     </div>
                   </div>
-
                   {/* Footer */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                     <div className="flex items-center space-x-4 text-xs text-gray-500">
                       <div className="flex items-center">
                         <Users size={12} className="mr-1" />
-                        <span className="body-text">Grupo</span>
+                        <span className="body-text">{t.group}</span>
                       </div>
                       <div className="flex items-center">
                         <Calendar size={12} className="mr-1" />
-                        <span className="body-text">{itinerary.difficulty}</span>
+                        <span className="body-text">
+                          {itinerary.difficulty === "Fácil" && t.difficultyFacil}
+                          {itinerary.difficulty === "Moderado" && t.difficultyModerado}
+                          {itinerary.difficulty === "Difícil" && t.difficultyDificil}
+                        </span>
                       </div>
                     </div>
                     <motion.button
                       className="text-peru-orange hover:text-peru-orange/80 text-sm font-medium brand-text flex items-center group"
                       whileHover={{ x: 5 }}
                     >
-                      Ver detalles
+                      {t.viewDetails}
                       <ArrowRight size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
                     </motion.button>
                   </div>
@@ -412,7 +403,6 @@ export default function ItinerariesPage() {
           </motion.div>
         </div>
       </section>
-
       {/* Why Choose Us */}
       <section className="py-16 md:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -424,41 +414,42 @@ export default function ItinerariesPage() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-light text-black mb-6 brand-text">
-              ¿Por qué elegir nuestros <span className="text-peru-orange">Itinerarios</span>?
+              {t.whyChooseOurItineraries.split(" ")[0]} {t.whyChooseOurItineraries.split(" ")[1]}{" "}
+              {t.whyChooseOurItineraries.split(" ")[2]}{" "}
+              <span className="text-peru-orange">{t.whyChooseOurItineraries.split(" ")[3]}</span>?
             </h2>
           </motion.div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
                 icon: <MapPin className="text-peru-orange" size={32} />,
-                title: "Rutas Exclusivas",
-                description: "Itinerarios únicos diseñados por expertos locales con acceso a lugares especiales",
+                title: t.exclusiveRoutes,
+                description: t.exclusiveRoutesDescription,
               },
               {
                 icon: <Users className="text-peru-orange" size={32} />,
-                title: "Grupos Pequeños",
-                description: "Máximo 16 personas para una experiencia más personalizada e íntima",
+                title: t.smallGroups,
+                description: t.smallGroupsDescription,
               },
               {
                 icon: <Star className="text-peru-orange" size={32} />,
-                title: "Calidad Garantizada",
-                description: "Hoteles seleccionados, guías certificados y servicios de primera clase",
+                title: t.guaranteedQuality,
+                description: t.guaranteedQualityDescription,
               },
               {
                 icon: <Clock className="text-peru-orange" size={32} />,
-                title: "Flexibilidad Total",
-                description: "Adaptamos cualquier itinerario según tus preferencias y necesidades",
+                title: t.totalFlexibility,
+                description: t.totalFlexibilityDescription,
               },
               {
                 icon: <CheckCircle className="text-peru-orange" size={32} />,
-                title: "Todo Incluido",
-                description: "Sin sorpresas: hoteles, traslados, tours y muchas comidas incluidas",
+                title: t.allInclusive,
+                description: t.allInclusiveDescription,
               },
               {
                 icon: <Camera className="text-peru-orange" size={32} />,
-                title: "Experiencias Únicas",
-                description: "Actividades exclusivas que no encontrarás en otros operadores",
+                title: t.uniqueExperiences,
+                description: t.uniqueExperiencesDescription,
               },
             ].map((feature, index) => (
               <motion.div
@@ -477,7 +468,6 @@ export default function ItinerariesPage() {
           </div>
         </div>
       </section>
-
       {/* CTA Section */}
       <section className="py-16 md:py-24 bg-peru-dark text-white">
         <div className="max-w-4xl mx-auto text-center px-4 md:px-8">
@@ -488,12 +478,12 @@ export default function ItinerariesPage() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-light mb-6 brand-text leading-tight">
-              ¿Listo para tu próxima
-              <br />
-              <span className="text-peru-gold">aventura peruana</span>?
+              {t.readyForAdventure.split(" ")[0]} {t.readyForAdventure.split(" ")[1]}{" "}
+              {t.readyForAdventure.split(" ")[2]} <br />
+              <span className="text-peru-gold">{t.readyForAdventure.split(" ")[3]}</span>?
             </h2>
             <p className="text-lg md:text-xl body-text mb-8 max-w-2xl mx-auto opacity-90">
-              Nuestros expertos están listos para diseñar el itinerario perfecto según tus sueños y presupuesto
+              {t.readyForAdventureSubtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.button
@@ -501,7 +491,7 @@ export default function ItinerariesPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                CONSULTAR ITINERARIO
+                {t.consultItinerary}
                 <ArrowRight className="inline-block ml-2 group-hover:translate-x-1 transition-transform" size={20} />
               </motion.button>
               <motion.button
@@ -509,7 +499,7 @@ export default function ItinerariesPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                HABLAR CON EXPERTO
+                {t.speakToExpert}
               </motion.button>
             </div>
           </motion.div>

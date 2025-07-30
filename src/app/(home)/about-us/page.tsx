@@ -20,305 +20,310 @@ import {
   TrendingUp,
   CheckCircle,
 } from "lucide-react"
-
-// Datos del equipo
-const teamMembers = [
-  {
-    id: 1,
-    name: "Carlos Mendoza",
-    position: "Fundador & CEO",
-    experience: "15 años",
-    specialty: "Turismo de Aventura",
-    image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
-    description:
-      "Apasionado por mostrar la belleza del Perú al mundo, Carlos fundó Inka Travel con la visión de crear experiencias auténticas e inolvidables.",
-    languages: ["Español", "Inglés", "Quechua"],
-    certifications: ["Guía Oficial", "Primeros Auxilios", "Turismo Sostenible"],
-  },
-  {
-    id: 2,
-    name: "María Quispe",
-    position: "Directora de Operaciones",
-    experience: "12 años",
-    specialty: "Turismo Cultural",
-    image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
-    description:
-      "Experta en cultura andina y tradiciones ancestrales, María asegura que cada viaje sea una inmersión cultural auténtica.",
-    languages: ["Español", "Inglés", "Quechua", "Aymara"],
-    certifications: ["Antropóloga", "Guía Especializada", "Patrimonio Cultural"],
-  },
-  {
-    id: 3,
-    name: "Roberto Silva",
-    position: "Jefe de Guías",
-    experience: "10 años",
-    specialty: "Trekking & Montañismo",
-    image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
-    description:
-      "Montañista experimentado y conocedor profundo de los Andes, Roberto lidera nuestro equipo de guías especializados.",
-    languages: ["Español", "Inglés", "Francés"],
-    certifications: ["Guía de Montaña", "Rescate en Altura", "Wilderness First Aid"],
-  },
-  {
-    id: 4,
-    name: "Ana Vargas",
-    position: "Coordinadora de Sostenibilidad",
-    experience: "8 años",
-    specialty: "Turismo Responsable",
-    image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
-    description:
-      "Bióloga y conservacionista, Ana desarrolla nuestros programas de turismo sostenible y responsabilidad social.",
-    languages: ["Español", "Inglés", "Portugués"],
-    certifications: ["Bióloga", "Turismo Sostenible", "Conservación"],
-  },
-]
-
-// Estadísticas de la empresa
-const companyStats = [
-  {
-    number: "15+",
-    label: "Años de Experiencia",
-    description: "Creando experiencias inolvidables",
-    icon: Calendar,
-    color: "text-peru-orange",
-    bgColor: "bg-peru-orange/10",
-  },
-  {
-    number: "10,000+",
-    label: "Viajeros Felices",
-    description: "De más de 50 países",
-    icon: Users,
-    color: "text-peru-green",
-    bgColor: "bg-peru-green/10",
-  },
-  {
-    number: "50+",
-    label: "Destinos Únicos",
-    description: "Por todo el Perú",
-    icon: MapPin,
-    color: "text-peru-gold",
-    bgColor: "bg-peru-gold/10",
-  },
-  {
-    number: "98%",
-    label: "Satisfacción",
-    description: "Calificación promedio",
-    icon: Star,
-    color: "text-peru-orange",
-    bgColor: "bg-peru-orange/10",
-  },
-]
-
-// Valores de la empresa
-const companyValues = [
-  {
-    title: "Autenticidad",
-    description: "Experiencias genuinas que conectan con la cultura local y las tradiciones ancestrales del Perú.",
-    icon: Heart,
-    color: "bg-red-50 text-red-600",
-    borderColor: "border-red-200",
-  },
-  {
-    title: "Sostenibilidad",
-    description: "Turismo responsable que protege el medio ambiente y beneficia a las comunidades locales.",
-    icon: Leaf,
-    color: "bg-green-50 text-green-600",
-    borderColor: "border-green-200",
-  },
-  {
-    title: "Excelencia",
-    description: "Estándares de calidad superiores en cada detalle de nuestros servicios y experiencias.",
-    icon: Award,
-    color: "bg-yellow-50 text-yellow-600",
-    borderColor: "border-yellow-200",
-  },
-  {
-    title: "Seguridad",
-    description: "Protocolos rigurosos y equipos especializados para garantizar la seguridad de nuestros viajeros.",
-    icon: Shield,
-    color: "bg-blue-50 text-blue-600",
-    borderColor: "border-blue-200",
-  },
-  {
-    title: "Innovación",
-    description: "Constantemente mejoramos nuestros servicios incorporando nuevas tecnologías y metodologías.",
-    icon: Compass,
-    color: "bg-purple-50 text-purple-600",
-    borderColor: "border-purple-200",
-  },
-  {
-    title: "Pasión",
-    description: "Amor genuino por el Perú y dedicación absoluta para compartir sus maravillas con el mundo.",
-    icon: Mountain,
-    color: "bg-orange-50 text-orange-600",
-    borderColor: "border-orange-200",
-  },
-]
-
-// Certificaciones y reconocimientos
-const certifications = [
-  {
-    title: "Certificación IATA",
-    description: "Agencia de viajes certificada internacionalmente",
-    year: "2015",
-    icon: Globe,
-  },
-  {
-    title: "Turismo Sostenible",
-    description: "Certificado por el Ministerio de Turismo del Perú",
-    year: "2018",
-    icon: Leaf,
-  },
-  {
-    title: "Excelencia TripAdvisor",
-    description: "Certificado de Excelencia por 5 años consecutivos",
-    year: "2019-2024",
-    icon: Award,
-  },
-  {
-    title: "ISO 9001",
-    description: "Sistema de gestión de calidad certificado",
-    year: "2020",
-    icon: Shield,
-  },
-]
-
-// Testimonios de clientes
-const testimonials = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    country: "Estados Unidos",
-    rating: 5,
-    text: "Inka Travel hizo que nuestro viaje a Perú fuera absolutamente mágico. Cada detalle estaba perfectamente planificado y nuestro guía Carlos fue increíble. ¡Definitivamente regresaremos!",
-    tour: "Machu Picchu & Valle Sagrado",
-    image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
-  },
-  {
-    id: 2,
-    name: "Hans Mueller",
-    country: "Alemania",
-    rating: 5,
-    text: "La experiencia más auténtica que he tenido viajando. El equipo de Inka Travel realmente conoce el Perú y te hace sentir la cultura de una manera única.",
-    tour: "Camino Inca Clásico",
-    image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
-  },
-  {
-    id: 3,
-    name: "Yuki Tanaka",
-    country: "Japón",
-    rating: 5,
-    text: "Profesionalismo excepcional y atención a cada detalle. Inka Travel superó todas nuestras expectativas. El Amazonas fue una experiencia transformadora.",
-    tour: "Aventura Amazónica",
-    image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
-  },
-]
-
-// Historia de la empresa (timeline)
-const companyHistory = [
-  {
-    year: "2009",
-    title: "Fundación",
-    description: "Carlos Mendoza funda Inka Travel con la visión de mostrar el verdadero Perú al mundo.",
-    milestone: "Primeros tours a Machu Picchu",
-    icon: Target,
-    color: "bg-peru-orange",
-    achievements: ["Primera oficina en Cusco", "5 tours iniciales", "Equipo de 3 personas"],
-  },
-  {
-    year: "2012",
-    title: "Expansión",
-    description: "Ampliamos nuestros servicios al Amazonas y la costa norte del Perú.",
-    milestone: "1,000 viajeros atendidos",
-    icon: TrendingUp,
-    color: "bg-peru-green",
-    achievements: ["Nuevas rutas amazónicas", "Oficina en Lima", "15 guías especializados"],
-  },
-  {
-    year: "2015",
-    title: "Certificación Internacional",
-    description: "Obtenemos la certificación IATA y reconocimiento del Ministerio de Turismo.",
-    milestone: "Certificación IATA",
-    icon: Award,
-    color: "bg-peru-gold",
-    achievements: ["Certificación IATA", "Reconocimiento oficial", "5,000 clientes satisfechos"],
-  },
-  {
-    year: "2018",
-    title: "Turismo Sostenible",
-    description: "Implementamos programas de turismo responsable y sostenibilidad ambiental.",
-    milestone: "Certificación Sostenible",
-    icon: Leaf,
-    color: "bg-green-600",
-    achievements: ["Programas eco-friendly", "Alianzas comunitarias", "Certificación verde"],
-  },
-  {
-    year: "2020",
-    title: "Innovación Digital",
-    description: "Adaptación a nuevas tecnologías y protocolos de seguridad post-pandemia.",
-    milestone: "Plataforma digital",
-    icon: Compass,
-    color: "bg-blue-600",
-    achievements: ["Plataforma online", "Tours virtuales", "Protocolos COVID-19"],
-  },
-  {
-    year: "2024",
-    title: "Líderes del Sector",
-    description: "Reconocidos como una de las mejores agencias de turismo del Perú.",
-    milestone: "10,000+ viajeros felices",
-    icon: CheckCircle,
-    color: "bg-purple-600",
-    achievements: ["Líder del mercado", "50+ destinos", "98% satisfacción"],
-  },
-]
-
-// Razones para elegirnos
-const whyChooseUs = [
-  {
-    title: "Experiencia Local",
-    description: "15 años de experiencia profunda en el turismo peruano con guías nativos especializados.",
-    icon: Mountain,
-    color: "text-peru-orange",
-  },
-  {
-    title: "Turismo Responsable",
-    description: "Comprometidos con la sostenibilidad y el beneficio de las comunidades locales.",
-    icon: Leaf,
-    color: "text-green-600",
-  },
-  {
-    title: "Atención Personalizada",
-    description: "Cada viaje es único y diseñado específicamente para tus intereses y necesidades.",
-    icon: Heart,
-    color: "text-red-600",
-  },
-  {
-    title: "Seguridad Garantizada",
-    description: "Protocolos rigurosos de seguridad y equipos especializados en cada expedición.",
-    icon: Shield,
-    color: "text-blue-600",
-  },
-  {
-    title: "Soporte 24/7",
-    description: "Asistencia completa antes, durante y después de tu viaje por el Perú.",
-    icon: Users,
-    color: "text-purple-600",
-  },
-  {
-    title: "Mejor Precio Garantizado",
-    description: "Precios competitivos sin comprometer la calidad de nuestros servicios premium.",
-    icon: Award,
-    color: "text-yellow-600",
-  },
-]
+import { useLanguage } from "@/contexts/LanguageContext"
 
 export default function AboutUsPage() {
+  const { t } = useLanguage()
+
+  // Datos del equipo
+  const teamMembers = [
+    {
+      id: 1,
+      name: "Carlos Mendoza",
+      position: t.founderCEO,
+      experience: "15 " + t.yearsOfExperience,
+      specialty: t.sustainableTourism, // Reusing key for "Turismo de Aventura"
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
+      description: t.carlosDescription,
+      languages: [t.spanish, t.english, t.quechua],
+      certifications: [t.officialGuide, t.firstAid, t.sustainableTourism],
+    },
+    {
+      id: 2,
+      name: "María Quispe",
+      position: t.operationsDirector,
+      experience: "12 " + t.yearsOfExperience,
+      specialty: t.culturalHeritage, // Reusing key for "Turismo Cultural"
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
+      description: t.mariaDescription,
+      languages: [t.spanish, t.english, t.quechua, t.aymara],
+      certifications: [t.anthropologist, t.specializedGuide, t.culturalHeritage],
+    },
+    {
+      id: 3,
+      name: "Roberto Silva",
+      position: t.headOfGuides,
+      experience: "10 " + t.yearsOfExperience,
+      specialty: t.mountainGuide, // Reusing key for "Trekking & Montañismo"
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
+      description: t.robertoDescription,
+      languages: [t.spanish, t.english, t.french],
+      certifications: [t.mountainGuide, t.highAltitudeRescue, t.wildernessFirstAid],
+    },
+    {
+      id: 4,
+      name: "Ana Vargas",
+      position: t.sustainabilityCoordinator,
+      experience: "8 " + t.yearsOfExperience,
+      specialty: t.responsibleTourism, // Reusing key for "Turismo Responsable"
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
+      description: t.anaDescription,
+      languages: [t.spanish, t.english, t.portuguese],
+      certifications: [t.biologist, t.sustainableTourism, t.conservation],
+    },
+  ]
+
+  // Estadísticas de la empresa
+  const companyStats = [
+    {
+      number: "15+",
+      label: t.yearsOfExperience,
+      description: t.creatingUnforgettableExperiences,
+      icon: Calendar,
+      color: "text-peru-orange",
+      bgColor: "bg-peru-orange/10",
+    },
+    {
+      number: "10,000+",
+      label: t.happyTravelers,
+      description: t.fromOver50Countries,
+      icon: Users,
+      color: "text-peru-green",
+      bgColor: "bg-peru-green/10",
+    },
+    {
+      number: "50+",
+      label: t.uniqueDestinations,
+      description: t.throughoutPeru,
+      icon: MapPin,
+      color: "text-peru-gold",
+      bgColor: "bg-peru-gold/10",
+    },
+    {
+      number: "98%",
+      label: t.satisfaction,
+      description: t.averageRating,
+      icon: Star,
+      color: "text-peru-orange",
+      bgColor: "bg-peru-orange/10",
+    },
+  ]
+
+  // Valores de la empresa
+  const companyValues = [
+    {
+      title: t.authenticity,
+      description: t.authenticityDescription,
+      icon: Heart,
+      color: "bg-red-50 text-red-600",
+      borderColor: "border-red-200",
+    },
+    {
+      title: t.sustainability,
+      description: t.sustainabilityValueDescription,
+      icon: Leaf,
+      color: "bg-green-50 text-green-600",
+      borderColor: "border-green-200",
+    },
+    {
+      title: t.excellence,
+      description: t.excellenceDescription,
+      icon: Award,
+      color: "bg-yellow-50 text-yellow-600",
+      borderColor: "border-yellow-200",
+    },
+    {
+      title: t.safety,
+      description: t.safetyDescription,
+      icon: Shield,
+      color: "bg-blue-50 text-blue-600",
+      borderColor: "border-blue-200",
+    },
+    {
+      title: t.innovation,
+      description: t.innovationDescription,
+      icon: Compass,
+      color: "bg-purple-50 text-purple-600",
+      borderColor: "border-purple-200",
+    },
+    {
+      title: t.passion,
+      description: t.passionDescription,
+      icon: Mountain,
+      color: "bg-orange-50 text-orange-600",
+      borderColor: "border-orange-200",
+    },
+  ]
+
+  // Certificaciones y reconocimientos
+  const certifications = [
+    {
+      title: t.iataCertification,
+      description: t.iataCertificationDescription,
+      year: "2015",
+      icon: Globe,
+    },
+    {
+      title: t.sustainableTourism,
+      description: t.sustainableTourismCertDescription,
+      year: "2018",
+      icon: Leaf,
+    },
+    {
+      title: t.tripAdvisorExcellence,
+      description: t.tripAdvisorExcellenceDescription,
+      year: "2019-2024",
+      icon: Award,
+    },
+    {
+      title: t.iso9001,
+      description: t.iso9001Description,
+      year: "2020",
+      icon: Shield,
+    },
+  ]
+
+  // Testimonios de clientes
+  const testimonials = [
+    {
+      id: 1,
+      name: "Sarah Johnson",
+      country: t.unitedStates,
+      rating: 5,
+      text: t.testimonialText1,
+      tour: t.machuPicchuSacredValley,
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
+    },
+    {
+      id: 2,
+      name: "Hans Mueller",
+      country: t.germany,
+      rating: 5,
+      text: t.testimonialText2,
+      tour: t.classicIncaTrail,
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
+    },
+    {
+      id: 3,
+      name: "Yuki Tanaka",
+      country: t.japan,
+      rating: 5,
+      text: t.testimonialText3,
+      tour: t.amazonAdventure,
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1750432260/turismo-vivencial-la-comunidad-amaru-cuzco-inkayni-peru-tours_enayn1.webp",
+    },
+  ]
+
+  // Historia de la empresa (timeline)
+  const companyHistory = [
+    {
+      year: "2009",
+      title: t.foundation,
+      description: t.foundationDescription,
+      milestone: t.firstToursMachuPicchu,
+      icon: Target,
+      color: "bg-peru-orange",
+      achievements: [t.firstOfficeCusco, t.fiveInitialTours, t.teamOfThree],
+    },
+    {
+      year: "2012",
+      title: t.expansion,
+      description: t.expansionDescription,
+      milestone: t.thousandTravelersServed,
+      icon: TrendingUp,
+      color: "bg-peru-green",
+      achievements: [t.newAmazonRoutes, t.officeInLima, t.fifteenSpecializedGuides],
+    },
+    {
+      year: "2015",
+      title: t.internationalCertification,
+      description: t.iataCertificationDescription,
+      milestone: t.iataCertification,
+      icon: Award,
+      color: "bg-peru-gold",
+      achievements: [t.iataCertification, t.officialRecognition, t.fiveThousandSatisfiedClients],
+    },
+    {
+      year: "2018",
+      title: t.sustainableTourism,
+      description: t.sustainableTourismDescription,
+      milestone: t.sustainableCertification,
+      icon: Leaf,
+      color: "bg-green-600",
+      achievements: [t.ecoFriendlyPrograms, t.communityPartnerships, t.greenCertification],
+    },
+    {
+      year: "2020",
+      title: t.digitalInnovation,
+      description: t.digitalInnovationDescription,
+      milestone: t.digitalPlatform,
+      icon: Compass,
+      color: "bg-blue-600",
+      achievements: [t.digitalPlatform, t.virtualTours, t.covidProtocols],
+    },
+    {
+      year: "2024",
+      title: t.industryLeaders,
+      description: t.industryLeadersDescription,
+      milestone: t.tenThousandPlusHappyTravelers,
+      icon: CheckCircle,
+      color: "bg-purple-600",
+      achievements: [t.marketLeader, t.fiftyPlusDestinations, t.ninetyEightPercentSatisfaction],
+    },
+  ]
+
+  // Razones para elegirnos
+  const whyChooseUs = [
+    {
+      title: t.localExperience,
+      description: t.localExperienceDescription,
+      icon: Mountain,
+      color: "text-peru-orange",
+    },
+    {
+      title: t.responsibleTourism,
+      description: t.responsibleTourismDescription,
+      icon: Leaf,
+      color: "text-green-600",
+    },
+    {
+      title: t.personalizedAttention,
+      description: t.personalizedAttentionDescription,
+      icon: Heart,
+      color: "text-red-600",
+    },
+    {
+      title: t.guaranteedSafety,
+      description: t.guaranteedSafetyDescription,
+      icon: Shield,
+      color: "text-blue-600",
+    },
+    {
+      title: t.support247,
+      description: t.support247Description,
+      icon: Users,
+      color: "text-purple-600",
+    },
+    {
+      title: t.bestPriceGuaranteed,
+      description: t.bestPriceGuaranteedDescription,
+      icon: Award,
+      color: "text-yellow-600",
+    },
+  ]
+
   const timelineRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
     target: timelineRef,
     offset: ["start end", "end start"],
   })
-
   const progressHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"])
 
   return (
@@ -333,7 +338,6 @@ export default function AboutUsPage() {
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="max-w-7xl mx-auto px-4 md:px-8 text-center">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
@@ -343,7 +347,7 @@ export default function AboutUsPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
-                Sobre Nosotros
+                {t.aboutUs}
               </motion.h1>
               <motion.p
                 className="text-xl md:text-2xl text-white/90 body-text max-w-4xl mx-auto mb-8 leading-relaxed"
@@ -351,8 +355,7 @@ export default function AboutUsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                Somos una empresa familiar peruana dedicada a crear experiencias auténticas e inolvidables que conectan
-                a los viajeros con la rica cultura, historia y naturaleza del Perú.
+                {t.aboutHeroSubtitle}
               </motion.p>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -365,20 +368,19 @@ export default function AboutUsPage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  CONOCE NUESTRA HISTORIA
+                  {t.ourStoryButton}
                 </motion.button>
                 <motion.button
                   className="px-8 py-4 border-2 border-white text-white brand-text text-lg hover:bg-white hover:text-peru-dark transition-all duration-300"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  VER NUESTRO EQUIPO
+                  {t.viewOurTeamButton}
                 </motion.button>
               </motion.div>
             </motion.div>
           </div>
         </div>
-
         {/* Scroll Indicator */}
         <motion.div
           className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white cursor-pointer"
@@ -387,12 +389,11 @@ export default function AboutUsPage() {
           onClick={() => window.scrollTo({ top: window.innerHeight, behavior: "smooth" })}
         >
           <div className="flex flex-col items-center">
-            <span className="text-sm body-text mb-2">Descubre más</span>
+            <span className="text-sm body-text mb-2">{t.discoverMore}</span>
             <ChevronDown size={32} />
           </div>
         </motion.div>
       </div>
-
       {/* Estadísticas */}
       <section className="py-16 md:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -403,12 +404,9 @@ export default function AboutUsPage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">Nuestros Logros</h2>
-            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">
-              Números que reflejan nuestro compromiso con la excelencia y la satisfacción de nuestros viajeros.
-            </p>
+            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">{t.ourAchievements}</h2>
+            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">{t.achievementsSubtitle}</p>
           </motion.div>
-
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             {companyStats.map((stat, index) => {
               const IconComponent = stat.icon
@@ -443,7 +441,6 @@ export default function AboutUsPage() {
           </div>
         </div>
       </section>
-
       {/* Timeline con Progress Bar */}
       <section className="py-16 md:py-24 bg-white" ref={timelineRef}>
         <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -454,23 +451,18 @@ export default function AboutUsPage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">Nuestra Historia</h2>
-            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">
-              Un viaje de 15 años construyendo experiencias inolvidables y conectando corazones con el Perú.
-            </p>
+            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">{t.ourHistory}</h2>
+            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">{t.historySubtitle}</p>
           </motion.div>
-
           {/* Timeline con Progress Bar */}
           <div className="relative max-w-6xl mx-auto">
             {/* Línea de fondo */}
             <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gray-200 hidden md:block" />
-
             {/* Línea de progreso animada */}
             <motion.div
               className="absolute left-1/2 transform -translate-x-1/2 w-1 bg-gradient-to-b from-peru-orange to-peru-gold hidden md:block"
               style={{ height: progressHeight }}
             />
-
             <div className="space-y-12 md:space-y-20">
               {companyHistory.map((item, index) => {
                 const IconComponent = item.icon
@@ -505,14 +497,11 @@ export default function AboutUsPage() {
                           </motion.span>
                           <h3 className="text-2xl md:text-3xl font-bold text-black brand-text">{item.title}</h3>
                         </div>
-
                         <p className="text-gray-600 body-text mb-6 leading-relaxed text-lg">{item.description}</p>
-
                         <div className="flex items-center space-x-2 text-peru-orange mb-6">
                           <Award size={20} />
                           <span className="text-base font-medium body-text">{item.milestone}</span>
                         </div>
-
                         {/* Logros específicos */}
                         <div className="space-y-2">
                           <h4 className="text-sm font-semibold text-gray-700 brand-text mb-3">Logros Destacados:</h4>
@@ -532,7 +521,6 @@ export default function AboutUsPage() {
                         </div>
                       </motion.div>
                     </div>
-
                     {/* Punto central animado con icono */}
                     <div className="hidden md:flex w-2/12 justify-center">
                       <motion.div
@@ -544,7 +532,6 @@ export default function AboutUsPage() {
                         whileHover={{ scale: 1.1 }}
                       >
                         <IconComponent size={24} className="text-white" />
-
                         {/* Pulso animado más sutil */}
                         <motion.div
                           className={`absolute inset-0 ${item.color} rounded-full opacity-20`}
@@ -554,7 +541,6 @@ export default function AboutUsPage() {
                         />
                       </motion.div>
                     </div>
-
                     {/* Espacio */}
                     <div className="hidden md:block w-5/12" />
                   </motion.div>
@@ -564,7 +550,6 @@ export default function AboutUsPage() {
           </div>
         </div>
       </section>
-
       {/* Por qué Elegirnos - Sin gradiente */}
       <section className="py-16 md:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -575,12 +560,9 @@ export default function AboutUsPage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">¿Por Qué Elegirnos?</h2>
-            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">
-              Descubre las razones que nos convierten en la mejor opción para tu aventura peruana.
-            </p>
+            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">{t.whyChooseUs}</h2>
+            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">{t.whyChooseUsSubtitle}</p>
           </motion.div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {whyChooseUs.map((reason, index) => {
               const IconComponent = reason.icon
@@ -604,7 +586,6 @@ export default function AboutUsPage() {
           </div>
         </div>
       </section>
-
       {/* Nuestros Valores */}
       <section className="py-16 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -615,13 +596,9 @@ export default function AboutUsPage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">Nuestros Valores</h2>
-            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">
-              Los principios que guían cada decisión y acción en Inka Travel, asegurando experiencias excepcionales y
-              responsables.
-            </p>
+            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">{t.ourValues}</h2>
+            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">{t.ourValuesSubtitle}</p>
           </motion.div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {companyValues.map((value, index) => {
               const IconComponent = value.icon
@@ -647,7 +624,6 @@ export default function AboutUsPage() {
           </div>
         </div>
       </section>
-
       {/* Nuestro Equipo */}
       <section className="py-16 md:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -658,12 +634,9 @@ export default function AboutUsPage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">Nuestro Equipo</h2>
-            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">
-              Conoce a los expertos apasionados que hacen posible cada experiencia única en el Perú.
-            </p>
+            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">{t.ourTeam}</h2>
+            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">{t.teamSubtitle}</p>
           </motion.div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {teamMembers.map((member, index) => (
               <motion.div
@@ -683,7 +656,6 @@ export default function AboutUsPage() {
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
                   {/* Info overlay en hover */}
                   <div className="absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <div className="flex flex-wrap gap-1 mb-2">
@@ -695,12 +667,10 @@ export default function AboutUsPage() {
                     </div>
                   </div>
                 </div>
-
                 {/* Información del miembro */}
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-black brand-text mb-1">{member.name}</h3>
                   <p className="text-peru-orange font-medium body-text mb-2">{member.position}</p>
-
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-gray-600 mb-4 space-y-1 sm:space-y-0">
                     <div className="flex items-center space-x-1">
                       <Calendar size={14} />
@@ -711,9 +681,7 @@ export default function AboutUsPage() {
                       <span className="body-text">{member.specialty}</span>
                     </div>
                   </div>
-
                   <p className="text-gray-600 body-text text-sm leading-relaxed mb-4">{member.description}</p>
-
                   {/* Certificaciones */}
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 brand-text mb-2">Certificaciones</h4>
@@ -734,7 +702,6 @@ export default function AboutUsPage() {
           </div>
         </div>
       </section>
-
       {/* Certificaciones */}
       <section className="py-16 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -746,14 +713,10 @@ export default function AboutUsPage() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">
-              Certificaciones y Reconocimientos
+              {t.certificationsAndRecognitions}
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">
-              Nuestro compromiso con la excelencia está respaldado por certificaciones internacionales y reconocimientos
-              de la industria.
-            </p>
+            <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">{t.certificationsSubtitle}</p>
           </motion.div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {certifications.map((cert, index) => {
               const IconComponent = cert.icon
@@ -780,7 +743,6 @@ export default function AboutUsPage() {
           </div>
         </div>
       </section>
-
       {/* Testimonios - Espaciado corregido */}
       <section className="py-16 md:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -791,14 +753,11 @@ export default function AboutUsPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">
-              Lo Que Dicen Nuestros Viajeros
-            </h2>
+            <h2 className="text-3xl md:text-5xl font-light text-black brand-text mb-6">{t.whatOurTravelersSay}</h2>
             <p className="text-lg md:text-xl text-gray-600 body-text max-w-3xl mx-auto">
-              Las experiencias de nuestros viajeros son nuestro mayor orgullo y motivación para seguir mejorando.
+              {t.travelerExperiencesSubtitle}
             </p>
           </motion.div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {testimonials.map((testimonial, index) => (
               <motion.div
@@ -815,13 +774,11 @@ export default function AboutUsPage() {
                     <Star key={i} size={16} className="text-yellow-400 fill-current" />
                   ))}
                 </div>
-
                 {/* Quote */}
                 <div className="relative mb-6">
                   <Quote size={24} className="text-peru-orange/30 absolute -top-2 -left-2" />
                   <p className="text-gray-600 body-text leading-relaxed italic pl-6">{'"' + testimonial.text + '"'}</p>
                 </div>
-
                 {/* Cliente info */}
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
@@ -844,7 +801,6 @@ export default function AboutUsPage() {
           </div>
         </div>
       </section>
-
       {/* Call to Action */}
       <section className="py-16 md:py-24 bg-peru-dark text-white">
         <div className="max-w-4xl mx-auto text-center px-4 md:px-8">
@@ -855,11 +811,10 @@ export default function AboutUsPage() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-5xl font-light leading-tight mb-6 brand-text">
-              ¿Listo para vivir tu aventura peruana?
+              {t.readyForPeruvianAdventure}
             </h2>
             <p className="text-lg md:text-xl text-white/90 body-text mb-8 max-w-2xl mx-auto">
-              Únete a los miles de viajeros que han confiado en nosotros para descubrir las maravillas del Perú. Tu
-              aventura inolvidable te está esperando.
+              {t.callToActionSubtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.button
@@ -867,14 +822,14 @@ export default function AboutUsPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                PLANIFICA TU VIAJE
+                {t.planYourTrip}
               </motion.button>
               <motion.button
                 className="px-8 py-4 border-2 border-white text-white brand-text text-lg hover:bg-white hover:text-peru-dark transition-colors"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                CONTÁCTANOS
+                {t.contactUs}
               </motion.button>
             </div>
           </motion.div>
