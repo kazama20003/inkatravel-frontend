@@ -90,12 +90,11 @@ interface CustomerDto {
 
 interface PaymentForm {
   type: string
-  // Optional fields for when we have card data (usually not needed for web forms)
-  pan?: string
-  cardScheme?: string
-  expiryMonth?: string
-  expiryYear?: string
-  securityCode?: string
+  pan: string // Required - card number
+  cardScheme: string // Required - card type (VISA, MASTERCARD, etc.)
+  expiryMonth: string // Required - expiry month as string
+  expiryYear: string // Required - expiry year as string
+  securityCode: string // Required - CVV/CVC code
 }
 
 interface CreateFormTokenRequest {
@@ -259,7 +258,12 @@ export default function TransportDetailPage() {
         contextMode: "TEST", // Add this for test environment
         paymentForms: [
           {
-            type: "card", // Specify that we want to enable card payments
+            type: "card",
+            pan: "4970100000000154", // Test card number for VISA
+            cardScheme: "VISA",
+            expiryMonth: "12",
+            expiryYear: "2026",
+            securityCode: "123",
           },
         ],
       }
