@@ -25,6 +25,8 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext"
 import { isAxiosError } from "axios"
 import Link from "next/link"
+import UserDataForm from "@/components/transport/UserDataForm"
+import "/styles/izipay-custom.css"
 
 // Exchange rate constant
 const USD_TO_PEN_RATE = 3.75
@@ -112,6 +114,29 @@ interface FormTokenResponse {
   publicKey: string
 }
 
+interface UserData {
+  email: string
+  firstName: string
+  lastName: string
+  phone?: string
+  address?: string
+  city?: string
+  country?: string
+}
+
+// Add proper interface for cart items instead of any[]
+interface CartItemData {
+  id: string
+  title: string
+  originCity: string
+  destinationCity: string
+  price: number
+  quantity: number
+  imageUrl?: string
+  departureTime?: string
+  duration?: string
+}
+
 export default function TransportDetailPage() {
   const params = useParams()
   const slug = params.slug as string
@@ -120,13 +145,16 @@ export default function TransportDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [passengers, setPassengers] = useState(1)
-  const [, setCurrentImageIndex] = useState(0)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
 
   // Payment state
   const [formToken, setFormToken] = useState<string | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+
+  // Cart and checkout state
+  const [, setCartItems] = useState<CartItemData[]>([])
+  const [showUserDataForm, setShowUserDataForm] = useState(false)
 
   // Create comprehensive gallery images from transport data
   const galleryImages = transport
@@ -236,7 +264,51 @@ export default function TransportDetailPage() {
     window.open("tel:+51987654321", "_self")
   }
 
-  const handleReserveNow = async () => {
+  const handleAddToCart = async () => {
+    if (!transport) return
+
+    const cartItem = {
+      id: transport._id,
+      title: transport.title,
+      originCity: transport.originCity,
+      destinationCity: transport.destinationCity,
+      price: transport.price,
+      quantity: passengers,
+      imageUrl: transport.imageUrl,
+      departureTime: transport.departureTime,
+      duration: transport.durationInHours ? `${transport.durationInHours}h` : undefined,
+    }
+
+    try {
+      // Add to cart via API
+      await api.post("/cart", cartItem)
+
+      // Update local cart state
+      setCartItems((prev) => {
+        const existingItem = prev.find((item) => item.id === cartItem.id)
+        if (existingItem) {
+          return prev.map((item) =>
+            item.id === cartItem.id ? { ...item, quantity: item.quantity + cartItem.quantity } : item,
+          )
+        }
+        return [...prev, cartItem]
+      })
+
+      // Show user data form
+      setShowUserDataForm(true)
+    } catch (err) {
+      console.error("Error adding to cart:", err)
+      setError("Error al agregar al carrito. Por favor, inténtalo de nuevo.")
+    }
+  }
+
+  const handleUserDataSubmit = async (userDataForm: UserData) => {
+    setShowUserDataForm(false)
+    // Now generate the payment token with real user data
+    await generatePaymentToken(userDataForm)
+  }
+
+  const generatePaymentToken = async (userDataForm: UserData) => {
     if (!transport) return
 
     setIsProcessingPayment(true)
@@ -247,18 +319,18 @@ export default function TransportDetailPage() {
       const payload: CreateFormTokenRequest = {
         amount: Number.parseInt(totalAmountPEN) * 100, // Amount in cents
         currency: "PEN",
-        orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`, // Unique order ID
+        orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         customer: {
-          email: "cliente@correo.com", // Replace with actual user email
-          billingFirstName: "Juan", // Optional - replace with actual user data
-          billingLastName: "Pérez", // Optional - replace with actual user data
+          email: userDataForm.email,
+          billingFirstName: userDataForm.firstName,
+          billingLastName: userDataForm.lastName,
         },
         formAction: "PAYMENT",
-        contextMode: "TEST", // Add this for test environment
+        contextMode: "TEST",
         paymentForms: [
           {
             type: "card",
-            pan: "4970100000000154", // Test card number for VISA
+            pan: "4970100000000154", // Test card - this will be removed in production
             cardScheme: "VISA",
             expiryMonth: "12",
             expiryYear: "2026",
@@ -626,7 +698,6 @@ export default function TransportDetailPage() {
                           onClick={() => {
                             const dayImageIndex = galleryImages.findIndex((img) => img === day.imageUrl)
                             if (dayImageIndex !== -1) {
-                              setCurrentImageIndex(dayImageIndex)
                               setIsGalleryOpen(true)
                             }
                           }}
@@ -688,7 +759,6 @@ export default function TransportDetailPage() {
                                       onClick={() => {
                                         const stopImageIndex = galleryImages.findIndex((img) => img === stop.imageUrl)
                                         if (stopImageIndex !== -1) {
-                                          setCurrentImageIndex(stopImageIndex)
                                           setIsGalleryOpen(true)
                                         }
                                       }}
@@ -837,19 +907,19 @@ export default function TransportDetailPage() {
               <div className="space-y-3 md:space-y-4">
                 {/* Reserve Button */}
                 <button
-                  onClick={handleReserveNow}
+                  onClick={handleAddToCart}
                   disabled={isProcessingPayment}
                   className="w-full py-3 md:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isProcessingPayment ? (
                     <>
                       <Loader2 className="animate-spin mr-2" size={18} />
-                      <span>{t.processingPayment || "Processing..."}</span>
+                      <span>Agregando al carrito...</span>
                     </>
                   ) : (
                     <>
                       <ShoppingCart size={18} className="md:w-5 md:h-5" />
-                      <span className="text-sm md:text-base">{t.reserveNow}</span>
+                      <span className="text-sm md:text-base">Agregar al Carrito</span>
                     </>
                   )}
                 </button>
@@ -950,6 +1020,28 @@ export default function TransportDetailPage() {
                 </div>
               )}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* User Data Form Modal */}
+      <AnimatePresence>
+        {showUserDataForm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
+          >
+            <UserDataForm
+              onSubmit={handleUserDataSubmit}
+              onCancel={() => {
+                setShowUserDataForm(false)
+              }}
+              isLoading={isProcessingPayment}
+              totalAmount={transport ? transport.price * passengers * USD_TO_PEN_RATE : 0}
+              currency="PEN"
+            />
           </motion.div>
         )}
       </AnimatePresence>
