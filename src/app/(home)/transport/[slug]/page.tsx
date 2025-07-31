@@ -27,7 +27,6 @@ import { isAxiosError } from "axios"
 import Link from "next/link"
 import UserDataForm from "@/components/transport/UserDataForm"
 import DateSelector from "@/components/transport/DateSelector"
-import "/styles/izipay-custom.css"
 
 // Exchange rate constant
 const USD_TO_PEN_RATE = 3.75
