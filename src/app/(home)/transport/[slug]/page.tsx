@@ -205,17 +205,12 @@ export default function TransportDetailPage() {
       const scriptId = "izipay-script"
       if (document.getElementById(scriptId)) {
         // If script already exists, re-initialize if necessary or just ensure form is rendered
-        // For Izipay, simply having the div with kr-form-token should be enough if script is loaded
         return
       }
 
       const script = document.createElement("script")
       script.id = scriptId
       script.src = "https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
-
-      // AÑADE ESTA LÍNEA PARA DEPURAR
-      console.log("NEXT_PUBLIC_IZIPAY_PUBLIC_KEY:", process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY)
-
       script.setAttribute("kr-public-key", process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY || "")
       script.setAttribute("kr-post-url-success", process.env.NEXT_PUBLIC_IZIPAY_SUCCESS_URL || "")
       script.setAttribute("kr-post-url-refused", process.env.NEXT_PUBLIC_IZIPAY_REFUSED_URL || "")
@@ -290,7 +285,6 @@ export default function TransportDetailPage() {
       setIsProcessingPayment(false)
     }
   }
-
 
   if (loading) {
     return (
@@ -811,7 +805,7 @@ export default function TransportDetailPage() {
                     -
                   </button>
                   <div className="flex items-center space-x-2">
-                    <Users size={18} className="md:w-5 md:h-5 text-slate-500" />
+                    <Users size={18} className="md:w-5 md:h-5" />
                     <span className="text-lg md:text-xl font-semibold text-slate-800 dark:text-slate-100">
                       {passengers}
                     </span>
@@ -904,6 +898,57 @@ export default function TransportDetailPage() {
               >
                 <X size={24} />
               </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Payment Modal (Izipay Pop-in) */}
+      <AnimatePresence>
+        {showPaymentModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowPaymentModal(false)} // Close modal on overlay click
+          >
+            <div
+              className="relative w-full max-w-md h-full max-h-[90vh] bg-white rounded-lg shadow-lg p-6 flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="absolute top-4 right-4 z-10 bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300 transition-colors"
+              >
+                <X size={24} />
+              </button>
+
+              <h2 className="text-2xl font-bold mb-4 text-center text-slate-800">{t.completeYourPayment}</h2>
+
+              {!formToken ? (
+                <div className="flex flex-col items-center justify-center flex-grow text-slate-600">
+                  <Loader2 className="animate-spin w-8 h-8 mb-4" />
+                  <p>{t.loadingPaymentForm}</p>
+                </div>
+              ) : (
+                <div className="flex-grow overflow-auto">
+                  {/* Izipay Payment Form Container */}
+                  <div
+                    className="kr-embedded"
+                    kr-popin="true" // Use kr-popin attribute as specified
+                    kr-form-token={formToken}
+                  >
+                    {/* These divs are placeholders for Izipay to inject its UI */}
+                    <div className="kr-pan"></div>
+                    <div className="kr-expiry"></div>
+                    <div className="kr-security-code"></div>
+                    <button className="kr-payment-button"></button>
+                    <div className="kr-form-error"></div>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
