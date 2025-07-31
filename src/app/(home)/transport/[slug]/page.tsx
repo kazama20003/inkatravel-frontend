@@ -212,6 +212,10 @@ export default function TransportDetailPage() {
       const script = document.createElement("script")
       script.id = scriptId
       script.src = "https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
+
+      // AÑADE ESTA LÍNEA PARA DEPURAR
+      console.log("NEXT_PUBLIC_IZIPAY_PUBLIC_KEY:", process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY)
+
       script.setAttribute("kr-public-key", process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY || "")
       script.setAttribute("kr-post-url-success", process.env.NEXT_PUBLIC_IZIPAY_SUCCESS_URL || "")
       script.setAttribute("kr-post-url-refused", process.env.NEXT_PUBLIC_IZIPAY_REFUSED_URL || "")
@@ -286,6 +290,7 @@ export default function TransportDetailPage() {
       setIsProcessingPayment(false)
     }
   }
+
 
   if (loading) {
     return (
@@ -416,7 +421,7 @@ export default function TransportDetailPage() {
                 <div className="absolute left-6 md:left-8 top-12 md:top-16 bottom-12 md:bottom-16 w-0.5 md:w-1 bg-gradient-to-b from-blue-500 via-purple-500 to-green-500 rounded-full"></div>
                 {/* Origin */}
                 <div className="flex items-center mb-6 md:mb-8">
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg z-10">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                     <MapPin size={18} className="md:w-6 md:h-6" />
                   </div>
                   <div className="ml-4 md:ml-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl md:rounded-2xl p-3 md:p-4 flex-1">
@@ -437,7 +442,7 @@ export default function TransportDetailPage() {
                 {transport.intermediateStops && transport.intermediateStops.length > 0 && (
                   <div className="mb-6 md:mb-8">
                     <div className="flex items-center mb-3 md:mb-4">
-                      <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg z-10">
+                      <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                         <Route size={16} className="md:w-5 md:h-5" />
                       </div>
                       <div className="ml-4 md:ml-6">
@@ -466,7 +471,7 @@ export default function TransportDetailPage() {
                 )}
                 {/* Destination */}
                 <div className="flex items-center">
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg z-10">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                     <MapPin size={18} className="md:w-6 md:h-6" />
                   </div>
                   <div className="ml-4 md:ml-6 bg-green-50 dark:bg-green-900/20 rounded-xl md:rounded-2xl p-3 md:p-4 flex-1">
