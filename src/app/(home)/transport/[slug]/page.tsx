@@ -26,6 +26,8 @@ import { useLanguage } from "@/contexts/LanguageContext"
 import { isAxiosError } from "axios"
 import Link from "next/link"
 import UserDataForm from "@/components/transport/UserDataForm"
+import DateSelector from "@/components/transport/DateSelector"
+import "/styles/izipay-custom.css"
 
 // Exchange rate constant
 const USD_TO_PEN_RATE = 3.75
@@ -145,6 +147,12 @@ export default function TransportDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [passengers, setPassengers] = useState(1)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // Default to tomorrow
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return tomorrow.toISOString().split("T")[0]
+  })
 
   // Payment state
   const [formToken, setFormToken] = useState<string | null>(null)
@@ -266,38 +274,61 @@ export default function TransportDetailPage() {
   const handleAddToCart = async () => {
     if (!transport) return
 
+    // Create the cart item according to the backend DTO structure
     const cartItem = {
-      id: transport._id,
-      title: transport.title,
-      originCity: transport.originCity,
-      destinationCity: transport.destinationCity,
-      price: transport.price,
-      quantity: passengers,
-      imageUrl: transport.imageUrl,
-      departureTime: transport.departureTime,
-      duration: transport.durationInHours ? `${transport.durationInHours}h` : undefined,
+      productType: "TourTransport", // Use the enum value from CartItemType
+      productId: transport._id,
+      startDate: `${selectedDate}T00:00:00.000Z`, // Convert to ISO string
+      people: passengers,
+      pricePerPerson: transport.price,
+      total: transport.price * passengers,
+      notes: `${transport.title} - ${transport.originCity} → ${transport.destinationCity}`,
+    }
+
+    // Create the payload according to CreateCartDto structure
+    const cartPayload = {
+      items: [cartItem], // Array of cart items
+      totalPrice: transport.price * passengers,
     }
 
     try {
       // Add to cart via API
-      await api.post("/cart", cartItem)
+      await api.post("/cart", cartPayload)
 
-      // Update local cart state
+      // Update local cart state for UI purposes
+      const localCartItem = {
+        id: transport._id,
+        title: transport.title,
+        originCity: transport.originCity,
+        destinationCity: transport.destinationCity,
+        price: transport.price,
+        quantity: passengers,
+        imageUrl: transport.imageUrl,
+        departureTime: transport.departureTime,
+        duration: transport.durationInHours ? `${transport.durationInHours}h` : undefined,
+      }
+
       setCartItems((prev) => {
-        const existingItem = prev.find((item) => item.id === cartItem.id)
+        const existingItem = prev.find((item) => item.id === localCartItem.id)
         if (existingItem) {
           return prev.map((item) =>
-            item.id === cartItem.id ? { ...item, quantity: item.quantity + cartItem.quantity } : item,
+            item.id === localCartItem.id ? { ...item, quantity: item.quantity + localCartItem.quantity } : item,
           )
         }
-        return [...prev, cartItem]
+        return [...prev, localCartItem]
       })
 
       // Show user data form
       setShowUserDataForm(true)
     } catch (err) {
       console.error("Error adding to cart:", err)
-      setError("Error al agregar al carrito. Por favor, inténtalo de nuevo.")
+      if (isAxiosError(err)) {
+        const errorMessage =
+          err.response?.data?.message || "Error al agregar al carrito. Por favor, inténtalo de nuevo."
+        setError(errorMessage)
+      } else {
+        setError("Error al agregar al carrito. Por favor, inténtalo de nuevo.")
+      }
     }
   }
 
@@ -861,6 +892,16 @@ export default function TransportDetailPage() {
                   <div className="text-xs md:text-sm text-slate-500">{t.perPerson}</div>
                 </div>
               </div>
+
+              {/* Date Selection */}
+              <div className="mb-4 md:mb-6">
+                <DateSelector
+                  selectedDate={selectedDate}
+                  onDateChange={setSelectedDate}
+                  availableDays={transport.availableDays}
+                />
+              </div>
+
               {/* Passenger Selection */}
               <div className="mb-4 md:mb-6">
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
