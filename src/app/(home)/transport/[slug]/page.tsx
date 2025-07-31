@@ -18,8 +18,6 @@ import {
   Users,
   Timer,
   DollarSign,
-  ChevronLeft,
-  ChevronRight,
   X,
   Images,
   Loader2,
@@ -27,7 +25,6 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext"
 import { isAxiosError } from "axios"
 import Link from "next/link"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog" // Import Dialog components
 
 // Exchange rate constant
 const USD_TO_PEN_RATE = 3.75
@@ -91,13 +88,24 @@ interface CustomerDto {
   billingLastName?: string
 }
 
+interface PaymentForm {
+  type: string
+  // Optional fields for when we have card data (usually not needed for web forms)
+  pan?: string
+  cardScheme?: string
+  expiryMonth?: string
+  expiryYear?: string
+  securityCode?: string
+}
+
 interface CreateFormTokenRequest {
   amount: number // Amount in cents
   currency: string
   orderId: string
   customer: CustomerDto
   formAction: string
-  paymentForms: string[] // Add this required field
+  contextMode?: string // Add context mode for test/production
+  paymentForms: PaymentForm[] // Array of payment form objects
 }
 
 interface FormTokenResponse {
@@ -113,7 +121,7 @@ export default function TransportDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [passengers, setPassengers] = useState(1)
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [, setCurrentImageIndex] = useState(0)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
 
   // Payment state
@@ -243,12 +251,17 @@ export default function TransportDetailPage() {
         currency: "PEN",
         orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`, // Unique order ID
         customer: {
-          email: "client@correo.com", // Replace with actual user email
-          billingFirstName: "John", // Optional
-          billingLastName: "Doe", // Optional
+          email: "cliente@correo.com", // Replace with actual user email
+          billingFirstName: "Juan", // Optional - replace with actual user data
+          billingLastName: "Pérez", // Optional - replace with actual user data
         },
         formAction: "PAYMENT",
-        paymentForms: ["CARD"], // Add this required field
+        contextMode: "TEST", // Add this for test environment
+        paymentForms: [
+          {
+            type: "card", // Specify that we want to enable card payments
+          },
+        ],
       }
 
       const response = await api.post<FormTokenResponse>("/payments/formtoken", payload)
@@ -268,14 +281,6 @@ export default function TransportDetailPage() {
     } finally {
       setIsProcessingPayment(false)
     }
-  }
-
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length)
-  }
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length)
   }
 
   if (loading) {
@@ -890,119 +895,10 @@ export default function TransportDetailPage() {
               >
                 <X size={24} />
               </button>
-              {/* Navigation Buttons */}
-              {galleryImages.length > 1 && (
-                <>
-                  <button
-                    onClick={prevImage}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-                  >
-                    <ChevronLeft size={24} />
-                  </button>
-                  <button
-                    onClick={nextImage}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-                  >
-                    <ChevronRight size={24} />
-                  </button>
-                </>
-              )}
-              {/* Main Image */}
-              <motion.div
-                key={currentImageIndex}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-                className="relative w-full h-full rounded-lg overflow-hidden"
-              >
-                <Image
-                  src={galleryImages[currentImageIndex] || "/placeholder.svg"}
-                  alt={`Gallery image ${currentImageIndex + 1}`}
-                  fill
-                  className="object-contain"
-                />
-                {/* Image Info Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
-                  <div className="text-white">
-                    <h3 className="text-lg md:text-xl font-bold mb-2">
-                      {currentImageIndex === 0
-                        ? transport?.title
-                        : `${transport?.title} - Imagen ${currentImageIndex + 1}`}
-                    </h3>
-                    <p className="text-sm md:text-base opacity-90">
-                      {currentImageIndex === 0
-                        ? transport?.description
-                        : `Parte del itinerario de ${transport?.originCity} a ${transport?.destinationCity}`}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-              {/* Image Counter */}
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full">
-                <span className="text-sm">
-                  {currentImageIndex + 1} / {galleryImages.length}
-                </span>
-              </div>
-              {/* Enhanced Thumbnail Strip */}
-              {galleryImages.length > 1 && (
-                <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-full overflow-x-auto">
-                  <div className="flex space-x-2 px-4 pb-2">
-                    {galleryImages.map((image, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentImageIndex(index)}
-                        className={`relative w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
-                          index === currentImageIndex
-                            ? "border-white shadow-lg scale-110"
-                            : "border-transparent opacity-60 hover:opacity-80"
-                        }`}
-                      >
-                        <Image
-                          src={image || "/placeholder.svg"}
-                          alt={`Thumbnail ${index + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                        {index === 0 && (
-                          <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
-                            Principal
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Izipay Payment Modal */}
-      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="sm:max-w-[425px] md:max-w-2xl lg:max-w-3xl p-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-0">
-            <DialogTitle className="text-2xl font-bold text-center text-slate-800 dark:text-slate-100">
-              {t.completeYourPayment || "Complete Your Payment"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="p-6 pt-4">
-            {formToken ? (
-              <div className="kr-embedded" kr-form-token={formToken}>
-                {/* The Izipay form will be injected here by the script */}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-10">
-                <Loader2 className="animate-spin text-blue-500 mb-4" size={32} />
-                <p className="text-slate-600 dark:text-slate-400">
-                  {t.loadingPaymentForm || "Loading payment form..."}
-                </p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
