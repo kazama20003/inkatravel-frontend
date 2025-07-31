@@ -1,0 +1,138 @@
+/* Izipay Custom Styles - Popin/Style-Personalization-PopIn.css */
+
+.kr-popin-button {
+  color: #ffffff !important;
+  background-color: #00a09d !important;
+  border-radius: 4px !important;
+  height: 55px !important;
+  margin-bottom: 0px !important;
+}
+
+.kr-popin-button span:hover {
+  transition-duration: 0.2s;
+  font-size: large;
+  text-shadow: -0.5px -0.5px 0.5px #000, 0.5px 0.5px 0.5px #000, -0.5px 0.5px 0.5px #000, 0.5px -0.5px 0.5px #000;
+}
+
+.kr-popin-button:hover {
+  background-color: #3dd2ce !important;
+  border-radius: 4px !important;
+  color: #ffffff !important;
+}
+
+.kr-embedded[kr-popin] .kr-popin-modal-header .kr-popin-modal-header-image img.kr-header-logo {
+  background-color: #000;
+  content: url("https://github.com/izipay-pe/Imagenes/blob/main/logos_izipay/logo-Z-fondoRojo-200x200.png?raw=true") !important;
+  margin-top: -8px;
+  transform: scale(1.5);
+}
+
+.kr-embedded[kr-popin].kr-help-button-inner-field .kr-popin-modal-footer .kr-whitelabel-logo img {
+  border-radius: 4px;
+  content: url("https://github.com/izipay-pe/Imagenes/blob/main/logos_izipay/logo-izipay-sinFondo-250x102.png?raw=true");
+  max-height: 100%;
+  margin-right: 30px;
+}
+
+.kr-embedded {
+  border-radius: 6px !important;
+  justify-content: space-between !important;
+  border: 1px solid #b3b6b5 !important;
+}
+
+/** Manejo de la cabecera **/
+.kr-popin-modal-header {
+  border-bottom: 0px !important;
+  border-radius: 10px !important;
+}
+
+.kr-popin-modal-header-background {
+  background-color: #ffffff !important;
+  border-radius: 10px !important;
+}
+
+.kr-popin-shop-name {
+  border-bottom: solid 1px #bbb !important;
+  width: 85% !important;
+  height: 30px !important;
+  margin-top: 60px !important;
+}
+
+.kr-field-wrapper {
+  margin-top: 3px !important;
+}
+
+.kr-pan,
+.kr-expiry,
+.kr-security-code,
+.kr-installment-number,
+.kr-first-installment-delay {
+  height: 45px !important;
+  display: flex !important;
+  align-items: center !important;
+  margin-bottom: 5px !important;
+  border-radius: 4px !important;
+}
+
+.kr-pan {
+  margin-top: -5px !important;
+}
+
+.kr-field-wrapper.kr-select-wrapper.kr-real-select {
+  height: 31.7px !important;
+}
+
+.kr-field-element.kr-expiry.kr-size-half {
+  width: 52% !important;
+  margin-right: 0px !important;
+}
+
+.kr-field-element.kr-security-code.kr-size-half {
+  width: 46% !important;
+}
+
+.kr-embedded .kr-payment-button {
+  color: #ffffff !important;
+  background-color: #00a09d !important;
+  border-radius: 4px !important;
+  height: 55px !important;
+  margin-bottom: 0px !important;
+}
+
+.kr-embedded .kr-payment-button span:hover {
+  transition-duration: 0.2s;
+  font-size: large;
+  text-shadow: -0.5px -0.5px 0.5px #000, 0.5px 0.5px 0.5px #000, -0.5px 0.5px 0.5px #000, 0.5px -0.5px 0.5px #000;
+}
+
+.kr-embedded .kr-payment-button:hover {
+  background-color: #3dd2ce !important;
+  border-radius: 4px !important;
+  color: #ffffff !important;
+}
+
+.kr-embedded[kr-popin],
+div.kr-popin-modal-footer {
+  border-radius: 10px !important;
+}
+
+.kr-popin-modal-footer div img {
+  margin-right: 28px !important;
+}
+
+/* Estilos adicionales para mejor integración */
+.kr-embedded {
+  font-family: inherit !important;
+}
+
+.kr-field-wrapper input {
+  font-family: inherit !important;
+  font-size: 14px !important;
+}
+
+.kr-payment-button {
+  font-family: inherit !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
