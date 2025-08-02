@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-checkbox": "^1.3.2",
@@ -40,11 +41,13 @@
     "react-big-calendar": "^1.19.4",
     "react-day-picker": "^9.7.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.62.0",
     "react-phone-input-2": "^2.15.1",
     "recharts": "^3.0.2",
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.0",
-    "world-countries": "^5.1.0"
+    "world-countries": "^5.1.0",
+    "zod": "^4.0.14"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

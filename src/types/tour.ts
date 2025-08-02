@@ -10,11 +10,16 @@ export type TourCategory =
   | "Panoramico"
   | "Transporte Turistico"
 
+// Interface for translated text
+export interface TranslatedText {
+  es?: string
+  en?: string
+}
 
 export interface RoutePoint {
   _id?: string // Añadido para compatibilidad con MongoDB
-  location: string
-  description?: string
+  location: TranslatedText
+  description?: TranslatedText
   imageId?: string
   imageUrl?: string
 }
@@ -22,9 +27,9 @@ export interface RoutePoint {
 export interface ItineraryDay {
   _id?: string // Añadido para compatibilidad con MongoDB
   day: number
-  title: string
-  description: string
-  activities: string[]
+  title: TranslatedText
+  description: TranslatedText
+  activities: TranslatedText[] // ✅ Ahora multilingüe
   meals?: string[]
   accommodation?: string
   imageId?: string
@@ -73,15 +78,15 @@ export interface Tour {
   updatedAt: string
 }
 
-// DTO para crear tours (sin _id, createdAt, updatedAt)
+// DTO para crear tours (con campos traducibles)
 export interface CreateTourDto {
-  title: string
-  subtitle: string
+  title: TranslatedText
+  subtitle: TranslatedText
   imageUrl: string
   imageId?: string
   price: number
   originalPrice?: number
-  duration: string
+  duration: TranslatedText
   rating: number
   reviews: number
   location: string
@@ -89,14 +94,14 @@ export interface CreateTourDto {
   category: TourCategory
   difficulty: Difficulty
   packageType: PackageType
-  highlights: string[]
+  highlights: TranslatedText[]
   featured?: boolean
   transportOptionIds?: string[] // Solo IDs para crear
-  itinerary?: ItineraryDay[]
-  includes?: string[]
-  notIncludes?: string[]
-  toBring?: string[]
-  conditions?: string[]
+  itinerary: ItineraryDay[]
+  includes?: TranslatedText[]
+  notIncludes?: TranslatedText[]
+  toBring?: TranslatedText[]
+  conditions?: TranslatedText[]
   slug: string // El backend lo requiere
 }
 
@@ -107,4 +112,13 @@ export type UpdateTourDto = CreateTourDto
 export interface TourFormData extends Omit<CreateTourDto, "transportOptionIds"> {
   selectedTransports: TransportOption[] // Para mostrar en el formulario
   transportOptionIds?: string[] // Para enviar al backend
+}
+
+// Filtros para tours
+export interface FilterTourDto {
+  category?: TourCategory
+  difficulty?: Difficulty
+  packageType?: PackageType
+  region?: string
+  location?: string
 }

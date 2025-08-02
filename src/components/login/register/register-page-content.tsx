@@ -123,7 +123,7 @@ export default function RegisterPageContent() {
           if (response.data.user.role === "admin") {
             router.push("/dashboard")
           } else {
-            router.push("/users")
+            router.push("/cart")
           }
         }, 1500)
       } else {

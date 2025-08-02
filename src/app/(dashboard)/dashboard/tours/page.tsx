@@ -55,13 +55,23 @@ import {
   Crown,
   Shield,
   Mountain,
-
   TreePine,
   Camera,
 } from "lucide-react"
 import { toast } from "sonner"
 import { toursApi } from "@/lib/tours-api"
 import type { Tour, PackageType, Difficulty, TourCategory } from "@/types/tour"
+
+// Interface for multilingual duration
+interface MultilingualDuration {
+  es?: string
+  en?: string
+}
+
+// Interface for raw tour data from API
+interface RawTour extends Omit<Tour, "duration"> {
+  duration: string | MultilingualDuration
+}
 
 export default function PaquetesPage() {
   const [tours, setTours] = useState<Tour[]>([])
@@ -77,21 +87,39 @@ export default function PaquetesPage() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
   const [submitting, setSubmitting] = useState(false)
-
   const router = useRouter()
+
+  // Helper function to extract duration string
+  const extractDuration = (duration: string | MultilingualDuration): string => {
+    if (typeof duration === "string") {
+      return duration
+    }
+    if (duration && typeof duration === "object") {
+      return duration.es || duration.en || "Duración no disponible"
+    }
+    return "Duración no disponible"
+  }
 
   // Función para cargar tours con useCallback para evitar el warning de dependencias
   const loadTours = useCallback(async (page = 1) => {
     try {
       setLoading(true)
       const response = await toursApi.getAll(page, 12)
-      setTours(response.data)
+
+      // Transform tours data to handle multilingual fields
+      const transformedTours = response.data.map((tour: RawTour) => {
+        return {
+          ...tour,
+          duration: extractDuration(tour.duration),
+        }
+      })
+
+      setTours(transformedTours)
       if (response.pagination) {
         setCurrentPage(response.pagination.page)
         setTotalPages(response.pagination.totalPages)
         setTotalTours(response.pagination.total)
       }
-
       // Check if we're using fallback data
       if (response.message.includes("desarrollo")) {
         toast.info("Usando datos de desarrollo", {
@@ -104,7 +132,6 @@ export default function PaquetesPage() {
       setTours([])
       setTotalPages(1)
       setTotalTours(0)
-
       toast.error("Error al cargar paquetes", {
         description: "No se pudieron cargar los paquetes turísticos. Por favor, intente más tarde.",
         duration: 5000,
@@ -127,26 +154,26 @@ export default function PaquetesPage() {
     const matchesType = selectedType === "all" || tour.packageType === selectedType
     const matchesDifficulty = selectedDifficulty === "all" || tour.difficulty === selectedDifficulty
     const matchesCategory = selectedCategory === "all" || tour.category === selectedCategory
+
     return matchesSearch && matchesType && matchesDifficulty && matchesCategory
   })
 
   // Manejar eliminación de tour
   const handleDeleteTour = async () => {
     if (!selectedTour) return
+
     try {
       setSubmitting(true)
       await toursApi.delete(selectedTour._id)
       setIsDeleteDialogOpen(false)
       setSelectedTour(null)
       loadTours(currentPage)
-
       toast.success("Paquete eliminado", {
         description: "El paquete turístico ha sido eliminado exitosamente.",
         duration: 3000,
       })
     } catch (error) {
       console.error("Error deleting tour:", error)
-
       toast.error("Error al eliminar paquete", {
         description: "No se pudo eliminar el paquete turístico. Por favor, intente más tarde.",
         duration: 5000,
@@ -162,7 +189,12 @@ export default function PaquetesPage() {
   }
 
   const openViewDialog = (tour: Tour) => {
-    setSelectedTour(tour)
+    // Ensure duration is a string before setting
+    const transformedTour = {
+      ...tour,
+      duration: extractDuration(tour.duration as string | MultilingualDuration),
+    }
+    setSelectedTour(transformedTour)
     setIsViewDialogOpen(true)
   }
 
@@ -208,6 +240,8 @@ export default function PaquetesPage() {
             Naturaleza
           </Badge>
         )
+      default:
+        return <Badge variant="secondary">{category}</Badge>
     }
   }
 
@@ -257,7 +291,6 @@ export default function PaquetesPage() {
   const categoryStats = [
     { label: "Aventura", count: tours.filter((t) => t.category === "Aventura").length, color: "text-orange-600" },
     { label: "Cultural", count: tours.filter((t) => t.category === "Cultural").length, color: "text-blue-600" },
-    
     { label: "Naturaleza", count: tours.filter((t) => t.category === "Naturaleza").length, color: "text-green-600" },
   ]
 
@@ -294,7 +327,6 @@ export default function PaquetesPage() {
               <p className="text-xs text-muted-foreground">Paquetes disponibles</p>
             </CardContent>
           </Card>
-
           {/* Mostrar estadísticas de tipos de tour */}
           {tourTypeStats.map((stat) => (
             <Card key={stat.label}>
@@ -312,7 +344,6 @@ export default function PaquetesPage() {
               </CardContent>
             </Card>
           ))}
-
           {/* Estadística de categoría más popular */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -389,7 +420,7 @@ export default function PaquetesPage() {
                     <SelectItem value="all">Todas</SelectItem>
                     <SelectItem value="Aventura">Aventura</SelectItem>
                     <SelectItem value="Cultural">Cultural</SelectItem>
-                    <SelectItem value="Relax">Relax</SelectItem>
+                    <SelectItem value="Relajación">Relax</SelectItem>
                     <SelectItem value="Naturaleza">Naturaleza</SelectItem>
                   </SelectContent>
                 </Select>
@@ -442,7 +473,7 @@ export default function PaquetesPage() {
                           <Eye className="mr-2 h-4 w-4" />
                           Ver Detalles
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push(`/paquetes/${tour._id}/edit`)}>
+                        <DropdownMenuItem onClick={() => router.push(`/dashboard/tours/${tour._id}/edit`)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>

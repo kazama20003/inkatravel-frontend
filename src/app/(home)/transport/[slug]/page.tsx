@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/axiosInstance"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
@@ -25,8 +25,8 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext"
 import { isAxiosError } from "axios"
 import Link from "next/link"
-import UserDataForm from "@/components/transport/UserDataForm"
 import DateSelector from "@/components/transport/DateSelector"
+
 
 // Exchange rate constant
 const USD_TO_PEN_RATE = 3.75
@@ -83,47 +83,6 @@ interface ApiResponse {
   total: number
 }
 
-// Interfaces for Izipay payment request
-interface CustomerDto {
-  email: string
-  billingFirstName?: string
-  billingLastName?: string
-}
-
-interface PaymentForm {
-  type: string
-  pan: string // Required - card number
-  cardScheme: string // Required - card type (VISA, MASTERCARD, etc.)
-  expiryMonth: string // Required - expiry month as string
-  expiryYear: string // Required - expiry year as string
-  securityCode: string // Required - CVV/CVC code
-}
-
-interface CreateFormTokenRequest {
-  amount: number // Amount in cents
-  currency: string
-  orderId: string
-  customer: CustomerDto
-  formAction: string
-  contextMode?: string // Add context mode for test/production
-  paymentForms: PaymentForm[] // Array of payment form objects
-}
-
-interface FormTokenResponse {
-  formToken: string
-  publicKey: string
-}
-
-interface UserData {
-  email: string
-  firstName: string
-  lastName: string
-  phone?: string
-  address?: string
-  city?: string
-  country?: string
-}
-
 // Add proper interface for cart items instead of any[]
 interface CartItemData {
   id: string
@@ -153,14 +112,13 @@ export default function TransportDetailPage() {
     return tomorrow.toISOString().split("T")[0]
   })
 
+  const router = useRouter()
+
   // Payment state
-  const [formToken, setFormToken] = useState<string | null>(null)
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
   // Cart and checkout state
-  const [, setCartItems] = useState<CartItemData[]>([])
-  const [showUserDataForm, setShowUserDataForm] = useState(false)
+  const [, ] = useState<CartItemData[]>([])
 
   // Create comprehensive gallery images from transport data
   const galleryImages = transport
@@ -233,33 +191,6 @@ export default function TransportDetailPage() {
     }
   }, [slug, language, t.tourNotFound, t.errorLoadingToursMessage])
 
-  // Effect to load Izipay script when modal opens and formToken is available
-  useEffect(() => {
-    if (showPaymentModal && formToken) {
-      const scriptId = "izipay-script"
-      if (document.getElementById(scriptId)) {
-        // If script already exists, re-initialize if necessary or just ensure form is rendered
-        return
-      }
-
-      const script = document.createElement("script")
-      script.id = scriptId
-      script.src = "https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
-      script.setAttribute("kr-public-key", process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY || "")
-      script.setAttribute("kr-post-url-success", process.env.NEXT_PUBLIC_IZIPAY_SUCCESS_URL || "")
-      script.setAttribute("kr-post-url-refused", process.env.NEXT_PUBLIC_IZIPAY_REFUSED_URL || "")
-      document.body.appendChild(script)
-
-      // Clean up script on unmount or when modal closes
-      return () => {
-        const existingScript = document.getElementById(scriptId)
-        if (existingScript) {
-          document.body.removeChild(existingScript)
-        }
-      }
-    }
-  }, [showPaymentModal, formToken])
-
   const handleWhatsAppContact = () => {
     const message = `${t.consultWhatsApp}: ${transport?.title} - ${transport?.originCity} → ${transport?.destinationCity}`
     const whatsappUrl = `https://wa.me/51987654321?text=${encodeURIComponent(message)}`
@@ -273,115 +204,64 @@ export default function TransportDetailPage() {
   const handleAddToCart = async () => {
     if (!transport) return
 
-    // Create the cart item according to the backend DTO structure
+    // Create the cart item according to the CreateCartDto structure
     const cartItem = {
-      productType: "TourTransport", // Use the enum value from CartItemType
-      productId: transport._id,
-      startDate: `${selectedDate}T00:00:00.000Z`, // Convert to ISO string
+      productType: "TourTransport" as const, // Ensure it matches the enum exactly
+      productId: transport._id, // This should be the ObjectId string
+      startDate: `${selectedDate}T00:00:00.000Z`, // ISO string format
       people: passengers,
       pricePerPerson: transport.price,
       total: transport.price * passengers,
       notes: `${transport.title} - ${transport.originCity} → ${transport.destinationCity}`,
+      // Optional denormalized fields
+      productTitle: transport.title,
+      productImageUrl: transport.imageUrl || undefined,
+      productSlug: transport.slug || undefined,
     }
 
     // Create the payload according to CreateCartDto structure
     const cartPayload = {
-      items: [cartItem], // Array of cart items
+      items: [cartItem], // Array of CartItemDto
       totalPrice: transport.price * passengers,
+      // Do NOT include userId - backend adds it automatically
     }
 
+    console.log("Cart payload being sent:", JSON.stringify(cartPayload, null, 2))
+    console.log("Individual cart item:", JSON.stringify(cartItem, null, 2))
+
     try {
+      setIsProcessingPayment(true)
+      setError(null) // Clear any previous errors
+
       // Add to cart via API
-      await api.post("/cart", cartPayload)
+      const response = await api.post("/cart", cartPayload)
+      console.log("Cart response:", response.data)
 
-      // Update local cart state for UI purposes
-      const localCartItem = {
-        id: transport._id,
-        title: transport.title,
-        originCity: transport.originCity,
-        destinationCity: transport.destinationCity,
-        price: transport.price,
-        quantity: passengers,
-        imageUrl: transport.imageUrl,
-        departureTime: transport.departureTime,
-        duration: transport.durationInHours ? `${transport.durationInHours}h` : undefined,
-      }
-
-      setCartItems((prev) => {
-        const existingItem = prev.find((item) => item.id === localCartItem.id)
-        if (existingItem) {
-          return prev.map((item) =>
-            item.id === localCartItem.id ? { ...item, quantity: item.quantity + localCartItem.quantity } : item,
-          )
-        }
-        return [...prev, localCartItem]
-      })
-
-      // Show user data form
-      setShowUserDataForm(true)
+      // Redirect to checkout page
+      router.push("/checkout")
     } catch (err) {
       console.error("Error adding to cart:", err)
       if (isAxiosError(err)) {
-        const errorMessage =
-          err.response?.data?.message || "Error al agregar al carrito. Por favor, inténtalo de nuevo."
+        console.error("Error response status:", err.response?.status)
+        console.error("Error response data:", err.response?.data)
+        console.error("Error response headers:", err.response?.headers)
+
+        let errorMessage = "Error al agregar al carrito. Por favor, inténtalo de nuevo."
+
+        if (err.response?.data) {
+          if (typeof err.response.data === "string") {
+            errorMessage = err.response.data
+          } else if (err.response.data.message) {
+            errorMessage = err.response.data.message
+          } else if (err.response.data.error) {
+            errorMessage = err.response.data.error
+          }
+        }
+
         setError(errorMessage)
       } else {
         setError("Error al agregar al carrito. Por favor, inténtalo de nuevo.")
       }
-    }
-  }
-
-  const handleUserDataSubmit = async (userDataForm: UserData) => {
-    setShowUserDataForm(false)
-    // Now generate the payment token with real user data
-    await generatePaymentToken(userDataForm)
-  }
-
-  const generatePaymentToken = async (userDataForm: UserData) => {
-    if (!transport) return
-
-    setIsProcessingPayment(true)
-    setError(null)
-
-    try {
-      const totalAmountPEN = (transport.price * passengers * USD_TO_PEN_RATE).toFixed(0)
-      const payload: CreateFormTokenRequest = {
-        amount: Number.parseInt(totalAmountPEN) * 100, // Amount in cents
-        currency: "PEN",
-        orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        customer: {
-          email: userDataForm.email,
-          billingFirstName: userDataForm.firstName,
-          billingLastName: userDataForm.lastName,
-        },
-        formAction: "PAYMENT",
-        contextMode: "TEST",
-        paymentForms: [
-          {
-            type: "card",
-            pan: "4970100000000154", // Test card - this will be removed in production
-            cardScheme: "VISA",
-            expiryMonth: "12",
-            expiryYear: "2026",
-            securityCode: "123",
-          },
-        ],
-      }
-
-      const response = await api.post<FormTokenResponse>("/payments/formtoken", payload)
-      setFormToken(response.data.formToken)
-      setShowPaymentModal(true)
-    } catch (err: unknown) {
-      console.error("Error generating payment form token:", err)
-      let errorMessage = t.errorProcessingPayment || "Error processing payment. Please try again."
-      if (isAxiosError(err)) {
-        if (err.response?.data && typeof err.response.data === "object" && "message" in err.response.data) {
-          errorMessage = (err.response.data as { message: string }).message
-        } else if (err.message) {
-          errorMessage = err.message
-        }
-      }
-      setError(errorMessage)
     } finally {
       setIsProcessingPayment(false)
     }
@@ -1008,79 +888,6 @@ export default function TransportDetailPage() {
                 <X size={24} />
               </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Payment Modal (Izipay Pop-in) */}
-      <AnimatePresence>
-        {showPaymentModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowPaymentModal(false)} // Close modal on overlay click
-          >
-            <div
-              className="relative w-full max-w-md h-full max-h-[90vh] bg-white rounded-lg shadow-lg p-6 flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="absolute top-4 right-4 z-10 bg-gray-200 text-gray-700 p-2 rounded-full hover:bg-gray-300 transition-colors"
-              >
-                <X size={24} />
-              </button>
-
-              <h2 className="text-2xl font-bold mb-4 text-center text-slate-800">{t.completeYourPayment}</h2>
-
-              {!formToken ? (
-                <div className="flex flex-col items-center justify-center flex-grow text-slate-600">
-                  <Loader2 className="animate-spin w-8 h-8 mb-4" />
-                  <p>{t.loadingPaymentForm}</p>
-                </div>
-              ) : (
-                <div className="flex-grow overflow-auto">
-                  {/* Izipay Payment Form Container */}
-                  <div
-                    className="kr-embedded"
-                    kr-popin="true" // Use kr-popin attribute as specified
-                    kr-form-token={formToken}
-                  >
-                    {/* These divs are placeholders for Izipay to inject its UI */}
-                    <div className="kr-pan"></div>
-                    <div className="kr-expiry"></div>
-                    <div className="kr-security-code"></div>
-                    <button className="kr-payment-button"></button>
-                    <div className="kr-form-error"></div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* User Data Form Modal */}
-      <AnimatePresence>
-        {showUserDataForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
-          >
-            <UserDataForm
-              onSubmit={handleUserDataSubmit}
-              onCancel={() => {
-                setShowUserDataForm(false)
-              }}
-              isLoading={isProcessingPayment}
-              totalAmount={transport ? transport.price * passengers * USD_TO_PEN_RATE : 0}
-              currency="PEN"
-            />
           </motion.div>
         )}
       </AnimatePresence>

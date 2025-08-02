@@ -7,6 +7,8 @@ import Link from "next/link"
 import Image from "next/image" // Import Image component
 import { usePathname } from "next/navigation"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { api } from "@/lib/axiosInstance" // Import axios instance
+import type { CartResponse, CartItem } from "@/types/cart" // Import cart types
 
 interface AnimatedHeaderProps {
   customScrollPosition?: number
@@ -32,10 +34,16 @@ export default function AnimatedHeader({
   const pathname = usePathname()
   // Usar el contexto de idioma
   const { language, setLanguage, t } = useLanguage()
+
+  // Cart state
+  const [cartItemCount, setCartItemCount] = useState(0)
+  const [, setLoadingCart] = useState(true)
+
   // Add this useEffect at the beginning of the component, after all useState declarations
   useEffect(() => {
     setMounted(true)
   }, [])
+
   // Track browser scroll position for non-home pages
   useEffect(() => {
     if (useCustomScroll) return // Don't track browser scroll on home page
@@ -50,6 +58,32 @@ export default function AnimatedHeader({
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [useCustomScroll])
+
+  // Fetch cart count
+  useEffect(() => {
+    const fetchCartCount = async () => {
+      try {
+        setLoadingCart(true)
+        const response = await api.get<CartResponse>("/cart")
+        // Check if response.data.data exists and has items
+        if (response.data.data && response.data.data.length > 0) {
+          // Access the first cart in the array
+          const totalItems = response.data.data[0].items.reduce((sum: number, item: CartItem) => sum + item.people, 0)
+          setCartItemCount(totalItems)
+        } else {
+          setCartItemCount(0)
+        }
+      } catch (err) {
+        console.error("Error fetching cart count:", err)
+        setCartItemCount(0) // Reset count on error
+      } finally {
+        setLoadingCart(false)
+      }
+    }
+
+    fetchCartCount()
+  }, [pathname]) // Re-fetch when pathname changes (e.g., navigating to/from checkout)
+
   // Use the appropriate scroll values based on the page
   const scrollPosition = useCustomScroll ? customScrollPosition : browserScrollPosition
   const isScrollingDown = useCustomScroll ? customIsScrollingDown : browserIsScrollingDown
@@ -299,14 +333,7 @@ export default function AnimatedHeader({
               transition={{ duration: 0.2 }}
               onClick={() => setIsMenuOpen(true)}
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ color: currentColors.text }}
-              >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -525,7 +552,9 @@ export default function AnimatedHeader({
                   }}
                   onClick={closeAllMenus}
                 >
-                  <span className="text-sm font-medium brand-text">{t.reserve}</span>
+                  <span className="text-sm font-medium brand-text">
+                    {t.reserve} {cartItemCount > 0 && `(${cartItemCount})`}
+                  </span>
                   <div
                     className="w-4 h-4 rounded-full border-2 border-dotted flex items-center justify-center"
                     style={{ borderColor: currentColors.border }}
@@ -797,22 +826,28 @@ export default function AnimatedHeader({
                   }}
                   onClick={closeAllMenus}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <polyline
-                      points="22,6 12,13 2,6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  {cartItemCount > 0 ? (
+                    <span className="text-xs font-medium brand-text" style={{ color: currentColors.text }}>
+                      {cartItemCount}
+                    </span>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <polyline
+                        points="22,6 12,13 2,6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
                 </Link>
               </motion.div>
             </div>
