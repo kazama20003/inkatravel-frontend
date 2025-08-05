@@ -31,36 +31,45 @@ import { useLanguage } from "@/contexts/LanguageContext"
 import { isAxiosError } from "axios"
 import Image from "next/image"
 import "../../styles/izipay.css"
-import type { Cart, CartItem, CartResponse } from "@/types/cart" // Import from shared types
+import type { Cart, CartItem, CartResponse } from "@/types/cart"
 import { CartItemType } from "@/types/cart"
 
-// Exchange rate constant
-const USD_TO_PEN_RATE = 3.75
+// Eliminar esta línea
+// const USD_TO_PEN_RATE = 3.75
 
-// Interfaces for Izipay payment request
-interface CustomerDto {
+// Updated interfaces for the new backend structure
+interface OrderItemDto {
+  tour: string
+  startDate: string
+  people: number
+  pricePerPerson: number
+  total: number
+  notes?: string
+}
+
+interface CustomerInfoDto {
+  fullName: string
   email: string
-  billingFirstName?: string
-  billingLastName?: string
+  phone?: string
+  nationality?: string
 }
 
-interface PaymentForm {
-  type: string
-  pan: string // Required - card number
-  cardScheme: string // Required - card type (VISA, MASTERCARD, etc.)
-  expiryMonth: string // Required - expiry month as string
-  expiryYear: string // Required - expiry year as string
-  securityCode: string // Required - CVV/CVC code
-}
-
-interface CreateFormTokenRequest {
-  amount: number // Amount in cents
+interface CreatePaymentDto {
+  // Payment specific fields
+  amount: number
   currency: string
   orderId: string
-  customer: CustomerDto
-  formAction: "PAID" // Cambiar a "PAID"
-  contextMode?: string // Add context mode for test/production
-  paymentForms: PaymentForm[] // Array of payment form objects
+  formAction: "PAID"
+  contextMode?: "TEST" | "PRODUCTION"
+
+  // Order fields (from CreateOrderDto)
+  items: OrderItemDto[]
+  customer: CustomerInfoDto
+  totalPrice: number
+  paymentMethod?: string
+  notes?: string
+  discountCodeUsed?: string
+  user?: string
 }
 
 interface FormTokenResponse {
@@ -83,13 +92,14 @@ export default function CheckoutPage() {
   const { t } = useLanguage()
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [,] = useState(false)
   const [cart, setCart] = useState<Cart | null>(null)
   const [error, setError] = useState<string | null>(null)
+
   // Payment state
   const [formToken, setFormToken] = useState<string | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+
   // Form data
   const [customerInfo, setCustomerInfo] = useState<UserData>({
     email: "",
@@ -112,10 +122,9 @@ export default function CheckoutPage() {
       console.log("Loading cart...")
       const response = await api.get<CartResponse>("/cart")
       console.log("Cart response:", response.data)
-      // Check if response.data.data exists and is a Cart object
+
       if (response.data.data && response.data.data.length > 0) {
-        // Check if data array exists and has items
-        const cartData = response.data.data[0] // Get the first cart object from the array
+        const cartData = response.data.data[0]
         console.log("Cart data:", cartData)
         setCart(cartData)
         if (!cartData.items || cartData.items.length === 0) {
@@ -156,6 +165,7 @@ export default function CheckoutPage() {
       if (document.getElementById(scriptId)) {
         return
       }
+
       const script = document.createElement("script")
       script.id = scriptId
       script.src = "https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
@@ -163,6 +173,7 @@ export default function CheckoutPage() {
       script.setAttribute("kr-post-url-success", process.env.NEXT_PUBLIC_IZIPAY_SUCCESS_URL || "")
       script.setAttribute("kr-post-url-refused", process.env.NEXT_PUBLIC_IZIPAY_REFUSED_URL || "")
       document.body.appendChild(script)
+
       return () => {
         const existingScript = document.getElementById(scriptId)
         if (existingScript) {
@@ -175,11 +186,13 @@ export default function CheckoutPage() {
   // Update item quantity
   const updateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1 || !cart) return
+
     try {
       const response = await api.patch(`/cart/items/${itemId}`, {
         cartId: cart._id,
         people: newQuantity,
       })
+
       if (response.data) {
         const updatedCart = { ...cart }
         const itemIndex = updatedCart.items.findIndex((item) => item._id === itemId)
@@ -200,12 +213,14 @@ export default function CheckoutPage() {
   // Remove item from cart
   const removeItem = async (itemId: string) => {
     if (!cart) return
+
     try {
       const response = await api.delete(`/cart/${cart._id}/items/${itemId}`)
       if (response.data) {
         const updatedCart = { ...cart }
         updatedCart.items = updatedCart.items.filter((item) => item._id !== itemId)
         updatedCart.totalPrice = updatedCart.items.reduce((sum, item) => sum + item.total, 0)
+
         if (updatedCart.items.length === 0) {
           setError("Tu carrito está vacío. Agrega algunos tours para continuar con tu reserva.")
           setCart(null)
@@ -223,11 +238,13 @@ export default function CheckoutPage() {
   // Update item date
   const updateDate = async (itemId: string, newDate: string) => {
     if (!cart) return
+
     try {
       const response = await api.patch(`/cart/items/${itemId}`, {
         cartId: cart._id,
         startDate: `${newDate}T00:00:00.000Z`,
       })
+
       if (response.data) {
         const updatedCart = { ...cart }
         const itemIndex = updatedCart.items.findIndex((item) => item._id === itemId)
@@ -243,49 +260,91 @@ export default function CheckoutPage() {
     }
   }
 
-  // Generate payment token
+  // Generate payment token with correct payload structure
   const generatePaymentToken = async () => {
     if (!cart) return
+
     setIsProcessingPayment(true)
     setError(null)
+
     try {
-      const totalAmountPEN = (cart.totalPrice * USD_TO_PEN_RATE).toFixed(0)
-      const payload: CreateFormTokenRequest = {
-        amount: Number.parseInt(totalAmountPEN) * 100, // Amount in cents
+      //const totalAmountPEN = Math.round(cart.totalPrice * USD_TO_PEN_RATE)
+      const totalAmountPEN = Math.round(cart.totalPrice) // Ya está en soles
+
+      // Transform cart items to match OrderItemDto structure
+      const orderItems: OrderItemDto[] = cart.items.map((item) => {
+        // Handle both string and object types for productId
+        let tourId: string
+        if (typeof item.productId === "string") {
+          tourId = item.productId
+        } else if (item.productId && typeof item.productId === "object" && "_id" in item.productId) {
+          tourId = (item.productId as { _id: string })._id
+        } else {
+          console.error("Invalid productId format:", item.productId)
+          tourId = "" // fallback
+        }
+
+        return {
+          tour: tourId,
+          startDate: item.startDate,
+          people: item.people,
+          pricePerPerson: item.pricePerPerson,
+          total: item.total,
+          notes: item.notes || undefined,
+        }
+      })
+
+      // Create the payload according to CreatePaymentDto structure
+      const payload: CreatePaymentDto = {
+        // Payment specific fields
+        amount: totalAmountPEN, // Send amount in soles, not cents
         currency: "PEN",
         orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        customer: {
-          email: customerInfo.email,
-          billingFirstName: customerInfo.firstName,
-          billingLastName: customerInfo.lastName,
-        },
-        formAction: "PAID", // Cambiar de "PAYMENT" a "PAID"
+        formAction: "PAID",
         contextMode: "TEST",
-        paymentForms: [
-          {
-            type: "card",
-            pan: "4970100000000154", // Test card - this will be removed in production
-            cardScheme: "VISA",
-            expiryMonth: "12",
-            expiryYear: "2026",
-            securityCode: "123",
-          },
-        ],
+
+        // Order fields
+        items: orderItems,
+        customer: {
+          fullName: `${customerInfo.firstName} ${customerInfo.lastName}`.trim(),
+          email: customerInfo.email,
+          phone: customerInfo.phone || undefined,
+          nationality: customerInfo.country || undefined,
+        },
+        totalPrice: cart.totalPrice,
+        paymentMethod: paymentMethod || "izipay",
+        notes: orderNotes || undefined,
+        discountCodeUsed: discountCode || undefined,
+        // user field will be handled by backend if user is authenticated
       }
+
+      console.log("Payment payload:", payload)
+
       const response = await api.post<FormTokenResponse>("/payments/formtoken", payload)
+
       setFormToken(response.data.formToken)
       setShowPaymentModal(true)
     } catch (err: unknown) {
       console.error("Error generating payment form token:", err)
       let errorMessage = t.errorProcessingPayment || "Error processing payment. Please try again."
+
       if (isAxiosError(err)) {
         if (err.response?.data && typeof err.response.data === "object" && "message" in err.response.data) {
           errorMessage = (err.response.data as { message: string }).message
         } else if (err.message) {
           errorMessage = err.message
         }
+
+        // Log the full error for debugging
+        console.error("Full error details:", {
+          status: err.response?.status,
+          data: err.response?.data,
+          message: err.message,
+        })
       }
+
       setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsProcessingPayment(false)
     }
@@ -340,6 +399,7 @@ export default function CheckoutPage() {
     const isTransport = item.productType === CartItemType.Transport
     let locationDisplay = "Ubicación no disponible"
     let durationDisplay = "Duración no disponible"
+
     if (item.notes) {
       const parts = item.notes.split(" - ")
       if (isTransport && parts.length >= 2) {
@@ -348,11 +408,13 @@ export default function CheckoutPage() {
         locationDisplay = parts[0] // e.g., "Tour Title" or "Origin City"
       }
     }
+
     if (isTransport) {
       durationDisplay = "Transporte"
     } else {
       durationDisplay = "Duración del tour" // Placeholder, as tour.duration is no longer available
     }
+
     return {
       id: item._id,
       title: item.productTitle || (isTransport ? "Servicio de Transporte" : "Tour"),
@@ -460,8 +522,9 @@ export default function CheckoutPage() {
           </motion.div>
         </div>
       </div>
+
       <div className="relative -mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Progress Steps - Mejorado */}
+        {/* Progress Steps */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -511,11 +574,12 @@ export default function CheckoutPage() {
             </div>
           </div>
         </motion.div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content - Mejorado */}
+          {/* Main Content */}
           <div className="lg:col-span-2">
             <AnimatePresence mode="wait">
-              {/* Step 1: Cart Review - Rediseñado */}
+              {/* Step 1: Cart Review */}
               {currentStep === 1 && (
                 <motion.div
                   key="step1"
@@ -583,7 +647,7 @@ export default function CheckoutPage() {
                                         {displayData.duration}
                                       </div>
                                     </div>
-                                    {/* Date Selection - Mejorado */}
+                                    {/* Date Selection */}
                                     <div className="mb-4">
                                       <Label className="text-sm font-semibold text-gray-700 mb-2 block">
                                         📅 Fecha del Tour
@@ -596,7 +660,7 @@ export default function CheckoutPage() {
                                         className="w-full sm:w-auto border-2 border-gray-200 focus:border-purple-500 rounded-lg"
                                       />
                                     </div>
-                                    {/* Quantity Controls - Mejorado */}
+                                    {/* Quantity Controls */}
                                     <div className="flex items-center gap-4">
                                       <Label className="text-sm font-semibold text-gray-700">👥 Personas:</Label>
                                       <div className="flex items-center bg-gray-50 rounded-lg border-2 border-gray-200">
@@ -623,7 +687,7 @@ export default function CheckoutPage() {
                                       </div>
                                     </div>
                                   </div>
-                                  {/* Price and Actions - Mejorado */}
+                                  {/* Price and Actions */}
                                   <div className="text-right flex-shrink-0 lg:ml-6">
                                     <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-4 mb-4">
                                       <p className="text-2xl font-bold text-purple-700 mb-1">S/ {item.total}</p>
@@ -659,7 +723,8 @@ export default function CheckoutPage() {
                   </div>
                 </motion.div>
               )}
-              {/* Step 2: Customer Information - Rediseñado */}
+
+              {/* Step 2: Customer Information */}
               {currentStep === 2 && (
                 <motion.div
                   key="step2"
@@ -769,7 +834,8 @@ export default function CheckoutPage() {
                   </div>
                 </motion.div>
               )}
-              {/* Step 3: Payment Method - Rediseñado */}
+
+              {/* Step 3: Payment Method */}
               {currentStep === 3 && (
                 <motion.div
                   key="step3"
@@ -789,7 +855,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="p-6 sm:p-8">
                     <div className="space-y-6">
-                      {/* Payment Method Selection - Mejorado */}
+                      {/* Payment Method Selection */}
                       <div className="grid grid-cols-1 gap-4">
                         <div
                           onClick={() => setPaymentMethod("izipay")}
@@ -824,7 +890,8 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                       </div>
-                      {/* Order Notes - Mejorado */}
+
+                      {/* Order Notes */}
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-gray-700 flex items-center">
                           <span className="mr-2">📝</span> Notas Adicionales (Opcional)
@@ -836,6 +903,7 @@ export default function CheckoutPage() {
                           className="min-h-[100px] border-2 border-gray-200 focus:border-teal-500 rounded-lg resize-none"
                         />
                       </div>
+
                       {/* Security Info */}
                       <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl p-4">
                         <div className="flex items-center text-teal-700">
@@ -847,6 +915,7 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                     </div>
+
                     <div className="flex flex-col sm:flex-row justify-between gap-4 mt-8 pt-6 border-t border-gray-200">
                       <Button
                         variant="outline"
@@ -881,7 +950,8 @@ export default function CheckoutPage() {
               )}
             </AnimatePresence>
           </div>
-          {/* Order Summary Sidebar - Completamente rediseñado */}
+
+          {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -896,6 +966,7 @@ export default function CheckoutPage() {
                   Resumen del Pedido
                 </h3>
               </div>
+
               {/* Tours List */}
               <div className="p-6">
                 <div className="space-y-4 mb-6">
@@ -929,6 +1000,7 @@ export default function CheckoutPage() {
                     )
                   })}
                 </div>
+
                 {/* Discount Code */}
                 <div className="mb-6">
                   <Label className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
@@ -952,6 +1024,7 @@ export default function CheckoutPage() {
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Funcionalidad próximamente disponible</p>
                 </div>
+
                 {/* Price Breakdown */}
                 <div className="space-y-3 border-t border-gray-200 pt-4">
                   <div className="flex justify-between text-sm">
@@ -967,6 +1040,7 @@ export default function CheckoutPage() {
                     <span className="text-purple-600">S/ {cart.totalPrice}</span>
                   </div>
                 </div>
+
                 {/* Example Discount Codes */}
                 <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
                   <h4 className="text-sm font-bold text-purple-800 mb-2 flex items-center">🎁 Códigos de Ejemplo</h4>
@@ -982,7 +1056,8 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-      {/* Payment Modal - Mejorado */}
+
+      {/* Payment Modal */}
       <AnimatePresence>
         {showPaymentModal && (
           <motion.div
@@ -1003,6 +1078,7 @@ export default function CheckoutPage() {
               >
                 <X size={20} />
               </button>
+
               {/* Header */}
               <div className="text-center mb-6 pt-2">
                 <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
@@ -1013,11 +1089,10 @@ export default function CheckoutPage() {
                 {/* Amount Display */}
                 <div className="mt-4 p-4 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl border border-purple-200">
                   <p className="text-sm text-gray-600 mb-1">Total a pagar</p>
-                  <p className="brand-text text-2xl text-gray-800">
-                    S/ {cart ? (cart.totalPrice * USD_TO_PEN_RATE).toFixed(0) : "0"} PEN
-                  </p>
+                  <p className="brand-text text-2xl text-gray-800">S/ {cart ? cart.totalPrice.toFixed(0) : "0"}</p>
                 </div>
               </div>
+
               {!formToken ? (
                 <div className="flex flex-col items-center justify-center flex-grow text-slate-600">
                   <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -1043,6 +1118,7 @@ export default function CheckoutPage() {
                       <div className="kr-form-error"></div>
                     </div>
                   </div>
+
                   {/* Security Info */}
                   <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center text-sm text-green-700">

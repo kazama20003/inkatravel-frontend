@@ -1,143 +1,478 @@
-/* Izipay Custom Styles - Popin/Style-Personalization-PopIn.css */
+/* Izipay Custom Styles - Ultra Modern Design */
 
-/* Botón principal de Izipay */
-.kr-popin-button {
-  color: #ffffff !important; /* Mantener blanco para contraste */
-  background-color: #00a09d !important; /* Color específico de Izipay, mantener */
-  border-radius: 4px !important;
-  height: 55px !important;
-  margin-bottom: 0px !important;
-  font-family: var(--font-inter) !important; /* Usar fuente de la marca */
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
+/* Variables CSS personalizadas */
+:root {
+  --izipay-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --izipay-primary-hover: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  --izipay-secondary: #f8fafc;
+  --izipay-border: #e2e8f0;
+  --izipay-text: #1a202c;
+  --izipay-text-muted: #718096;
+  --izipay-success: #48bb78;
+  --izipay-error: #f56565;
+  --izipay-radius: 16px;
+  --izipay-radius-sm: 8px;
+  --izipay-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --izipay-shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --izipay-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.kr-popin-button span:hover {
-  transition-duration: 0.2s;
-  font-size: large;
-  text-shadow: -0.5px -0.5px 0.5px #000, 0.5px 0.5px 0.5px #000, -0.5px 0.5px 0.5px #000, 0.5px -0.5px 0.5px #000;
-}
-
-.kr-popin-button:hover {
-  background-color: #3dd2ce !important; /* Color específico de Izipay para hover, mantener */
-  border-radius: 4px !important;
-  color: #ffffff !important;
-}
-
-/* Estilos para el contenedor del formulario embebido */
+/* Contenedor principal del formulario embebido */
 .kr-embedded {
-  border-radius: var(--radius-md) !important; /* Usar variable de radio de la marca */
-  justify-content: space-between !important;
-  border: 1px solid var(--border) !important; /* Usar variable de borde de la marca */
-  font-family: var(--font-inter) !important; /* Usar fuente de la marca */
+  border-radius: var(--izipay-radius) !important;
+  border: 2px solid transparent !important;
+  background: linear-gradient(white, white) padding-box, linear-gradient(135deg, #667eea, #764ba2) border-box !important;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  box-shadow: var(--izipay-shadow) !important;
+  overflow: hidden !important;
+  position: relative !important;
 }
 
-/* Manejo de la cabecera del modal pop-in */
-.kr-popin-modal-header {
-  border-bottom: 0px !important;
-  border-radius: var(--radius-xl) !important; /* Usar variable de radio de la marca */
+.kr-embedded::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--izipay-primary);
+  z-index: 1;
 }
 
-.kr-popin-modal-header-background {
-  background-color: var(--background) !important; /* Usar variable de fondo de la marca */
-  border-radius: var(--radius-xl) !important; /* Usar variable de radio de la marca */
+/* Botones de pago con diseño ultra moderno */
+.kr-popin-button,
+.kr-embedded .kr-payment-button {
+  background: var(--izipay-primary) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: var(--izipay-radius) !important;
+  height: 60px !important;
+  font-family: "Inter", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 18px !important;
+  letter-spacing: 0.5px !important;
+  text-transform: none !important;
+  transition: var(--izipay-transition) !important;
+  box-shadow: var(--izipay-shadow) !important;
+  margin: 0 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
 }
 
-.kr-popin-shop-name {
-  border-bottom: solid 1px var(--border) !important; /* Usar variable de borde de la marca */
-  width: 85% !important;
-  height: 30px !important;
-  margin-top: 60px !important;
+.kr-popin-button::before,
+.kr-embedded .kr-payment-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
 }
 
-/* Estilos para los campos de entrada */
-.kr-field-wrapper {
-  margin-top: 3px !important;
+.kr-popin-button:hover::before,
+.kr-embedded .kr-payment-button:hover::before {
+  left: 100%;
 }
 
+.kr-popin-button:hover,
+.kr-embedded .kr-payment-button:hover {
+  background: var(--izipay-primary-hover) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: var(--izipay-shadow-lg) !important;
+}
+
+.kr-popin-button:active,
+.kr-embedded .kr-payment-button:active {
+  transform: translateY(0) !important;
+  box-shadow: var(--izipay-shadow) !important;
+}
+
+/* Campos de entrada ultra modernos */
 .kr-pan,
 .kr-expiry,
 .kr-security-code,
 .kr-installment-number,
 .kr-first-installment-delay {
-  height: 45px !important;
-  display: flex !important;
-  align-items: center !important;
-  margin-bottom: 5px !important;
-  border-radius: 4px !important;
-  border: 1px solid var(--input) !important; /* Usar variable de input de la marca */
+  height: 56px !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: var(--izipay-radius-sm) !important;
+  background: #ffffff !important;
+  font-family: "Inter", sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: var(--izipay-text) !important;
+  padding: 0 20px !important;
+  margin-bottom: 20px !important;
+  transition: var(--izipay-transition) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+  position: relative !important;
 }
 
+.kr-pan:focus,
+.kr-expiry:focus,
+.kr-security-code:focus,
+.kr-installment-number:focus,
+.kr-first-installment-delay:focus {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  outline: none !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Efectos de placeholder modernos */
+.kr-field-wrapper input::placeholder {
+  color: var(--izipay-text-muted) !important;
+  opacity: 0.8 !important;
+  font-weight: 400 !important;
+}
+
+/* Ajustes específicos para campos */
 .kr-pan {
-  margin-top: -5px !important;
-}
-
-.kr-field-wrapper.kr-select-wrapper.kr-real-select {
-  height: 31.7px !important;
+  margin-top: 0 !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%) !important;
 }
 
 .kr-field-element.kr-expiry.kr-size-half {
-  width: 52% !important;
-  margin-right: 0px !important;
+  width: calc(50% - 10px) !important;
+  margin-right: 20px !important;
 }
 
 .kr-field-element.kr-security-code.kr-size-half {
-  width: 46% !important;
+  width: calc(50% - 10px) !important;
 }
 
-/* Botón de pago dentro del formulario embebido */
-.kr-embedded .kr-payment-button {
-  color: #ffffff !important;
-  background-color: #00a09d !important; /* Color específico de Izipay, mantener */
-  border-radius: 4px !important;
-  height: 55px !important;
-  margin-bottom: 0px !important;
-  font-family: var(--font-inter) !important; /* Usar fuente de la marca */
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
+/* Wrapper de campos con animaciones */
+.kr-field-wrapper {
+  margin-bottom: 12px !important;
+  position: relative !important;
 }
 
-.kr-embedded .kr-payment-button span:hover {
-  transition-duration: 0.2s;
-  font-size: large;
-  text-shadow: -0.5px -0.5px 0.5px #000, 0.5px 0.5px 0.5px #000, -0.5px 0.5px 0.5px #000, 0.5px -0.5px 0.5px #000;
+.kr-field-wrapper::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--izipay-primary);
+  transition: var(--izipay-transition);
+  transform: translateX(-50%);
 }
 
-.kr-embedded .kr-payment-button:hover {
-  background-color: #3dd2ce !important; /* Color específico de Izipay para hover, mantener */
-  border-radius: 4px !important;
-  color: #ffffff !important;
+.kr-field-wrapper:focus-within::after {
+  width: 100%;
 }
 
-/* Footer del modal pop-in */
+/* Modal y header ultra modernos */
+.kr-popin-modal-header {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
+  border-radius: var(--izipay-radius) var(--izipay-radius) 0 0 !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+  padding: 32px !important;
+  position: relative !important;
+}
+
+.kr-popin-modal-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--izipay-primary);
+}
+
+.kr-popin-modal-header-background {
+  background: transparent !important;
+  border-radius: var(--izipay-radius) var(--izipay-radius) 0 0 !important;
+}
+
+.kr-popin-shop-name {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
+  color: var(--izipay-text) !important;
+  font-weight: 700 !important;
+  font-size: 24px !important;
+  padding: 20px 0 !important;
+  margin-top: 0 !important;
+  height: auto !important;
+  width: 100% !important;
+  text-align: center !important;
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+/* Footer del modal con gradiente */
 .kr-embedded[kr-popin],
 div.kr-popin-modal-footer {
-  border-radius: var(--radius-xl) !important; /* Usar variable de radio de la marca */
+  border-radius: 0 0 var(--izipay-radius) var(--izipay-radius) !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+  border-top: 1px solid rgba(226, 232, 240, 0.5) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.kr-popin-modal-footer {
+  padding: 24px 32px !important;
 }
 
 .kr-popin-modal-footer div img {
-  margin-right: 28px !important;
+  margin-right: 20px !important;
+  border-radius: var(--izipay-radius-sm) !important;
+  opacity: 0.9 !important;
+  transition: var(--izipay-transition) !important;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1)) !important;
 }
 
-/* Imágenes de logo de Izipay (mantener URLs externas) */
+.kr-popin-modal-footer div img:hover {
+  opacity: 1 !important;
+  transform: scale(1.05) !important;
+}
+
+/* Logos con efectos modernos */
 .kr-embedded[kr-popin] .kr-popin-modal-header .kr-popin-modal-header-image img.kr-header-logo {
-  background-color: #000;
   content: url("https://github.com/izipay-pe/Imagenes/blob/main/logos_izipay/logo-Z-fondoRojo-200x200.png?raw=true") !important;
-  margin-top: -8px;
-  transform: scale(1.5);
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: var(--izipay-radius-sm) !important;
+  margin: 0 !important;
+  transform: none !important;
+  box-shadow: var(--izipay-shadow) !important;
+  transition: var(--izipay-transition) !important;
+}
+
+.kr-embedded[kr-popin] .kr-popin-modal-header .kr-popin-modal-header-image img.kr-header-logo:hover {
+  transform: scale(1.1) rotate(5deg) !important;
+  box-shadow: var(--izipay-shadow-lg) !important;
 }
 
 .kr-embedded[kr-popin].kr-help-button-inner-field .kr-popin-modal-footer .kr-whitelabel-logo img {
-  border-radius: 4px;
-  content: url("https://github.com/izipay-pe/Imagenes/blob/main/logos_izipay/logo-izipay-sinFondo-250x102.png?raw=true");
-  max-height: 100%;
-  margin-right: 30px;
+  content: url("https://github.com/izipay-pe/Imagenes/blob/main/logos_izipay/logo-izipay-sinFondo-250x102.png?raw=true") !important;
+  max-height: 40px !important;
+  width: auto !important;
+  border-radius: var(--izipay-radius-sm) !important;
+  margin-right: 20px !important;
 }
 
-/* Estilos adicionales para mejor integración */
+/* Estilos para inputs con efectos glassmorphism */
 .kr-field-wrapper input {
-  font-family: var(--font-inter) !important; /* Usar fuente de la marca */
+  font-family: "Inter", sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: var(--izipay-text) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(10px) !important;
+  border: none !important;
+  outline: none !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: var(--izipay-radius-sm) !important;
+}
+
+/* Estados de error con animaciones */
+.kr-field-wrapper.kr-error .kr-pan,
+.kr-field-wrapper.kr-error .kr-expiry,
+.kr-field-wrapper.kr-error .kr-security-code {
+  border-color: var(--izipay-error) !important;
+  box-shadow: 0 0 0 4px rgba(245, 101, 101, 0.1) !important;
+  animation: shake 0.5s ease-in-out !important;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* Mensajes de error modernos */
+.kr-form-error {
+  color: var(--izipay-error) !important;
   font-size: 14px !important;
+  font-weight: 600 !important;
+  margin-top: 12px !important;
+  padding: 16px 20px !important;
+  background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%) !important;
+  border: 1px solid #fc8181 !important;
+  border-radius: var(--izipay-radius-sm) !important;
+  box-shadow: var(--izipay-shadow) !important;
+  position: relative !important;
+}
+
+.kr-form-error::before {
+  content: "⚠️";
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+/* Estados de carga con spinner moderno */
+.kr-payment-button[disabled],
+.kr-popin-button[disabled] {
+  opacity: 0.7 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  position: relative !important;
+}
+
+.kr-payment-button[disabled]::after,
+.kr-popin-button[disabled]::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid transparent;
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animaciones de entrada */
+.kr-embedded {
+  animation: slideInUp 0.5s ease-out !important;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Efectos de hover para campos */
+.kr-pan:hover,
+.kr-expiry:hover,
+.kr-security-code:hover {
+  border-color: #a0aec0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Responsive design mejorado */
+@media (max-width: 640px) {
+  .kr-embedded {
+    border-radius: var(--izipay-radius-sm) !important;
+    margin: 0 !important;
+  }
+
+  .kr-field-element.kr-expiry.kr-size-half,
+  .kr-field-element.kr-security-code.kr-size-half {
+    width: 100% !important;
+    margin-right: 0 !important;
+    margin-bottom: 16px !important;
+  }
+
+  .kr-popin-modal-header,
+  .kr-popin-modal-footer {
+    padding: 20px !important;
+  }
+
+  .kr-popin-button,
+  .kr-embedded .kr-payment-button {
+    height: 56px !important;
+    font-size: 16px !important;
+  }
+}
+
+/* Mejoras de accesibilidad */
+.kr-embedded:focus-within {
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), var(--izipay-shadow) !important;
+}
+
+/* Estilos para el contenedor del modal cuando está abierto */
+.kr-popin-modal {
+  backdrop-filter: blur(12px) !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  animation: fadeIn 0.3s ease-out !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.kr-popin-modal-content {
+  border-radius: var(--izipay-radius) !important;
+  box-shadow: var(--izipay-shadow-lg) !important;
+  border: none !important;
+  overflow: hidden !important;
+  animation: scaleIn 0.3s ease-out !important;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Efectos de partículas para el fondo */
+.kr-embedded::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Asegurar que el contenido esté por encima del fondo */
+.kr-embedded > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Efectos de brillo en los botones */
+.kr-popin-button,
+.kr-embedded .kr-payment-button {
+  background-size: 200% 200% !important;
+  animation: gradientShift 3s ease infinite !important;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
