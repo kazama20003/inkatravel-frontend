@@ -83,15 +83,13 @@ export default function CheckoutPage() {
   const { t } = useLanguage()
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [, ] = useState(false)
+  const [,] = useState(false)
   const [cart, setCart] = useState<Cart | null>(null)
   const [error, setError] = useState<string | null>(null)
-
   // Payment state
   const [formToken, setFormToken] = useState<string | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
-
   // Form data
   const [customerInfo, setCustomerInfo] = useState<UserData>({
     email: "",
@@ -158,7 +156,6 @@ export default function CheckoutPage() {
       if (document.getElementById(scriptId)) {
         return
       }
-
       const script = document.createElement("script")
       script.id = scriptId
       script.src = "https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
@@ -166,7 +163,6 @@ export default function CheckoutPage() {
       script.setAttribute("kr-post-url-success", process.env.NEXT_PUBLIC_IZIPAY_SUCCESS_URL || "")
       script.setAttribute("kr-post-url-refused", process.env.NEXT_PUBLIC_IZIPAY_REFUSED_URL || "")
       document.body.appendChild(script)
-
       return () => {
         const existingScript = document.getElementById(scriptId)
         if (existingScript) {
@@ -250,10 +246,8 @@ export default function CheckoutPage() {
   // Generate payment token
   const generatePaymentToken = async () => {
     if (!cart) return
-
     setIsProcessingPayment(true)
     setError(null)
-
     try {
       const totalAmountPEN = (cart.totalPrice * USD_TO_PEN_RATE).toFixed(0)
       const payload: CreateFormTokenRequest = {
@@ -278,7 +272,6 @@ export default function CheckoutPage() {
           },
         ],
       }
-
       const response = await api.post<FormTokenResponse>("/payments/formtoken", payload)
       setFormToken(response.data.formToken)
       setShowPaymentModal(true)
@@ -345,10 +338,8 @@ export default function CheckoutPage() {
   // Helper function to get item display data
   const getItemDisplayData = (item: CartItem) => {
     const isTransport = item.productType === CartItemType.Transport
-
     let locationDisplay = "Ubicación no disponible"
     let durationDisplay = "Duración no disponible"
-
     if (item.notes) {
       const parts = item.notes.split(" - ")
       if (isTransport && parts.length >= 2) {
@@ -357,13 +348,11 @@ export default function CheckoutPage() {
         locationDisplay = parts[0] // e.g., "Tour Title" or "Origin City"
       }
     }
-
     if (isTransport) {
       durationDisplay = "Transporte"
     } else {
       durationDisplay = "Duración del tour" // Placeholder, as tour.duration is no longer available
     }
-
     return {
       id: item._id,
       title: item.productTitle || (isTransport ? "Servicio de Transporte" : "Tour"),
@@ -389,59 +378,56 @@ export default function CheckoutPage() {
 
   if (error || !cart || !cart.items || cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-peru-light via-white to-orange-50 pt-20 sm:pt-24 md:pt-32 pb-8 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 pt-20 sm:pt-24 md:pt-32 pb-8 flex items-center justify-center px-4">
         <div className="text-center max-w-2xl mx-auto p-8">
           <div className="mb-8">
-            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-peru-orange to-peru-gold rounded-full flex items-center justify-center">
+            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
               <ShoppingCart className="w-12 h-12 text-white" />
             </div>
-            <h1 className="brand-text text-4xl md:text-5xl text-peru-dark mb-4">Tu Carrito Está Vacío</h1>
+            <h1 className="brand-text text-4xl md:text-5xl text-gray-800 mb-4">Tu Carrito Está Vacío</h1>
             <p className="body-text text-lg text-gray-600 mb-8 max-w-md mx-auto">
               Descubre increíbles tours y servicios de transporte en Perú. ¡Comienza tu aventura ahora!
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Tours Card */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-peru-green to-emerald-500 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-full flex items-center justify-center">
                 <MapPin className="w-8 h-8 text-white" />
               </div>
-              <h3 className="brand-text text-2xl text-peru-dark mb-3">Tours Increíbles</h3>
+              <h3 className="brand-text text-2xl text-gray-800 mb-3">Tours Increíbles</h3>
               <p className="body-text text-gray-600 mb-4">
                 Explora Machu Picchu, el Valle Sagrado, y muchos destinos más
               </p>
               <Button
                 onClick={() => router.push("/tours")}
-                className="w-full bg-gradient-to-r from-peru-green to-emerald-500 hover:from-peru-green/90 hover:to-emerald-500/90 text-white font-semibold py-3 rounded-xl transition-all duration-300"
+                className="w-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-semibold py-3 rounded-xl transition-all duration-300"
               >
                 Ver Tours
               </Button>
             </div>
-
             {/* Transport Card */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-peru-orange to-red-500 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
                 <Package className="w-8 h-8 text-white" />
               </div>
-              <h3 className="brand-text text-2xl text-peru-dark mb-3">Transporte</h3>
+              <h3 className="brand-text text-2xl text-gray-800 mb-3">Transporte</h3>
               <p className="body-text text-gray-600 mb-4">
                 Viaja cómodo entre ciudades con nuestros servicios de transporte
               </p>
               <Button
                 onClick={() => router.push("/transport")}
-                className="w-full bg-gradient-to-r from-peru-orange to-red-500 hover:from-peru-orange/90 hover:to-red-500/90 text-white font-semibold py-3 rounded-xl transition-all duration-300"
+                className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold py-3 rounded-xl transition-all duration-300"
               >
                 Ver Transporte
               </Button>
             </div>
           </div>
-
           <div className="flex gap-4 justify-center">
             <Button
               variant="outline"
               onClick={loadCart}
-              className="border-peru-orange text-peru-orange hover:bg-peru-orange hover:text-white transition-all duration-300 bg-transparent"
+              className="border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white transition-all duration-300 bg-transparent"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Reintentar
@@ -455,7 +441,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-peru-orange via-peru-gold to-orange-500 pt-20 sm:pt-24 md:pt-32 pb-16">
+      <div className="relative bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 pt-20 sm:pt-24 md:pt-32 pb-16">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
@@ -474,7 +460,6 @@ export default function CheckoutPage() {
           </motion.div>
         </div>
       </div>
-
       <div className="relative -mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Progress Steps - Mejorado */}
         <motion.div
@@ -496,7 +481,7 @@ export default function CheckoutPage() {
                     <div
                       className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-sm sm:text-base font-bold transition-all duration-300 ${
                         item.step <= currentStep
-                          ? "bg-gradient-to-r from-peru-orange to-peru-gold text-white shadow-lg scale-110"
+                          ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg scale-110"
                           : "bg-gray-100 text-gray-400"
                       }`}
                     >
@@ -508,7 +493,7 @@ export default function CheckoutPage() {
                     </div>
                     <span
                       className={`mt-2 text-xs sm:text-sm font-medium ${
-                        item.step <= currentStep ? "text-peru-orange" : "text-gray-500"
+                        item.step <= currentStep ? "text-purple-600" : "text-gray-500"
                       }`}
                     >
                       {item.title}
@@ -517,7 +502,7 @@ export default function CheckoutPage() {
                   {index < 3 && (
                     <div
                       className={`w-12 sm:w-16 h-1 mx-4 rounded-full transition-all duration-300 ${
-                        item.step < currentStep ? "bg-gradient-to-r from-peru-orange to-peru-gold" : "bg-gray-200"
+                        item.step < currentStep ? "bg-gradient-to-r from-purple-500 to-blue-500" : "bg-gray-200"
                       }`}
                     />
                   )}
@@ -526,7 +511,6 @@ export default function CheckoutPage() {
             </div>
           </div>
         </motion.div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content - Mejorado */}
           <div className="lg:col-span-2">
@@ -540,16 +524,15 @@ export default function CheckoutPage() {
                   exit={{ opacity: 0, x: -20 }}
                   className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
                 >
-                  <div className="bg-gradient-to-r from-peru-orange/10 to-peru-gold/10 p-6 sm:p-8 border-b border-gray-100">
+                  <div className="bg-gradient-to-r from-purple-100 to-blue-100 p-6 sm:p-8 border-b border-gray-100">
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center brand-text">
-                      <div className="w-10 h-10 bg-gradient-to-r from-peru-orange to-peru-gold rounded-full flex items-center justify-center mr-4">
+                      <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mr-4">
                         <ShoppingCart className="w-5 h-5 text-white" />
                       </div>
                       Tu Selección de Tours
                     </h2>
                     <p className="text-gray-600 mt-2 body-text">Revisa y personaliza tu experiencia</p>
                   </div>
-
                   <div className="p-6 sm:p-8">
                     <div className="space-y-6">
                       {cart.items.map((item, index) => {
@@ -557,7 +540,7 @@ export default function CheckoutPage() {
                         return (
                           <div
                             key={`cart-item-${item._id || index}`}
-                            className="group bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-peru-orange/30"
+                            className="group bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-purple-300"
                           >
                             <div className="flex flex-col lg:flex-row gap-6">
                               {/* Image */}
@@ -583,7 +566,6 @@ export default function CheckoutPage() {
                                   </div>
                                 </div>
                               </div>
-
                               {/* Content */}
                               <div className="flex-1 min-w-0">
                                 <div className="flex flex-col lg:flex-row lg:justify-between gap-4">
@@ -591,10 +573,9 @@ export default function CheckoutPage() {
                                     <h3 className="text-xl font-bold text-gray-900 mb-3 brand-text">
                                       {displayData.title}
                                     </h3>
-
                                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
-                                      <div className="flex items-center bg-peru-light/20 px-3 py-1 rounded-full">
-                                        <MapPin className="w-4 h-4 mr-2 text-peru-orange" />
+                                      <div className="flex items-center bg-purple-100 px-3 py-1 rounded-full">
+                                        <MapPin className="w-4 h-4 mr-2 text-purple-600" />
                                         {displayData.location}
                                       </div>
                                       <div className="flex items-center bg-blue-50 px-3 py-1 rounded-full">
@@ -602,7 +583,6 @@ export default function CheckoutPage() {
                                         {displayData.duration}
                                       </div>
                                     </div>
-
                                     {/* Date Selection - Mejorado */}
                                     <div className="mb-4">
                                       <Label className="text-sm font-semibold text-gray-700 mb-2 block">
@@ -613,10 +593,9 @@ export default function CheckoutPage() {
                                         value={item.startDate.split("T")[0]}
                                         onChange={(e) => updateDate(item._id, e.target.value)}
                                         min={getMinDate()}
-                                        className="w-full sm:w-auto border-2 border-gray-200 focus:border-peru-orange rounded-lg"
+                                        className="w-full sm:w-auto border-2 border-gray-200 focus:border-purple-500 rounded-lg"
                                       />
                                     </div>
-
                                     {/* Quantity Controls - Mejorado */}
                                     <div className="flex items-center gap-4">
                                       <Label className="text-sm font-semibold text-gray-700">👥 Personas:</Label>
@@ -626,7 +605,7 @@ export default function CheckoutPage() {
                                           variant="ghost"
                                           onClick={() => updateQuantity(item._id, item.people - 1)}
                                           disabled={item.people <= 1}
-                                          className="w-10 h-10 hover:bg-peru-orange hover:text-white"
+                                          className="w-10 h-10 hover:bg-purple-500 hover:text-white"
                                         >
                                           <Minus className="w-4 h-4" />
                                         </Button>
@@ -637,18 +616,17 @@ export default function CheckoutPage() {
                                           size="sm"
                                           variant="ghost"
                                           onClick={() => updateQuantity(item._id, item.people + 1)}
-                                          className="w-10 h-10 hover:bg-peru-orange hover:text-white"
+                                          className="w-10 h-10 hover:bg-purple-500 hover:text-white"
                                         >
                                           <Plus className="w-4 h-4" />
                                         </Button>
                                       </div>
                                     </div>
                                   </div>
-
                                   {/* Price and Actions - Mejorado */}
                                   <div className="text-right flex-shrink-0 lg:ml-6">
-                                    <div className="bg-gradient-to-r from-peru-orange/10 to-peru-gold/10 rounded-xl p-4 mb-4">
-                                      <p className="text-2xl font-bold text-peru-orange mb-1">S/ {item.total}</p>
+                                    <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-4 mb-4">
+                                      <p className="text-2xl font-bold text-purple-700 mb-1">S/ {item.total}</p>
                                       <p className="text-sm text-gray-600">S/ {item.pricePerPerson} por persona</p>
                                     </div>
                                     <Button
@@ -668,12 +646,11 @@ export default function CheckoutPage() {
                         )
                       })}
                     </div>
-
                     <div className="flex justify-end mt-8 pt-6 border-t border-gray-200">
                       <Button
                         onClick={nextStep}
                         size="lg"
-                        className="bg-gradient-to-r from-peru-orange to-peru-gold hover:from-peru-orange/90 hover:to-peru-gold/90 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                        className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                       >
                         Continuar con mis Datos
                         <ArrowRight className="w-5 h-5 ml-2" />
@@ -682,7 +659,6 @@ export default function CheckoutPage() {
                   </div>
                 </motion.div>
               )}
-
               {/* Step 2: Customer Information - Rediseñado */}
               {currentStep === 2 && (
                 <motion.div
@@ -692,7 +668,7 @@ export default function CheckoutPage() {
                   exit={{ opacity: 0, x: -20 }}
                   className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
                 >
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 sm:p-8 border-b border-gray-100">
+                  <div className="bg-gradient-to-r from-blue-100 to-indigo-100 p-6 sm:p-8 border-b border-gray-100">
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center brand-text">
                       <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mr-4">
                         <User className="w-5 h-5 text-white" />
@@ -701,7 +677,6 @@ export default function CheckoutPage() {
                     </h2>
                     <p className="text-gray-600 mt-2 body-text">Necesitamos algunos datos para tu reserva</p>
                   </div>
-
                   <div className="p-6 sm:p-8">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
@@ -715,7 +690,6 @@ export default function CheckoutPage() {
                           className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg"
                         />
                       </div>
-
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-gray-700 flex items-center">
                           <span className="mr-2">👤</span> Apellido *
@@ -727,7 +701,6 @@ export default function CheckoutPage() {
                           className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg"
                         />
                       </div>
-
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-gray-700 flex items-center">
                           <span className="mr-2">📧</span> Correo Electrónico *
@@ -740,7 +713,6 @@ export default function CheckoutPage() {
                           className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg"
                         />
                       </div>
-
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-gray-700 flex items-center">
                           <span className="mr-2">📱</span> Teléfono
@@ -752,7 +724,6 @@ export default function CheckoutPage() {
                           className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg"
                         />
                       </div>
-
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-gray-700 flex items-center">
                           <span className="mr-2">🌍</span> País
@@ -764,7 +735,6 @@ export default function CheckoutPage() {
                           className="h-12 border-2 border-gray-200 focus:border-blue-500"
                         />
                       </div>
-
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-gray-700 flex items-center">
                           <span className="mr-2">🏙️</span> Ciudad
@@ -777,7 +747,6 @@ export default function CheckoutPage() {
                         />
                       </div>
                     </div>
-
                     <div className="flex flex-col sm:flex-row justify-between gap-4 mt-8 pt-6 border-t border-gray-200">
                       <Button
                         variant="outline"
@@ -800,7 +769,6 @@ export default function CheckoutPage() {
                   </div>
                 </motion.div>
               )}
-
               {/* Step 3: Payment Method - Rediseñado */}
               {currentStep === 3 && (
                 <motion.div
@@ -810,16 +778,15 @@ export default function CheckoutPage() {
                   exit={{ opacity: 0, x: -20 }}
                   className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
                 >
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 sm:p-8 border-b border-gray-100">
+                  <div className="bg-gradient-to-r from-teal-100 to-emerald-100 p-6 sm:p-8 border-b border-gray-100">
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center brand-text">
-                      <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mr-4">
+                      <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-full flex items-center justify-center mr-4">
                         <CreditCard className="w-5 h-5 text-white" />
                       </div>
                       Método de Pago
                     </h2>
                     <p className="text-gray-600 mt-2 body-text">Pago 100% seguro y protegido</p>
                   </div>
-
                   <div className="p-6 sm:p-8">
                     <div className="space-y-6">
                       {/* Payment Method Selection - Mejorado */}
@@ -828,7 +795,7 @@ export default function CheckoutPage() {
                           onClick={() => setPaymentMethod("izipay")}
                           className={`relative p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
                             paymentMethod === "izipay"
-                              ? "border-green-500 bg-green-50 shadow-lg"
+                              ? "border-teal-500 bg-teal-50 shadow-lg"
                               : "border-gray-200 hover:border-gray-300 hover:shadow-md"
                           }`}
                         >
@@ -836,12 +803,10 @@ export default function CheckoutPage() {
                             <div className="flex items-center">
                               <div
                                 className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center ${
-                                  paymentMethod === "izipay" ? "border-green-500" : "border-gray-300"
+                                  paymentMethod === "izipay" ? "border-teal-500" : "border-gray-300"
                                 }`}
                               >
-                                {paymentMethod === "izipay" && (
-                                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                )}
+                                {paymentMethod === "izipay" && <div className="w-3 h-3 bg-teal-500 rounded-full"></div>}
                               </div>
                               <div>
                                 <p className="font-bold text-gray-900 text-lg">💳 Tarjeta de Crédito/Débito</p>
@@ -853,13 +818,12 @@ export default function CheckoutPage() {
                                 </div>
                               </div>
                             </div>
-                            <div className="text-green-600">
+                            <div className="text-teal-600">
                               <CheckCircle className="w-6 h-6" />
                             </div>
                           </div>
                         </div>
                       </div>
-
                       {/* Order Notes - Mejorado */}
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-gray-700 flex items-center">
@@ -869,13 +833,12 @@ export default function CheckoutPage() {
                           value={orderNotes}
                           onChange={(e) => setOrderNotes(e.target.value)}
                           placeholder="¿Alguna solicitud especial? ¿Restricciones alimentarias? ¡Cuéntanos!"
-                          className="min-h-[100px] border-2 border-gray-200 focus:border-green-500 rounded-lg resize-none"
+                          className="min-h-[100px] border-2 border-gray-200 focus:border-teal-500 rounded-lg resize-none"
                         />
                       </div>
-
                       {/* Security Info */}
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
-                        <div className="flex items-center text-green-700">
+                      <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl p-4">
+                        <div className="flex items-center text-teal-700">
                           <CheckCircle className="w-5 h-5 mr-3" />
                           <div>
                             <p className="font-semibold">Pago 100% Seguro</p>
@@ -884,7 +847,6 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                     </div>
-
                     <div className="flex flex-col sm:flex-row justify-between gap-4 mt-8 pt-6 border-t border-gray-200">
                       <Button
                         variant="outline"
@@ -899,7 +861,7 @@ export default function CheckoutPage() {
                         onClick={nextStep}
                         disabled={isProcessingPayment}
                         size="lg"
-                        className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                        className="bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                       >
                         {isProcessingPayment ? (
                           <>
@@ -919,7 +881,6 @@ export default function CheckoutPage() {
               )}
             </AnimatePresence>
           </div>
-
           {/* Order Summary Sidebar - Completamente rediseñado */}
           <div className="lg:col-span-1">
             <motion.div
@@ -929,13 +890,12 @@ export default function CheckoutPage() {
               className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden sticky top-24"
             >
               {/* Header */}
-              <div className="bg-gradient-to-r from-peru-orange/10 to-peru-gold/10 p-6 border-b border-gray-100">
+              <div className="bg-gradient-to-r from-purple-100 to-blue-100 p-6 border-b border-gray-100">
                 <h3 className="text-xl font-bold text-gray-900 flex items-center brand-text">
-                  <Package className="w-6 h-6 mr-3 text-peru-orange" />
+                  <Package className="w-6 h-6 mr-3 text-purple-600" />
                   Resumen del Pedido
                 </h3>
               </div>
-
               {/* Tours List */}
               <div className="p-6">
                 <div className="space-y-4 mb-6">
@@ -962,17 +922,16 @@ export default function CheckoutPage() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-peru-orange">S/ {item.total}</p>
+                            <p className="font-bold text-purple-600">S/ {item.total}</p>
                           </div>
                         </div>
                       </div>
                     )
                   })}
                 </div>
-
                 {/* Discount Code */}
                 <div className="mb-6">
-                  <Label className="text-sm font-semibold text-gray-700 mb-2  flex items-center">
+                  <Label className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
                     <Tag className="w-4 h-4 mr-2" />
                     Código de Descuento
                   </Label>
@@ -981,20 +940,18 @@ export default function CheckoutPage() {
                       value={discountCode}
                       onChange={(e) => setDiscountCode(e.target.value)}
                       placeholder="Ej: WELCOME10"
-                      className="flex-1 text-sm border-2 border-gray-200 focus:border-peru-orange rounded-lg"
+                      className="flex-1 text-sm border-2 border-gray-200 focus:border-purple-500 rounded-lg"
                     />
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-gray-500 cursor-not-allowed border-2 border-gray-200 bg-transparent"
-                      disabled
+                      className="text-gray-500 border-2 border-gray-200 bg-gray-100 hover:bg-gray-200 hover:text-gray-700"
                     >
                       <Tag className="w-4 h-4" />
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Funcionalidad próximamente disponible</p>
                 </div>
-
                 {/* Price Breakdown */}
                 <div className="space-y-3 border-t border-gray-200 pt-4">
                   <div className="flex justify-between text-sm">
@@ -1007,18 +964,17 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between text-lg font-bold text-gray-900 border-t border-gray-200 pt-3">
                     <span>Total</span>
-                    <span className="text-peru-orange">S/ {cart.totalPrice}</span>
+                    <span className="text-purple-600">S/ {cart.totalPrice}</span>
                   </div>
                 </div>
-
                 {/* Example Discount Codes */}
-                <div className="mt-6 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg">
-                  <h4 className="text-sm font-bold text-orange-800 mb-2 flex items-center">🎁 Códigos de Ejemplo</h4>
-                  <div className="space-y-1 text-xs text-orange-700">
+                <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
+                  <h4 className="text-sm font-bold text-purple-800 mb-2 flex items-center">🎁 Códigos de Ejemplo</h4>
+                  <div className="space-y-1 text-xs text-purple-700">
                     <p>• WELCOME10 - 10% de descuento</p>
                     <p>• SUMMER20 - 20% de descuento</p>
                     <p>• SAVE50 - S/ 50 de descuento</p>
-                    <p className="text-orange-600 font-semibold mt-2">*Solo para demostración</p>
+                    <p className="text-purple-600 font-semibold mt-2">*Solo para demostración</p>
                   </div>
                 </div>
               </div>
@@ -1026,8 +982,7 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-
-      {/* Payment Modal - Mantener igual */}
+      {/* Payment Modal - Mejorado */}
       <AnimatePresence>
         {showPaymentModal && (
           <motion.div
@@ -1048,27 +1003,24 @@ export default function CheckoutPage() {
               >
                 <X size={20} />
               </button>
-
               {/* Header */}
               <div className="text-center mb-6 pt-2">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-peru-orange to-peru-gold rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
                   <CreditCard className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="brand-text text-3xl text-peru-dark mb-2">Pago Seguro</h2>
+                <h2 className="brand-text text-3xl text-gray-800 mb-2">Pago Seguro</h2>
                 <p className="body-text text-gray-600">Completa tu reserva de forma segura</p>
-
                 {/* Amount Display */}
-                <div className="mt-4 p-4 bg-gradient-to-r from-peru-light to-blue-50 rounded-xl border border-peru-orange/20">
+                <div className="mt-4 p-4 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl border border-purple-200">
                   <p className="text-sm text-gray-600 mb-1">Total a pagar</p>
-                  <p className="brand-text text-2xl text-peru-dark">
+                  <p className="brand-text text-2xl text-gray-800">
                     S/ {cart ? (cart.totalPrice * USD_TO_PEN_RATE).toFixed(0) : "0"} PEN
                   </p>
                 </div>
               </div>
-
               {!formToken ? (
                 <div className="flex flex-col items-center justify-center flex-grow text-slate-600">
-                  <div className="w-12 h-12 border-4 border-peru-orange border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
                   <p className="body-text text-gray-600">Preparando formulario de pago...</p>
                 </div>
               ) : (
@@ -1085,11 +1037,12 @@ export default function CheckoutPage() {
                         <div className="kr-expiry flex-1"></div>
                         <div className="kr-security-code flex-1"></div>
                       </div>
-                      <button className="kr-payment-button w-full"></button>
+                      <button className="kr-payment-button w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-blue-600 transition-all duration-300">
+                        Pagar Ahora
+                      </button>
                       <div className="kr-form-error"></div>
                     </div>
                   </div>
-
                   {/* Security Info */}
                   <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center text-sm text-green-700">
