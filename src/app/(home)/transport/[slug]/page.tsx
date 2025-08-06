@@ -17,7 +17,6 @@ import {
   ArrowRight,
   Users,
   Timer,
-  DollarSign,
   X,
   Images,
   Loader2,
@@ -26,10 +25,6 @@ import { useLanguage } from "@/contexts/LanguageContext"
 import { isAxiosError } from "axios"
 import Link from "next/link"
 import DateSelector from "@/components/transport/DateSelector"
-
-
-// Exchange rate constant
-const USD_TO_PEN_RATE = 3.75
 
 // Define the interface for route stops
 interface RouteStop {
@@ -111,14 +106,13 @@ export default function TransportDetailPage() {
     tomorrow.setDate(tomorrow.getDate() + 1)
     return tomorrow.toISOString().split("T")[0]
   })
-
   const router = useRouter()
 
   // Payment state
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
   // Cart and checkout state
-  const [, ] = useState<CartItemData[]>([])
+  const [,] = useState<CartItemData[]>([])
 
   // Create comprehensive gallery images from transport data
   const galleryImages = transport
@@ -164,6 +158,7 @@ export default function TransportDetailPage() {
         })
         const apiResponseData: ApiResponse = response.data
         const foundTransport = apiResponseData.data.find((item: TransportData) => item.slug === slug)
+
         if (foundTransport) {
           setTransport(foundTransport)
         } else {
@@ -172,6 +167,7 @@ export default function TransportDetailPage() {
       } catch (err: unknown) {
         console.error("Error fetching transport details:", err)
         let errorMessage = t.errorLoadingToursMessage
+
         if (err instanceof Error) {
           errorMessage = err.message
         } else if (isAxiosError(err)) {
@@ -186,6 +182,7 @@ export default function TransportDetailPage() {
         setLoading(false)
       }
     }
+
     if (slug) {
       fetchTransportDetails()
     }
@@ -257,7 +254,6 @@ export default function TransportDetailPage() {
             errorMessage = err.response.data.error
           }
         }
-
         setError(errorMessage)
       } else {
         setError("Error al agregar al carrito. Por favor, inténtalo de nuevo.")
@@ -317,6 +313,7 @@ export default function TransportDetailPage() {
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
+
         {/* Gallery Button */}
         <button
           onClick={() => setIsGalleryOpen(true)}
@@ -324,6 +321,7 @@ export default function TransportDetailPage() {
         >
           <Images size={20} className="md:w-6 md:h-6" />
         </button>
+
         {/* Hero Content */}
         <div className="absolute inset-0 flex items-end">
           <div className="w-full px-4 md:px-6 pb-8 md:pb-16 max-w-7xl mx-auto">
@@ -352,12 +350,14 @@ export default function TransportDetailPage() {
                   <span className="text-xs md:text-sm font-semibold text-green-400">{t.transport}</span>
                 </div>
               </div>
+
               <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-3 md:mb-4 leading-tight">
                 {transport.title}
               </h1>
               <p className="text-base md:text-xl lg:text-2xl font-light opacity-90 max-w-3xl mb-4 md:mb-6">
                 {transport.description}
               </p>
+
               {/* Route Preview - Responsive */}
               <div className="flex items-center space-x-2 md:space-x-4 bg-black/30 backdrop-blur-sm rounded-xl md:rounded-2xl p-3 md:p-4 max-w-fit">
                 <div className="text-center">
@@ -374,6 +374,7 @@ export default function TransportDetailPage() {
           </div>
         </div>
       </motion.div>
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
@@ -390,10 +391,12 @@ export default function TransportDetailPage() {
                 <Route className="mr-2 md:mr-3 text-blue-500 md:w-7 md:h-7" size={24} />
                 {t.panoramicRoute}
               </h2>
+
               {/* Route Visualization - Mobile Optimized */}
               <div className="relative">
                 {/* Route Line */}
                 <div className="absolute left-6 md:left-8 top-12 md:top-16 bottom-12 md:bottom-16 w-0.5 md:w-1 bg-gradient-to-b from-blue-500 via-purple-500 to-green-500 rounded-full"></div>
+
                 {/* Origin */}
                 <div className="flex items-center mb-6 md:mb-8">
                   <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
@@ -413,6 +416,7 @@ export default function TransportDetailPage() {
                     )}
                   </div>
                 </div>
+
                 {/* Intermediate Stops */}
                 {transport.intermediateStops && transport.intermediateStops.length > 0 && (
                   <div className="mb-6 md:mb-8">
@@ -444,6 +448,7 @@ export default function TransportDetailPage() {
                     </div>
                   </div>
                 )}
+
                 {/* Destination */}
                 <div className="flex items-center">
                   <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
@@ -465,6 +470,7 @@ export default function TransportDetailPage() {
                 </div>
               </div>
             </motion.div>
+
             {/* Schedule & Availability - Mobile Optimized */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -517,6 +523,7 @@ export default function TransportDetailPage() {
                     <p className="text-xs md:text-sm text-blue-700 dark:text-blue-300">💡 {t.arriveEarly}</p>
                   </div>
                 </div>
+
                 {/* Available Days */}
                 <div className="bg-slate-50 dark:bg-slate-700 rounded-xl md:rounded-2xl p-4 md:p-6">
                   <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-slate-800 dark:text-slate-100 flex items-center">
@@ -547,6 +554,7 @@ export default function TransportDetailPage() {
                 </div>
               </div>
             </motion.div>
+
             {/* Terms and Conditions */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -561,6 +569,7 @@ export default function TransportDetailPage() {
                 {transport.termsAndConditions}
               </p>
             </motion.div>
+
             {/* Itinerary Section - Enhanced */}
             {transport.itinerary && transport.itinerary.length > 0 && (
               <motion.div
@@ -598,6 +607,7 @@ export default function TransportDetailPage() {
                           </p>
                         </div>
                       </div>
+
                       {/* Day Image */}
                       {day.imageUrl && (
                         <motion.div
@@ -625,6 +635,7 @@ export default function TransportDetailPage() {
                           </div>
                         </motion.div>
                       )}
+
                       {/* Route Stops */}
                       {day.route && day.route.length > 0 && (
                         <div className="mt-4">
@@ -659,6 +670,7 @@ export default function TransportDetailPage() {
                                       {stop.description}
                                     </p>
                                   </div>
+
                                   {/* Stop Image */}
                                   {stop.imageUrl && (
                                     <motion.div
@@ -689,6 +701,7 @@ export default function TransportDetailPage() {
                           </div>
                         </div>
                       )}
+
                       {/* Connector Line (except for last item) */}
                       {index < (transport.itinerary?.length || 0) - 1 && (
                         <div className="flex justify-center mt-6 mb-2">
@@ -698,6 +711,7 @@ export default function TransportDetailPage() {
                     </motion.div>
                   ))}
                 </div>
+
                 {/* Itinerary Summary */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -746,6 +760,7 @@ export default function TransportDetailPage() {
               </motion.div>
             )}
           </div>
+
           {/* Right Column - Booking Panel - Mobile Optimized */}
           <div className="lg:col-span-1">
             <motion.div
@@ -757,16 +772,12 @@ export default function TransportDetailPage() {
               {/* Price Section */}
               <div className="text-center mb-6 md:mb-8">
                 <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-slate-800 dark:text-slate-100">
-                  {t.priceUSD}
+                  Precio
                 </h3>
                 <div className="space-y-2">
                   <div className="flex items-center justify-center space-x-2">
-                    <DollarSign className="text-green-500 md:w-8 md:h-8" size={24} />
+                    <span className="text-lg text-slate-600 dark:text-slate-400">S/</span>
                     <span className="text-3xl md:text-4xl font-bold text-green-600">{transport.price}</span>
-                    <span className="text-base md:text-lg text-slate-500">USD</span>
-                  </div>
-                  <div className="text-xl md:text-2xl font-semibold text-slate-600 dark:text-slate-400">
-                    S/ {(transport.price * USD_TO_PEN_RATE).toFixed(0)} PEN
                   </div>
                   <div className="text-xs md:text-sm text-slate-500">{t.perPerson}</div>
                 </div>
@@ -810,18 +821,17 @@ export default function TransportDetailPage() {
                   </button>
                 </div>
               </div>
+
               {/* Total Price */}
               <div className="mb-6 md:mb-8 p-3 md:p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl md:rounded-2xl border border-blue-200 dark:border-blue-700">
                 <div className="text-center">
                   <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mb-1">{t.totalToPay}</div>
                   <div className="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400">
-                    ${(transport.price * passengers).toFixed(2)} USD
-                  </div>
-                  <div className="text-base md:text-lg text-slate-600 dark:text-slate-400">
-                    S/ {(transport.price * passengers * USD_TO_PEN_RATE).toFixed(0)} PEN
+                    S/ {(transport.price * passengers).toFixed(0)}
                   </div>
                 </div>
               </div>
+
               {/* Action Buttons - Mobile Optimized */}
               <div className="space-y-3 md:space-y-4">
                 {/* Reserve Button */}
@@ -842,6 +852,7 @@ export default function TransportDetailPage() {
                     </>
                   )}
                 </button>
+
                 {/* WhatsApp Button */}
                 <button
                   onClick={handleWhatsAppContact}
@@ -850,6 +861,7 @@ export default function TransportDetailPage() {
                   <MessageCircle size={18} className="md:w-5 md:h-5" />
                   <span className="text-sm md:text-base">{t.consultWhatsApp}</span>
                 </button>
+
                 {/* Call Button */}
                 <button
                   onClick={handlePhoneCall}
@@ -859,6 +871,7 @@ export default function TransportDetailPage() {
                   <span className="text-sm md:text-base">{t.callNow}</span>
                 </button>
               </div>
+
               {/* Additional Info */}
               <div className="mt-4 md:mt-6 p-3 md:p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl md:rounded-2xl border border-yellow-200 dark:border-yellow-700">
                 <p className="text-xs md:text-sm text-yellow-700 dark:text-yellow-300 text-center">
@@ -869,6 +882,7 @@ export default function TransportDetailPage() {
           </div>
         </div>
       </div>
+
       {/* Image Gallery Modal */}
       <AnimatePresence>
         {isGalleryOpen && (

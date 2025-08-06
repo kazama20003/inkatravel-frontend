@@ -34,9 +34,6 @@ import "../../styles/izipay.css"
 import type { Cart, CartItem, CartResponse } from "@/types/cart"
 import { CartItemType } from "@/types/cart"
 
-// Eliminar esta línea
-// const USD_TO_PEN_RATE = 3.75
-
 // Updated interfaces for the new backend structure
 interface OrderItemDto {
   tour: string
@@ -85,6 +82,23 @@ interface UserData {
   address?: string
   city?: string
   country?: string
+}
+
+// DTO para el PATCH del carrito (debe coincidir con el backend)
+interface UpdateCartDto {
+  items: {
+    productType: CartItemType
+    productId: string
+    startDate: string
+    people: number
+    pricePerPerson: number
+    total: number
+    notes?: string
+    productTitle?: string
+    productImageUrl?: string
+    productSlug?: string
+  }[]
+  totalPrice: number
 }
 
 export default function CheckoutPage() {
@@ -183,25 +197,67 @@ export default function CheckoutPage() {
     }
   }, [showPaymentModal, formToken])
 
+  // Helper function to convert CartItem to DTO format
+  const cartItemToDto = (item: CartItem) => {
+    // Handle both string and object types for productId
+    let productId: string
+    if (typeof item.productId === "string") {
+      productId = item.productId
+    } else if (item.productId && typeof item.productId === "object" && "_id" in item.productId) {
+      productId = (item.productId as { _id: string })._id
+    } else {
+      console.error("Invalid productId format:", item.productId)
+      productId = "" // fallback
+    }
+
+    return {
+      productType: item.productType,
+      productId: productId,
+      startDate: item.startDate,
+      people: item.people,
+      pricePerPerson: item.pricePerPerson,
+      total: item.total,
+      notes: item.notes,
+      productTitle: item.productTitle,
+      productImageUrl: item.productImageUrl,
+      productSlug: item.productSlug,
+    }
+  }
+
   // Update item quantity
   const updateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1 || !cart) return
 
     try {
-      const response = await api.patch(`/cart/items/${itemId}`, {
-        cartId: cart._id,
-        people: newQuantity,
+      // Crear una copia del carrito con la cantidad actualizada
+      const updatedItems = cart.items.map((item) => {
+        if (item._id === itemId) {
+          const newTotal = newQuantity * item.pricePerPerson
+          return {
+            ...item,
+            people: newQuantity,
+            total: newTotal,
+          }
+        }
+        return item
       })
 
+      // Recalcular el precio total
+      const newTotalPrice = updatedItems.reduce((sum, item) => sum + item.total, 0)
+
+      // Preparar el payload según el DTO del backend
+      const updatePayload: UpdateCartDto = {
+        items: updatedItems.map(cartItemToDto),
+        totalPrice: newTotalPrice,
+      }
+
+      console.log("Update quantity payload:", updatePayload)
+
+      const response = await api.patch("/cart", updatePayload)
+
       if (response.data) {
-        const updatedCart = { ...cart }
-        const itemIndex = updatedCart.items.findIndex((item) => item._id === itemId)
-        if (itemIndex !== -1) {
-          updatedCart.items[itemIndex].people = newQuantity
-          updatedCart.items[itemIndex].total = newQuantity * updatedCart.items[itemIndex].pricePerPerson
-          updatedCart.totalPrice = updatedCart.items.reduce((sum, item) => sum + item.total, 0)
-          setCart(updatedCart)
-        }
+        // Recargar el carrito completo después de la actualización
+        await loadCart()
         toast.success("Cantidad actualizada")
       }
     } catch (err) {
@@ -215,18 +271,25 @@ export default function CheckoutPage() {
     if (!cart) return
 
     try {
-      const response = await api.delete(`/cart/${cart._id}/items/${itemId}`)
-      if (response.data) {
-        const updatedCart = { ...cart }
-        updatedCart.items = updatedCart.items.filter((item) => item._id !== itemId)
-        updatedCart.totalPrice = updatedCart.items.reduce((sum, item) => sum + item.total, 0)
+      // Crear una copia del carrito sin el item a eliminar
+      const updatedItems = cart.items.filter((item) => item._id !== itemId)
 
-        if (updatedCart.items.length === 0) {
-          setError("Tu carrito está vacío. Agrega algunos tours para continuar con tu reserva.")
-          setCart(null)
-        } else {
-          setCart(updatedCart)
-        }
+      // Recalcular el precio total
+      const newTotalPrice = updatedItems.reduce((sum, item) => sum + item.total, 0)
+
+      // Preparar el payload según el DTO del backend
+      const updatePayload: UpdateCartDto = {
+        items: updatedItems.map(cartItemToDto),
+        totalPrice: newTotalPrice,
+      }
+
+      console.log("Remove item payload:", updatePayload)
+
+      const response = await api.patch("/cart", updatePayload)
+
+      if (response.data) {
+        // Recargar el carrito completo después de eliminar
+        await loadCart()
         toast.success("Tour eliminado del carrito")
       }
     } catch (err) {
@@ -240,18 +303,33 @@ export default function CheckoutPage() {
     if (!cart) return
 
     try {
-      const response = await api.patch(`/cart/items/${itemId}`, {
-        cartId: cart._id,
-        startDate: `${newDate}T00:00:00.000Z`,
+      // Crear una copia del carrito con la fecha actualizada
+      const updatedItems = cart.items.map((item) => {
+        if (item._id === itemId) {
+          return {
+            ...item,
+            startDate: `${newDate}T00:00:00.000Z`,
+          }
+        }
+        return item
       })
 
+      // El precio total no cambia al actualizar la fecha
+      const newTotalPrice = cart.totalPrice
+
+      // Preparar el payload según el DTO del backend
+      const updatePayload: UpdateCartDto = {
+        items: updatedItems.map(cartItemToDto),
+        totalPrice: newTotalPrice,
+      }
+
+      console.log("Update date payload:", updatePayload)
+
+      const response = await api.patch("/cart", updatePayload)
+
       if (response.data) {
-        const updatedCart = { ...cart }
-        const itemIndex = updatedCart.items.findIndex((item) => item._id === itemId)
-        if (itemIndex !== -1) {
-          updatedCart.items[itemIndex].startDate = `${newDate}T00:00:00.000Z`
-          setCart(updatedCart)
-        }
+        // Recargar el carrito completo después de la actualización
+        await loadCart()
         toast.success("Fecha actualizada")
       }
     } catch (err) {
@@ -268,8 +346,7 @@ export default function CheckoutPage() {
     setError(null)
 
     try {
-      //const totalAmountPEN = Math.round(cart.totalPrice * USD_TO_PEN_RATE)
-      const totalAmountPEN = Math.round(cart.totalPrice) // Ya está en soles
+      const totalAmountPEN = Math.round(cart.totalPrice * 100) // Convertir a centavos para el procesador de pagos
 
       // Transform cart items to match OrderItemDto structure
       const orderItems: OrderItemDto[] = cart.items.map((item) => {
@@ -297,7 +374,7 @@ export default function CheckoutPage() {
       // Create the payload according to CreatePaymentDto structure
       const payload: CreatePaymentDto = {
         // Payment specific fields
-        amount: totalAmountPEN, // Send amount in soles, not cents
+        amount: totalAmountPEN, // Ahora en centavos
         currency: "PEN",
         orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         formAction: "PAID",
@@ -311,7 +388,7 @@ export default function CheckoutPage() {
           phone: customerInfo.phone || undefined,
           nationality: customerInfo.country || undefined,
         },
-        totalPrice: cart.totalPrice,
+        totalPrice: cart.totalPrice, // Este se mantiene en soles para el registro
         paymentMethod: paymentMethod || "izipay",
         notes: orderNotes || undefined,
         discountCodeUsed: discountCode || undefined,

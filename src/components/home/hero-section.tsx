@@ -1,10 +1,11 @@
 "use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import { useRef, useEffect, useState } from "react"
 import { useLanguage, type Translations } from "@/contexts/LanguageContext"
 import { api } from "@/lib/axiosInstance"
-import { Star, Clock, DollarSign, CalendarDays, Route, Timer, MapPin, ChevronLeft, ChevronRight } from "lucide-react"
+import { Star, Clock, CalendarDays, Route, Timer, MapPin, ChevronLeft, ChevronRight } from "lucide-react"
 import { motion } from "framer-motion"
 
 // Define the interface for route stops
@@ -68,8 +69,8 @@ export default function HeroSection() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isScrolling, setIsScrolling] = useState(false)
 
-  // Exchange rate USD to PEN (you can make this dynamic later)
-  const USD_TO_PEN = 3.75
+  // Exchange rate PEN to USD (for showing USD as secondary)
+  const PEN_TO_USD = 1 / 3.75
 
   // Helper function to get translated day names
   const getTranslatedDay = (dayKey: string, translations: Translations) => {
@@ -109,6 +110,7 @@ export default function HeroSection() {
         setIsLoading(false)
       }
     }
+
     fetchTours()
   }, [language, t.errorLoadingTours])
 
@@ -137,11 +139,13 @@ export default function HeroSection() {
       e.preventDefault()
 
       if (isScrolling) return
+
       setIsScrolling(true)
 
       const cardWidth =
         scrollContainer.clientWidth /
         (window.innerWidth >= 1280 ? 4 : window.innerWidth >= 1024 ? 3 : window.innerWidth >= 768 ? 2 : 1)
+
       const direction = e.deltaY > 0 ? 1 : -1
       const newIndex = Math.max(0, Math.min(tours.length - 1, currentIndex + direction))
 
@@ -160,6 +164,7 @@ export default function HeroSection() {
       const cardWidth =
         scrollContainer.clientWidth /
         (window.innerWidth >= 1280 ? 4 : window.innerWidth >= 1024 ? 3 : window.innerWidth >= 768 ? 2 : 1)
+
       const newIndex = Math.round(scrollContainer.scrollLeft / cardWidth)
       if (newIndex !== currentIndex) {
         setCurrentIndex(newIndex)
@@ -309,6 +314,18 @@ export default function HeroSection() {
                   {tour.description}
                 </p>
 
+                {/* Departure Time - New Addition */}
+                {tour.departureTime && (
+                  <div className="mb-3 md:mb-4">
+                    <div className="flex items-center space-x-2 bg-orange-500/20 px-3 py-2 rounded-lg">
+                      <Clock size={14} className="text-orange-400 md:w-4 md:h-4" />
+                      <span className="text-xs md:text-sm font-medium text-orange-300">
+                        {t.departureTime}: <span className="font-bold text-orange-200">{tour.departureTime}</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Intermediate Stops - Basic View */}
                 {tour.intermediateStops && tour.intermediateStops.length > 0 && (
                   <div className="mb-3 md:mb-4">
@@ -383,10 +400,9 @@ export default function HeroSection() {
                   </div>
                   <div className="text-right">
                     <div className="flex items-center space-x-1 text-green-400">
-                      <DollarSign size={16} className="md:w-5 md:h-5" />
-                      <span className="text-lg md:text-xl font-bold">${tour.price}</span>
+                      <span className="text-lg md:text-xl font-bold">S/ {tour.price}</span>
                     </div>
-                    <div className="text-xs opacity-75">S/ {(tour.price * USD_TO_PEN).toFixed(0)}</div>
+                    <div className="text-xs opacity-75">${(tour.price * PEN_TO_USD).toFixed(0)} USD</div>
                   </div>
                 </div>
               </div>
@@ -419,8 +435,8 @@ export default function HeroSection() {
                     )}
                     <div className="h-4 w-px bg-white/30"></div>
                     <div className="text-center">
-                      <div className="text-base md:text-lg font-bold text-green-400">${tour.price}</div>
-                      <div className="text-xs text-green-300">S/ {(tour.price * USD_TO_PEN).toFixed(0)}</div>
+                      <div className="text-base md:text-lg font-bold text-green-400">S/ {tour.price}</div>
+                      <div className="text-xs text-green-300">${(tour.price * PEN_TO_USD).toFixed(0)} USD</div>
                     </div>
                   </div>
                 </motion.div>
@@ -460,7 +476,6 @@ export default function HeroSection() {
                         <span className="text-gray-300">{t.destinationCity}:</span>
                         <span className="font-semibold text-white">{tour.destinationCity}</span>
                       </div>
-
                       {/* Enhanced Intermediate Stops */}
                       {tour.intermediateStops && tour.intermediateStops.length > 0 && (
                         <motion.div
@@ -548,7 +563,6 @@ export default function HeroSection() {
                       <CalendarDays size={16} className="text-purple-400 md:w-5 md:h-5" />
                       <span className="font-semibold text-xs md:text-sm text-purple-300">{t.availableDays}</span>
                     </div>
-
                     {/* Mobile-optimized days display */}
                     <div className="space-y-2">
                       {tour.availableDays && tour.availableDays.length > 0 && !tour.availableDays.includes("all") ? (
