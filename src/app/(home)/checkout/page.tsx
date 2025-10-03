@@ -34,16 +34,6 @@ import "../../styles/izipay.css"
 import type { Cart, CartItem, CartResponse } from "@/types/cart"
 import { CartItemType } from "@/types/cart"
 
-// Updated interfaces for the new backend structure
-interface OrderItemDto {
-  tour: string
-  startDate: string
-  people: number
-  pricePerPerson: number
-  total: number
-  notes?: string
-}
-
 interface CustomerInfoDto {
   fullName: string
   email: string
@@ -52,21 +42,13 @@ interface CustomerInfoDto {
 }
 
 interface CreatePaymentDto {
-  // Payment specific fields
+  // Payment specific fields only
   amount: number
   currency: string
   orderId: string
   formAction: "PAID"
   contextMode?: "TEST" | "PRODUCTION"
-
-  // Order fields (from CreateOrderDto)
-  items: OrderItemDto[]
   customer: CustomerInfoDto
-  totalPrice: number
-  paymentMethod?: string
-  notes?: string
-  discountCodeUsed?: string
-  user?: string
 }
 
 interface FormTokenResponse {
@@ -351,58 +333,29 @@ export default function CheckoutPage() {
     setError(null)
 
     try {
-      const totalAmountPEN = Math.round(cart.totalPrice * 100) // Convertir a centavos para el procesador de pagos
+      const totalAmountPEN = Math.round(cart.totalPrice * 100)
 
-      // Transform cart items to match OrderItemDto structure
-      const orderItems: OrderItemDto[] = cart.items.map((item) => {
-        // Handle both string and object types for productId
-        let tourId: string
-        if (typeof item.productId === "string") {
-          tourId = item.productId
-        } else if (item.productId && typeof item.productId === "object" && "_id" in item.productId) {
-          tourId = (item.productId as { _id: string })._id
-        } else {
-          console.error("Invalid productId format:", item.productId)
-          tourId = "" // fallback
-        }
-
-        return {
-          tour: tourId,
-          startDate: item.startDate,
-          people: item.people,
-          pricePerPerson: item.pricePerPerson,
-          total: item.total,
-          notes: item.notes || undefined,
-        }
-      })
-
-      // Create the payload according to CreatePaymentDto structure
       const payload: CreatePaymentDto = {
-        // Payment specific fields
-        amount: totalAmountPEN, // Ahora en centavos
+        amount: totalAmountPEN,
         currency: "PEN",
         orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         formAction: "PAID",
         contextMode: "TEST",
-
-        // Order fields
-        items: orderItems,
         customer: {
           fullName: `${customerInfo.firstName} ${customerInfo.lastName}`.trim(),
           email: customerInfo.email,
           phone: customerInfo.phone || undefined,
           nationality: customerInfo.country || undefined,
         },
-        totalPrice: cart.totalPrice, // Este se mantiene en soles para el registro
-        paymentMethod: paymentMethod || "izipay",
-        notes: orderNotes || undefined,
-        discountCodeUsed: discountCode || undefined,
-        // user field will be handled by backend if user is authenticated
       }
 
-      console.log("Payment payload:", payload)
+      console.log("Payment payload:", JSON.stringify(payload, null, 2))
 
-      const response = await api.post<FormTokenResponse>("/payments/formtoken", payload)
+      const response = await api.post<FormTokenResponse>("/payments/formtoken", payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
 
       setFormToken(response.data.formToken)
       setShowPaymentModal(true)
@@ -422,6 +375,8 @@ export default function CheckoutPage() {
           status: err.response?.status,
           data: err.response?.data,
           message: err.message,
+          requestData: err.config?.data,
+          requestHeaders: err.config?.headers,
         })
       }
 
