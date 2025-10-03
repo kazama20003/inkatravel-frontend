@@ -35,6 +35,7 @@ import type { Cart, CartItem, CartResponse } from "@/types/cart"
 import { CartItemType } from "@/types/cart"
 
 
+
 interface CustomerInfoDto {
   fullName: string
   email: string
@@ -53,7 +54,6 @@ interface CreatePaymentDto {
 }
 
 interface FormTokenResponse {
-  formToken: string
   publicKey: string
 }
 
@@ -360,13 +360,13 @@ export default function CheckoutPage() {
 
       console.log("[v0] Payment response:", response.data)
 
-      if (!response.data.formToken) {
-        throw new Error("No se recibió el token de pago del servidor")
+      if (!response.data.publicKey) {
+        throw new Error("No se recibió la clave pública del servidor")
       }
 
-      setFormToken(response.data.formToken)
+      setFormToken(response.data.publicKey)
       setShowPaymentModal(true)
-      console.log("[v0] Payment modal opened with token")
+      console.log("[v0] Payment modal opened with public key")
     } catch (err: unknown) {
       console.error("[v0] Error generating payment form token:", err)
       let errorMessage = t("errorProcessingPayment") || "Error processing payment. Please try again."
