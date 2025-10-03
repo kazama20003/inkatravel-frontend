@@ -34,8 +34,6 @@ import "../../styles/izipay.css"
 import type { Cart, CartItem, CartResponse } from "@/types/cart"
 import { CartItemType } from "@/types/cart"
 
-
-
 interface CustomerInfoDto {
   fullName: string
   email: string
@@ -54,7 +52,7 @@ interface CreatePaymentDto {
 }
 
 interface FormTokenResponse {
-  publicKey: string
+  formToken: string // Changed back to formToken for PRODUCTION mode
 }
 
 interface UserData {
@@ -341,7 +339,7 @@ export default function CheckoutPage() {
         currency: "PEN",
         orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         formAction: "PAID",
-        contextMode: "TEST",
+        contextMode: "PRODUCTION", // Changed from TEST to PRODUCTION to generate real formToken
         customer: {
           fullName: `${customerInfo.firstName} ${customerInfo.lastName}`.trim(),
           email: customerInfo.email,
@@ -360,13 +358,14 @@ export default function CheckoutPage() {
 
       console.log("[v0] Payment response:", response.data)
 
-      if (!response.data.publicKey) {
-        throw new Error("No se recibió la clave pública del servidor")
+      if (!response.data.formToken) {
+        // Changed back to formToken validation
+        throw new Error("No se recibió el token de pago del servidor")
       }
 
-      setFormToken(response.data.publicKey)
+      setFormToken(response.data.formToken) // Using formToken from PRODUCTION response
       setShowPaymentModal(true)
-      console.log("[v0] Payment modal opened with public key")
+      console.log("[v0] Payment modal opened with form token")
     } catch (err: unknown) {
       console.error("[v0] Error generating payment form token:", err)
       let errorMessage = t("errorProcessingPayment") || "Error processing payment. Please try again."
