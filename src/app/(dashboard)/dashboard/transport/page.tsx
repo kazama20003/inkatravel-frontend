@@ -31,9 +31,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { transportApi, type CreateTransportDto, type UpdateTransportDto } from "@/lib/transport-api"
+import { transportApi } from "@/lib/transport-api"
+import type { TransportOption, CreateTransportDto, UpdateTransportDto } from "@/types/transport"
+import type { PackageTypeTransport } from "@/types/tour"
 import { uploadApi } from "@/lib/upload-api"
-import type { TransportOption, PackageType } from "@/types/tour"
 import {
   Plus,
   Edit,
@@ -57,7 +58,7 @@ export default function TransportesPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalTransports, setTotalTransports] = useState(0)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterType, setFilterType] = useState<PackageType | "all">("all")
+  const [filterType, setFilterType] = useState<PackageTypeTransport | "all">("all")
 
   // Estados para modales
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -65,8 +66,9 @@ export default function TransportesPage() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [selectedTransport, setSelectedTransport] = useState<TransportOption | null>(null)
 
-  // Estados para formularios
   const [formData, setFormData] = useState<CreateTransportDto>({
+    name: "",
+    description: "",
     type: "Basico",
     vehicle: "",
     services: [],
@@ -77,9 +79,8 @@ export default function TransportesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [uploading, setUploading] = useState(false)
 
-  const limit = 6 // Transportes por página
+  const limit = 6
 
-  // Cargar transportes
   const loadTransports = async (page = 1) => {
     try {
       setLoading(true)
@@ -100,7 +101,6 @@ export default function TransportesPage() {
     loadTransports(currentPage)
   }, [currentPage])
 
-  // Filtrar transportes
   const filteredTransports = transports.filter((transport) => {
     const matchesSearch =
       transport.vehicle.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,9 +109,10 @@ export default function TransportesPage() {
     return matchesSearch && matchesType
   })
 
-  // Resetear formulario
   const resetForm = () => {
     setFormData({
+      name: "",
+      description: "",
       type: "Basico",
       vehicle: "",
       services: [],
@@ -121,7 +122,6 @@ export default function TransportesPage() {
     setServicesInput("")
   }
 
-  // Manejar servicios (convertir string a array)
   const handleServicesChange = (value: string) => {
     setServicesInput(value)
     const servicesArray = value
@@ -131,7 +131,6 @@ export default function TransportesPage() {
     setFormData((prev) => ({ ...prev, services: servicesArray }))
   }
 
-  // Manejar subida de imagen
   const handleImageUpload = async (file: File) => {
     try {
       setUploading(true)
@@ -150,7 +149,6 @@ export default function TransportesPage() {
     }
   }
 
-  // Remover imagen
   const handleRemoveImage = async () => {
     if (formData.imageId) {
       try {
@@ -164,10 +162,13 @@ export default function TransportesPage() {
     setFormData((prev) => ({ ...prev, imageUrl: "", imageId: "" }))
   }
 
-  // Crear transporte
   const handleCreate = async () => {
     if (!formData.vehicle.trim()) {
       toast.error("El nombre del vehículo es requerido")
+      return
+    }
+    if (!formData.name.trim()) {
+      toast.error("El nombre es requerido")
       return
     }
     if (formData.services.length === 0) {
@@ -190,11 +191,12 @@ export default function TransportesPage() {
     }
   }
 
-  // Editar transporte
   const handleEdit = async () => {
     if (!selectedTransport) return
 
     const updateData: UpdateTransportDto = {
+      name: formData.name,
+      description: formData.description,
       type: formData.type,
       vehicle: formData.vehicle,
       services: formData.services,
@@ -218,10 +220,8 @@ export default function TransportesPage() {
     }
   }
 
-  // Eliminar transporte
   const handleDelete = async (transport: TransportOption) => {
     try {
-      // Eliminar imagen de Cloudinary si existe
       if (transport.imageId) {
         try {
           await uploadApi.deleteImage(transport.imageId)
@@ -239,10 +239,11 @@ export default function TransportesPage() {
     }
   }
 
-  // Abrir modal de edición
   const openEditDialog = (transport: TransportOption) => {
     setSelectedTransport(transport)
     setFormData({
+      name: transport.name,
+      description: transport.description,
       type: transport.type,
       vehicle: transport.vehicle,
       services: transport.services,
@@ -253,14 +254,12 @@ export default function TransportesPage() {
     setIsEditDialogOpen(true)
   }
 
-  // Abrir modal de visualización
   const openViewDialog = (transport: TransportOption) => {
     setSelectedTransport(transport)
     setIsViewDialogOpen(true)
   }
 
-  // Badge para tipo de transporte
-  const getTypeBadge = (type: PackageType) => {
+  const getTypeBadge = (type: PackageTypeTransport) => {
     const variants = {
       Basico: "secondary",
       Premium: "default",
@@ -269,7 +268,6 @@ export default function TransportesPage() {
     return <Badge variant={variants[type] || "secondary"}>{type}</Badge>
   }
 
-  // Componente de subida de imagen
   const ImageUploadComponent = () => (
     <div className="space-y-2">
       <Label>Imagen del Transporte</Label>
@@ -334,7 +332,6 @@ export default function TransportesPage() {
       </header>
 
       <div className="flex flex-1 flex-col gap-6 p-6">
-        {/* Estadísticas */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -393,7 +390,6 @@ export default function TransportesPage() {
           </Card>
         </div>
 
-        {/* Filtros y búsqueda */}
         <Card>
           <CardHeader>
             <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
@@ -413,6 +409,27 @@ export default function TransportesPage() {
                     <DialogTitle>Crear Nuevo Transporte</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">Nombre *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                        placeholder="Ej: Toyota Runner"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="description">Descripción</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description || ""}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                        placeholder="Descripción del transporte"
+                        rows={2}
+                      />
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="vehicle">Vehículo *</Label>
@@ -427,7 +444,9 @@ export default function TransportesPage() {
                         <Label htmlFor="type">Tipo *</Label>
                         <Select
                           value={formData.type}
-                          onValueChange={(value: PackageType) => setFormData((prev) => ({ ...prev, type: value }))}
+                          onValueChange={(value: PackageTypeTransport) =>
+                            setFormData((prev) => ({ ...prev, type: value }))
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -482,7 +501,10 @@ export default function TransportesPage() {
                 />
               </div>
               <div className="flex flex-wrap gap-2">
-                <Select value={filterType} onValueChange={(value: PackageType | "all") => setFilterType(value)}>
+                <Select
+                  value={filterType}
+                  onValueChange={(value: PackageTypeTransport | "all") => setFilterType(value)}
+                >
                   <SelectTrigger className="w-[120px]">
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
@@ -497,7 +519,6 @@ export default function TransportesPage() {
           </CardContent>
         </Card>
 
-        {/* Grid de transportes */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -530,7 +551,7 @@ export default function TransportesPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>¿Eliminar transporte?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Esta acción no se puede deshacer. Se eliminará permanentemente el transporte 
+                            Esta acción no se puede deshacer. Se eliminará permanentemente el transporte{" "}
                             {transport.vehicle} y su imagen asociada.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
@@ -575,7 +596,6 @@ export default function TransportesPage() {
                           Editar
                         </Button>
                       </div>
-                      <div className="text-sm text-muted-foreground">{transport.services.length} servicios</div>
                     </div>
                   </div>
                 </CardContent>
@@ -584,7 +604,6 @@ export default function TransportesPage() {
           </div>
         )}
 
-        {/* Paginación */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
@@ -617,13 +636,33 @@ export default function TransportesPage() {
           </div>
         )}
 
-        {/* Modal de edición */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Editar Transporte</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Nombre *</Label>
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="Ej: Toyota Runner"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-description">Descripción</Label>
+                <Textarea
+                  id="edit-description"
+                  value={formData.description || ""}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder="Descripción del transporte"
+                  rows={2}
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="edit-vehicle">Vehículo *</Label>
@@ -638,7 +677,7 @@ export default function TransportesPage() {
                   <Label htmlFor="edit-type">Tipo *</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value: PackageType) => setFormData((prev) => ({ ...prev, type: value }))}
+                    onValueChange={(value: PackageTypeTransport) => setFormData((prev) => ({ ...prev, type: value }))}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -680,7 +719,6 @@ export default function TransportesPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Modal de visualización */}
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -699,14 +737,26 @@ export default function TransportesPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
+                    <Label>Nombre</Label>
+                    <p className="font-semibold">{selectedTransport.name}</p>
+                  </div>
+                  <div>
                     <Label>Vehículo</Label>
                     <p className="font-semibold">{selectedTransport.vehicle}</p>
                   </div>
-                  <div>
-                    <Label>Tipo</Label>
-                    <div className="mt-1">{getTypeBadge(selectedTransport.type)}</div>
-                  </div>
                 </div>
+
+                <div>
+                  <Label>Tipo</Label>
+                  <div className="mt-1">{getTypeBadge(selectedTransport.type)}</div>
+                </div>
+
+                {selectedTransport.description && (
+                  <div>
+                    <Label>Descripción</Label>
+                    <p className="text-sm text-muted-foreground">{selectedTransport.description}</p>
+                  </div>
+                )}
 
                 <div>
                   <Label>Servicios</Label>

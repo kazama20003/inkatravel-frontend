@@ -1,59 +1,65 @@
 "use client"
-
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
 import { api } from "@/lib/axiosInstance"
+import { notFound } from "next/navigation"
 import Image from "next/image"
-import { motion, AnimatePresence } from "framer-motion"
 import {
-  Clock,
-  Star,
-  MapPin,
   Calendar,
-  Route,
-  Phone,
-  ShoppingCart,
-  MessageCircle,
-  ArrowRight,
+  Clock,
+  MapPin,
+  Star,
   Users,
-  Timer,
-  X,
-  Images,
-  Loader2,
+  Phone,
+  MessageCircle,
+  Navigation,
+  Shield,
+  Award,
+  Globe,
+  ChevronLeft,
+  ChevronRight,
+  ShoppingCart,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/LanguageContext"
-import { isAxiosError } from "axios"
+import { useEffect, useState, useRef } from "react"
+import { GoogleMap, LoadScript, DirectionsService, DirectionsRenderer } from "@react-google-maps/api"
+import { type CreateCartDto, CartItemType } from "@/types/cart"
+import { toast } from "sonner"
 import Link from "next/link"
-import DateSelector from "@/components/transport/DateSelector"
 
-// Define the interface for route stops
-interface RouteStop {
-  location: string
-  description: string
-  imageUrl?: string
-  imageId?: string
-  stopTime?: string
+
+declare global {
+  interface Window {
+    google: typeof google
+  }
 }
 
-// Define the interface for itinerary items
-interface ItineraryItem {
-  day: number
-  title: string
-  description: string
-  imageUrl?: string
-  imageId?: string
-  route?: RouteStop[]
+interface TranslatedText {
+  es?: string
+  en?: string
+  fr?: string
+  de?: string
+  it?: string
 }
 
-// Define the interface for the tour transport data
-interface TransportData {
+interface TourTransport {
   _id: string
-  title: string
-  description: string
-  termsAndConditions: string
-  originCity: string
-  destinationCity: string
-  intermediateStops?: string[]
+  title: TranslatedText | string
+  description: TranslatedText | string
+  termsAndConditions: TranslatedText | string
+  origin: {
+    name: string
+    lat: number
+    lng: number
+  }
+  destination: {
+    name: string
+    lat: number
+    lng: number
+  }
+  intermediateStops?: Array<{
+    name: string
+    lat: number
+    lng: number
+  }>
   availableDays: string[]
   departureTime?: string
   arrivalTime?: string
@@ -65,7 +71,20 @@ interface TransportData {
   routeCode?: string
   isActive?: boolean
   slug?: string
-  itinerary?: ItineraryItem[]
+  itinerary?: Array<{
+    day: number
+    title: TranslatedText | string
+    description: TranslatedText | string
+    imageUrl?: string
+    imageId?: string
+    route?: Array<{
+      location: string
+      description: TranslatedText | string
+      imageUrl?: string
+      imageId?: string
+      stopTime?: string
+    }>
+  }>
   imageUrl?: string
   imageId?: string
   createdAt: string
@@ -73,838 +92,1342 @@ interface TransportData {
   __v: number
 }
 
-interface ApiResponse {
-  data: TransportData[]
-  total: number
+interface Props {
+  params: Promise<{ slug: string }>
 }
 
-// Add proper interface for cart items instead of any[]
-interface CartItemData {
-  id: string
-  title: string
-  originCity: string
-  destinationCity: string
-  price: number
-  quantity: number
-  imageUrl?: string
-  departureTime?: string
-  duration?: string
+const getTranslatedText = (text: TranslatedText | string | undefined, language: string): string => {
+  if (!text) return ""
+  if (typeof text === "string") return text
+  return text[language as keyof TranslatedText] || text.es || text.en || ""
 }
 
-export default function TransportDetailPage() {
-  const params = useParams()
-  const slug = params.slug as string
-  const { t, language } = useLanguage()
-  const [transport, setTransport] = useState<TransportData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [passengers, setPassengers] = useState(1)
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false)
-  const [selectedDate, setSelectedDate] = useState(() => {
-    // Default to tomorrow
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    return tomorrow.toISOString().split("T")[0]
-  })
-  const router = useRouter()
+const translations = {
+  es: {
+    loading: "Cargando paquete turístico...",
+    mapNotAvailable: "Mapa no disponible",
+    mapApiKeyMissing: "La clave de API de Google Maps no está configurada.",
+    origin: "Origen",
+    destination: "Destino",
+    loadingMap: "Cargando mapa...",
+    interactiveMap: "Mapa Interactivo",
+    roadRoute: "Ruta de Viaje",
+    roadRouteCalculated: "Ruta por carretera calculada",
+    showingLocations: "Mostrando ubicaciones",
+    roadDistance: "Distancia por carretera",
+    calculating: "Calculando...",
+    estimatedTime: "Tiempo estimado",
+    intermediateStops: "Paradas intermedias",
+    yearsExperience: "Años de experiencia",
+    satisfiedTourists: "Turistas satisfechos",
+    safeReliable: "Seguro y confiable",
+    supportAvailable: "Soporte disponible",
+    packageDescription: "Descripción del Paquete",
+    smallGroup: "Grupo Pequeño",
+    smallGroupDesc: "Máximo 12 personas para una experiencia personalizada y cómoda",
+    personalizedAttention: "Atención personalizada",
+    flexibilityStops: "Más flexibilidad en paradas",
+    familyEnvironment: "Ambiente familiar",
+    expertGuide: "Guía Experto",
+    expertGuideDesc: "Guía local certificado con conocimiento profundo de la región",
+    officialCertification: "Certificación oficial",
+    historicalKnowledge: "Conocimiento histórico",
+    multilingual: "Multilingüe",
+    allInclusive: "Todo Incluido",
+    allInclusiveDesc: "Transporte, comidas, entradas y alojamiento incluidos",
+    premiumTransport: "Transporte premium",
+    typicalMeals: "Comidas típicas",
+    siteEntries: "Entradas a sitios",
+    travelInsurance: "Seguro de Viaje",
+    travelInsuranceDesc: "Cobertura completa durante todo el recorrido",
+    medicalInsurance: "Seguro médico",
+    assistance24: "Asistencia 24/7",
+    luggageCoverage: "Cobertura de equipaje",
+    detailedItinerary: "Itinerario Detallado",
+    dayStops: "Paradas del día",
+    imageGallery: "Galería de Imágenes",
+    perPerson: "por persona",
+    specialPriceForForeigners: "¡Precio especial para extranjeros!",
+    tourLanguage: "Idioma del tour",
+    departureDate: "Fecha de Salida",
+    numberOfTravelers: "Número de viajeros",
+    person: "persona",
+    people: "personas",
+    availableDays: "Días Disponibles",
+    reserveNow: "Reservar Ahora",
+    consultWhatsApp: "Consultar por WhatsApp",
+    callNow: "Llamar Ahora",
+    schedules: "Horarios",
+    departure: "Salida",
+    arrival: "Llegada",
+    securePayment: "Pago Seguro",
+    certified: "Certificado",
+    routeInfo: "Información de la Ruta",
+    coordinates: "Coordenadas",
+    duration: "Duración",
+    hours: "horas",
+    directTrip: "Viaje directo sin paradas intermedias",
+    interactiveRouteMap: "Mapa interactivo de la ruta",
+    travelHours: "horas de viaje",
+    termsConditions: "Términos y Condiciones",
+    monday: "Lunes",
+    tuesday: "Martes",
+    wednesday: "Miércoles",
+    thursday: "Jueves",
+    friday: "Viernes",
+    saturday: "Sábado",
+    sunday: "Domingo",
+  },
+  en: {
+    loading: "Loading tour package...",
+    mapNotAvailable: "Map not available",
+    mapApiKeyMissing: "Google Maps API key is not configured.",
+    origin: "Origin",
+    destination: "Destination",
+    loadingMap: "Loading map...",
+    interactiveMap: "Interactive Map",
+    roadRoute: "Travel Route",
+    roadRouteCalculated: "Road route calculated",
+    showingLocations: "Showing locations",
+    roadDistance: "Road distance",
+    calculating: "Calculating...",
+    estimatedTime: "Estimated time",
+    intermediateStops: "Intermediate stops",
+    yearsExperience: "Years of experience",
+    satisfiedTourists: "Satisfied tourists",
+    safeReliable: "Safe and reliable",
+    supportAvailable: "Support available",
+    packageDescription: "Package Description",
+    smallGroup: "Small Group",
+    smallGroupDesc: "Maximum 12 people for a personalized and comfortable experience",
+    personalizedAttention: "Personalized attention",
+    flexibilityStops: "More flexibility in stops",
+    familyEnvironment: "Family environment",
+    expertGuide: "Expert Guide",
+    expertGuideDesc: "Certified local guide with deep knowledge of the region",
+    officialCertification: "Official certification",
+    historicalKnowledge: "Historical knowledge",
+    multilingual: "Multilingual",
+    allInclusive: "All Inclusive",
+    allInclusiveDesc: "Transport, meals, tickets and accommodation included",
+    premiumTransport: "Premium transport",
+    typicalMeals: "Typical meals",
+    siteEntries: "Site entries",
+    travelInsurance: "Travel Insurance",
+    travelInsuranceDesc: "Complete coverage throughout the journey",
+    medicalInsurance: "Medical insurance",
+    assistance24: "24/7 assistance",
+    luggageCoverage: "Luggage coverage",
+    detailedItinerary: "Detailed Itinerary",
+    dayStops: "Day stops",
+    imageGallery: "Image Gallery",
+    perPerson: "per person",
+    specialPriceForForeigners: "Special price for foreigners!",
+    tourLanguage: "Tour language",
+    departureDate: "Departure Date",
+    numberOfTravelers: "Number of travelers",
+    person: "person",
+    people: "people",
+    availableDays: "Available Days",
+    reserveNow: "Reserve Now",
+    consultWhatsApp: "Consult via WhatsApp",
+    callNow: "Call Now",
+    schedules: "Schedules",
+    departure: "Departure",
+    arrival: "Arrival",
+    securePayment: "Secure Payment",
+    certified: "Certified",
+    routeInfo: "Route Information",
+    coordinates: "Coordinates",
+    duration: "Duration",
+    hours: "hours",
+    directTrip: "Direct trip without intermediate stops",
+    interactiveRouteMap: "Interactive route map",
+    travelHours: "travel hours",
+    termsConditions: "Terms and Conditions",
+    monday: "Monday",
+    tuesday: "Tuesday",
+    wednesday: "Wednesday",
+    thursday: "Thursday",
+    friday: "Friday",
+    saturday: "Saturday",
+    sunday: "Sunday",
+  },
+  fr: {
+    loading: "Chargement du forfait touristique...",
+    mapNotAvailable: "Carte non disponible",
+    mapApiKeyMissing: "La clé API Google Maps n'est pas configurée.",
+    origin: "Origine",
+    destination: "Destination",
+    loadingMap: "Chargement de la carte...",
+    interactiveMap: "Carte Interactive",
+    roadRoute: "Itinéraire de Voyage",
+    roadRouteCalculated: "Itinéraire routier calculé",
+    showingLocations: "Affichage des emplacements",
+    roadDistance: "Distance routière",
+    calculating: "Calcul en cours...",
+    estimatedTime: "Temps estimé",
+    intermediateStops: "Arrêts intermédiaires",
+    yearsExperience: "Années d'expérience",
+    satisfiedTourists: "Touristes satisfaits",
+    safeReliable: "Sûr et fiable",
+    supportAvailable: "Support disponible",
+    packageDescription: "Description du Forfait",
+    smallGroup: "Petit Groupe",
+    smallGroupDesc: "Maximum 12 personnes pour une expérience personnalisée et confortable",
+    personalizedAttention: "Attention personnalisée",
+    flexibilityStops: "Plus de flexibilité dans les arrêts",
+    familyEnvironment: "Environnement familial",
+    expertGuide: "Guide Expert",
+    expertGuideDesc: "Guide local certifié avec une connaissance approfondie de la région",
+    officialCertification: "Certification officielle",
+    historicalKnowledge: "Connaissances historiques",
+    multilingual: "Multilingue",
+    allInclusive: "Tout Inclus",
+    allInclusiveDesc: "Transport, repas, billets et hébergement inclus",
+    premiumTransport: "Transport premium",
+    typicalMeals: "Repas typiques",
+    siteEntries: "Entrées de sites",
+    travelInsurance: "Assurance Voyage",
+    travelInsuranceDesc: "Couverture complète tout au long du voyage",
+    medicalInsurance: "Assurance médicale",
+    assistance24: "Assistance 24/7",
+    luggageCoverage: "Couverture bagages",
+    detailedItinerary: "Itinéraire Détaillé",
+    dayStops: "Arrêts de la journée",
+    imageGallery: "Galerie d'Images",
+    perPerson: "par personne",
+    specialPriceForForeigners: "Prix spécial pour les étrangers!",
+    tourLanguage: "Langue du tour",
+    departureDate: "Date de Départ",
+    numberOfTravelers: "Nombre de voyageurs",
+    person: "personne",
+    people: "personnes",
+    availableDays: "Jours Disponibles",
+    reserveNow: "Réserver Maintenant",
+    consultWhatsApp: "Consulter via WhatsApp",
+    callNow: "Appeler Maintenant",
+    schedules: "Horaires",
+    departure: "Départ",
+    arrival: "Arrivée",
+    securePayment: "Paiement Sécurisé",
+    certified: "Certifié",
+    routeInfo: "Informations sur l'Itinéraire",
+    coordinates: "Coordennées",
+    duration: "Durée",
+    hours: "heures",
+    directTrip: "Voyage direct sans arrêts intermédiaires",
+    interactiveRouteMap: "Carte interactive de l'itinéraire",
+    travelHours: "heures de voyage",
+    termsConditions: "Termes et Conditions",
+    monday: "Lundi",
+    tuesday: "Mardi",
+    wednesday: "Mercredi",
+    thursday: "Jeudi",
+    friday: "Vendredi",
+    saturday: "Samedi",
+    sunday: "Dimanche",
+  },
+  de: {
+    loading: "Tourpaket wird geladen...",
+    mapNotAvailable: "Karte nicht verfügbar",
+    mapApiKeyMissing: "Google Maps API-Schlüssel ist nicht konfiguriert.",
+    origin: "Ursprung",
+    destination: "Ziel",
+    loadingMap: "Karte wird geladen...",
+    interactiveMap: "Interaktive Karte",
+    roadRoute: "Reiseroute",
+    roadRouteCalculated: "Straßenroute berechnet",
+    showingLocations: "Standorte anzeigen",
+    roadDistance: "Straßenentfernung",
+    calculating: "Berechnung...",
+    estimatedTime: "Geschätzte Zeit",
+    intermediateStops: "Zwischenstopps",
+    yearsExperience: "Jahre Erfahrung",
+    satisfiedTourists: "Zufriedene Touristen",
+    safeReliable: "Sicher und zuverlässig",
+    supportAvailable: "Support verfügbar",
+    packageDescription: "Paketbeschreibung",
+    smallGroup: "Kleine Gruppe",
+    smallGroupDesc: "Maximal 12 Personen für ein personalisiertes und komfortables Erlebnis",
+    personalizedAttention: "Persönliche Betreuung",
+    flexibilityStops: "Mehr Flexibilität bei Stopps",
+    familyEnvironment: "Familienumgebung",
+    expertGuide: "Expertenführer",
+    expertGuideDesc: "Zertifizierter lokaler Führer mit tiefem Wissen über die Region",
+    officialCertification: "Offizielle Zertifizierung",
+    historicalKnowledge: "Historisches Wissen",
+    multilingual: "Mehrsprachig",
+    allInclusive: "Alles Inklusive",
+    allInclusiveDesc: "Transport, Mahlzeiten, Tickets und Unterkunft inklusive",
+    premiumTransport: "Premium-Transport",
+    typicalMeals: "Typische Mahlzeiten",
+    siteEntries: "Standorteingänge",
+    travelInsurance: "Reiseversicherung",
+    travelInsuranceDesc: "Vollständige Abdeckung während der gesamten Reise",
+    medicalInsurance: "Krankenversicherung",
+    assistance24: "24/7 Unterstützung",
+    luggageCoverage: "Gepäckabdeckung",
+    detailedItinerary: "Detaillierter Reiseplan",
+    dayStops: "Tagesstopps",
+    imageGallery: "Bildergalerie",
+    perPerson: "pro Person",
+    specialPriceForForeigners: "Sonderpreis für Ausländer!",
+    tourLanguage: "Tour-Sprache",
+    departureDate: "Abfahrtsdatum",
+    numberOfTravelers: "Anzahl der Reisenden",
+    person: "Person",
+    people: "Personen",
+    availableDays: "Verfügbare Tage",
+    reserveNow: "Jetzt Reservieren",
+    consultWhatsApp: "Über WhatsApp konsultieren",
+    callNow: "Jetzt Anrufen",
+    schedules: "Zeitpläne",
+    departure: "Abfahrt",
+    arrival: "Ankunft",
+    securePayment: "Sichere Zahlung",
+    certified: "Zertifiziert",
+    routeInfo: "Routeninformationen",
+    coordinates: "Koordinaten",
+    duration: "Dauer",
+    hours: "Stunden",
+    directTrip: "Direktreise ohne Zwischenstopps",
+    interactiveRouteMap: "Interaktive Routenkarte",
+    travelHours: "Reisestunden",
+    termsConditions: "Geschäftsbedingungen",
+    monday: "Montag",
+    tuesday: "Dienstag",
+    wednesday: "Mittwoch",
+    thursday: "Donnerstag",
+    friday: "Freitag",
+    saturday: "Samstag",
+    sunday: "Sonntag",
+  },
+  it: {
+    loading: "Caricamento pacchetto turistico...",
+    mapNotAvailable: "Mappa non disponibile",
+    mapApiKeyMissing: "La chiave API di Google Maps non è configurata.",
+    origin: "Origine",
+    destination: "Destinazione",
+    loadingMap: "Caricamento mappa...",
+    interactiveMap: "Mappa Interattiva",
+    roadRoute: "Percorso di Viaggio",
+    roadRouteCalculated: "Percorso stradale calcolato",
+    showingLocations: "Mostrando posizioni",
+    roadDistance: "Distanza stradale",
+    calculating: "Calcolando...",
+    estimatedTime: "Tempo stimato",
+    intermediateStops: "Fermate intermedie",
+    yearsExperience: "Anni di esperienza",
+    satisfiedTourists: "Turisti soddisfatti",
+    safeReliable: "Sicuro e affidabile",
+    supportAvailable: "Supporto disponibile",
+    packageDescription: "Descrizione del Pacchetto",
+    smallGroup: "Gruppo Piccolo",
+    smallGroupDesc: "Massimo 12 persone per un'esperienza personalizzata e confortevole",
+    personalizedAttention: "Attenzione personalizzata",
+    flexibilityStops: "Più flessibilità nelle fermate",
+    familyEnvironment: "Ambiente familiare",
+    expertGuide: "Guida Esperta",
+    expertGuideDesc: "Guida locale certificata con conoscenza approfondita della regione",
+    officialCertification: "Certificazione ufficiale",
+    historicalKnowledge: "Conoscenza storica",
+    multilingual: "Multilingue",
+    allInclusive: "Tutto Incluso",
+    allInclusiveDesc: "Trasporto, pasti, biglietti e alloggio inclusi",
+    premiumTransport: "Trasporto premium",
+    typicalMeals: "Pasti tipici",
+    siteEntries: "Ingressi ai siti",
+    travelInsurance: "Assicurazione di Viaggio",
+    travelInsuranceDesc: "Copertura completa durante tutto il viaggio",
+    medicalInsurance: "Assicurazione medica",
+    assistance24: "Assistenza 24/7",
+    luggageCoverage: "Copertura bagagli",
+    detailedItinerary: "Itinerario Dettagliato",
+    dayStops: "Fermate del giorno",
+    imageGallery: "Galleria di Immagini",
+    perPerson: "per persona",
+    specialPriceForForeigners: "Prezzo speciale per stranieri!",
+    tourLanguage: "Lingua del tour",
+    departureDate: "Data di Partenza",
+    numberOfTravelers: "Numero di viaggiatori",
+    person: "persona",
+    people: "persone",
+    availableDays: "Giorni Disponibili",
+    reserveNow: "Prenota Ora",
+    consultWhatsApp: "Consulta via WhatsApp",
+    callNow: "Chiama Ora",
+    schedules: "Orari",
+    departure: "Partenza",
+    arrival: "Arrivo",
+    securePayment: "Pagamento Sicuro",
+    certified: "Certificato",
+    routeInfo: "Informazioni sul Percorso",
+    coordinates: "Coordinate",
+    duration: "Durata",
+    hours: "ore",
+    directTrip: "Viaggio diretto senza fermate intermedie",
+    interactiveRouteMap: "Mappa interattiva del percorso",
+    travelHours: "ore di viaggio",
+    termsConditions: "Termini e Condizioni",
+    monday: "Lunedì",
+    tuesday: "Martedì",
+    wednesday: "Mercoledì",
+    thursday: "Giovedì",
+    friday: "Venerdì",
+    saturday: "Sabato",
+    sunday: "Domenica",
+  },
+}
 
-  // Payment state
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+const GOOGLE_MAPS_LIBRARIES: ("geometry" | "places")[] = ["geometry", "places"]
 
-  // Cart and checkout state
-  const [,] = useState<CartItemData[]>([])
+const GoogleMapComponent = ({
+  origin,
+  destination,
+  intermediateStops,
+}: {
+  origin: { name: string; lat: number; lng: number }
+  destination: { name: string; lat: number; lng: number }
+  intermediateStops?: Array<{ name: string; lat: number; lng: number }>
+}) => {
+  const { language } = useLanguage()
+  const t = translations[language as keyof typeof translations] || translations.es
 
-  // Create comprehensive gallery images from transport data
-  const galleryImages = transport
-    ? [
-        // Main transport image
-        transport.imageUrl,
-        // Itinerary day images
-        ...(transport.itinerary?.map((day) => day.imageUrl) || []),
-        // Route stop images from all days
-        ...(transport.itinerary?.flatMap((day) => day.route?.map((stop) => stop.imageUrl) || []) || []),
-      ].filter((url): url is string => Boolean(url)) // Type-safe filter to remove undefined/null
-    : ["/placeholder.svg"]
+  const [directionsResponse, setDirectionsResponse] = useState<google.maps.DirectionsResult | null>(null)
+  const [routeDistance, setRouteDistance] = useState<string>("")
+  const [routeDuration, setRouteDuration] = useState<string>("")
+  const [mapError, setMapError] = useState<string | null>(null)
+  const [routeCalculated, setRouteCalculated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false)
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([])
+  const mapRef = useRef<google.maps.Map | null>(null)
 
-  // Helper function to get translated day names
-  const getTranslatedDay = (dayKey: string) => {
-    switch (dayKey.toLowerCase()) {
-      case "monday":
-        return t.monday
-      case "tuesday":
-        return t.tuesday
-      case "wednesday":
-        return t.wednesday
-      case "thursday":
-        return t.thursday
-      case "friday":
-        return t.friday
-      case "saturday":
-        return t.saturday
-      case "sunday":
-        return t.sunday
-      default:
-        return dayKey
+  const center = {
+    lat: (origin.lat + destination.lat) / 2,
+    lng: (origin.lng + destination.lng) / 2,
+  }
+
+  const mapContainerStyle = {
+    width: "100%",
+    height: "400px",
+  }
+
+  const mapOptions = {
+    zoom: 8,
+    center: center,
+    mapTypeId: "roadmap" as const,
+    mapId: "DEMO_MAP_ID",
+  }
+
+  const createMarkerContent = (color: string, label: string, size = 32) => {
+    const markerDiv = document.createElement("div")
+    markerDiv.style.cssText = `
+      width: ${size}px;
+      height: ${size}px;
+      background-color: ${color};
+      border: 3px solid white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      cursor: pointer;
+    `
+    markerDiv.textContent = label
+    return markerDiv
+  }
+
+  const createMarkers = () => {
+    // The `google` object is now available globally after LoadScript has loaded
+    if (!mapRef.current || !window.google?.maps?.marker?.AdvancedMarkerElement) {
+      console.log("[v0] Map or AdvancedMarkerElement not available yet")
+      return
+    }
+
+    markersRef.current.forEach((marker) => {
+      marker.map = null
+    })
+    markersRef.current = []
+
+    try {
+      const originMarker = new window.google.maps.marker.AdvancedMarkerElement({
+        position: { lat: origin.lat, lng: origin.lng },
+        title: `${t.origin}: ${origin.name}`,
+        content: createMarkerContent("#10b981", "O"),
+        map: mapRef.current,
+      })
+      markersRef.current.push(originMarker)
+
+      const destinationMarker = new window.google.maps.marker.AdvancedMarkerElement({
+        position: { lat: destination.lat, lng: destination.lng },
+        title: `${t.destination}: ${destination.name}`,
+        content: createMarkerContent("#f97316", "D"),
+        map: mapRef.current,
+      })
+      markersRef.current.push(destinationMarker)
+
+      if (intermediateStops && intermediateStops.length > 0) {
+        intermediateStops.forEach((stop, index) => {
+          const stopMarker = new window.google.maps.marker.AdvancedMarkerElement({
+            position: { lat: stop.lat, lng: stop.lng },
+            title: `Parada ${index + 1}: ${stop.name}`,
+            content: createMarkerContent("#eab308", (index + 1).toString(), 28),
+            map: mapRef.current,
+          })
+          markersRef.current.push(stopMarker)
+        })
+      }
+
+      console.log("[v0] Created", markersRef.current.length, "advanced markers")
+    } catch (error) {
+      console.error("[v0] Error creating markers:", error)
     }
   }
 
-  useEffect(() => {
-    const fetchTransportDetails = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const response = await api.get<ApiResponse>("/tour-transport", {
-          params: { lang: language },
+  const directionsCallback = (result: google.maps.DirectionsResult | null, status: google.maps.DirectionsStatus) => {
+    console.log("[v0] Directions API response status:", status)
+
+    if (status === "OK" && result) {
+      console.log("[v0] Route calculated successfully")
+      setDirectionsResponse(result)
+
+      const route = result.routes[0]
+      if (route) {
+        let totalDistance = 0
+        let totalDuration = 0
+
+        route.legs.forEach((leg) => {
+          totalDistance += leg.distance?.value || 0
+          totalDuration += leg.duration?.value || 0
         })
-        const apiResponseData: ApiResponse = response.data
-        const foundTransport = apiResponseData.data.find((item: TransportData) => item.slug === slug)
 
-        if (foundTransport) {
-          setTransport(foundTransport)
-        } else {
-          setError(t.tourNotFound)
-        }
-      } catch (err: unknown) {
-        console.error("Error fetching transport details:", err)
-        let errorMessage = t.errorLoadingToursMessage
+        setRouteDistance(`${(totalDistance / 1000).toFixed(0)} km`)
+        setRouteDuration(
+          `${Math.floor(totalDuration / 3600)} ${t.hours} ${Math.round((totalDuration % 3600) / 60)} min`,
+        )
+      }
 
-        if (err instanceof Error) {
-          errorMessage = err.message
-        } else if (isAxiosError(err)) {
-          if (err.response?.data && typeof err.response.data === "object" && "message" in err.response.data) {
-            errorMessage = (err.response.data as { message: string }).message
-          } else if (err.message) {
-            errorMessage = err.message
-          }
+      setRouteCalculated(true)
+      setMapError(null)
+    } else {
+      console.warn("[v0] Directions API failed:", status)
+      setMapError("No se pudo calcular la ruta por carretera. Mostrando ubicaciones.")
+      setRouteCalculated(false)
+    }
+  }
+
+  const createWaypoints = (): Array<{ location: { lat: number; lng: number }; stopover: boolean }> => {
+    if (!isGoogleMapsLoaded || !window.google?.maps) return []
+
+    const waypoints: Array<{ location: { lat: number; lng: number }; stopover: boolean }> = []
+    if (intermediateStops && intermediateStops.length > 0) {
+      intermediateStops.forEach((stop) => {
+        const latLng = new window.google.maps.LatLng(stop.lat, stop.lng)
+        waypoints.push({
+          location: { lat: latLng.lat(), lng: latLng.lng() },
+          stopover: true,
+        })
+      })
+    }
+    return waypoints
+  }
+
+  const createDirectionsOptions = () => {
+    if (!isGoogleMapsLoaded || !window.google?.maps) return null
+
+    return {
+      origin: new window.google.maps.LatLng(origin.lat, origin.lng),
+      destination: new window.google.maps.LatLng(destination.lat, destination.lng),
+      waypoints: createWaypoints(),
+      optimizeWaypoints: false,
+      travelMode: window.google.maps.TravelMode.DRIVING,
+      unitSystem: window.google.maps.UnitSystem.METRIC,
+    }
+  }
+
+  const handleMapLoad = (map: google.maps.Map) => {
+    console.log("[v0] Google Map loaded successfully")
+    mapRef.current = map
+    setIsGoogleMapsLoaded(true)
+    setIsLoading(false)
+
+    setTimeout(() => {
+      createMarkers()
+    }, 500)
+  }
+
+  const handleLoadError = () => {
+    console.error("[v0] Failed to load Google Maps")
+    setMapError("Error al cargar Google Maps. Verifica tu conexión a internet.")
+    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    return () => {
+      markersRef.current.forEach((marker) => {
+        marker.map = null
+      })
+      markersRef.current = []
+    }
+  }, [])
+
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+  if (!apiKey) {
+    return (
+      <div className="w-full h-96 rounded-xl overflow-hidden relative bg-white border border-gray-200 flex items-center justify-center">
+        <div className="text-center p-8">
+          <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">{t.mapNotAvailable}</h3>
+          <p className="text-gray-500 mb-4">{t.mapApiKeyMissing}</p>
+          <div className="bg-gray-50 rounded-lg p-4 border">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span className="font-semibold text-gray-700">
+                {t.origin}: {origin.name}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              <span className="font-semibold text-gray-700">
+                {t.destination}: {destination.name}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const directionsOptions = createDirectionsOptions()
+
+  return (
+    <div className="w-full h-96 rounded-xl overflow-hidden relative border border-gray-200">
+      <LoadScript
+        googleMapsApiKey={apiKey}
+        libraries={GOOGLE_MAPS_LIBRARIES}
+        onLoad={() => setIsGoogleMapsLoaded(true)}
+        onError={handleLoadError}
+      >
+        {isLoading && (
+          <div className="absolute inset-0 bg-white flex items-center justify-center z-10">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
+              <p className="text-gray-600">{t.loadingMap}</p>
+            </div>
+          </div>
+        )}
+
+        <GoogleMap mapContainerStyle={mapContainerStyle} options={mapOptions} onLoad={handleMapLoad}>
+          {isGoogleMapsLoaded && directionsOptions && !directionsResponse && !mapError && (
+            <DirectionsService options={directionsOptions} callback={directionsCallback} />
+          )}
+
+          {isGoogleMapsLoaded && directionsResponse && (
+            <DirectionsRenderer
+              options={{
+                directions: directionsResponse,
+                suppressMarkers: true,
+                polylineOptions: {
+                  strokeColor: "#f97316",
+                  strokeOpacity: 0.8,
+                  strokeWeight: 4,
+                },
+              }}
+            />
+          )}
+        </GoogleMap>
+      </LoadScript>
+
+      <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
+        <div className="flex items-center gap-2 mb-3">
+          <MapPin className="w-5 h-5 text-orange-500" />
+          <span className="font-bold text-gray-800">{t.roadRoute}</span>
+          {routeCalculated && (
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full border border-green-200">
+              {t.roadRouteCalculated}
+            </span>
+          )}
+          {mapError && (
+            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full border border-yellow-200">
+              {t.showingLocations}
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span className="font-semibold text-gray-700">{t.origin}:</span>
+            </div>
+            <p className="text-gray-600 text-xs ml-5">{origin.name}</p>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+              <span className="font-semibold text-gray-700">{t.destination}:</span>
+            </div>
+            <p className="text-gray-600 text-xs ml-5">{destination.name}</p>
+          </div>
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-600">{t.roadDistance}:</span>
+            <span className="font-bold text-orange-500">{routeDistance || t.calculating}</span>
+          </div>
+          {routeDuration && (
+            <div className="flex justify-between items-center text-sm mt-1">
+              <span className="text-gray-600">{t.estimatedTime}:</span>
+              <span className="font-bold text-green-600">{routeDuration}</span>
+            </div>
+          )}
+          {intermediateStops && intermediateStops.length > 0 && (
+            <div className="flex justify-between items-center text-sm mt-1">
+              <span className="text-gray-600">{t.intermediateStops}:</span>
+              <span className="font-bold text-yellow-600">{intermediateStops.length}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+        {t.interactiveMap}
+      </div>
+
+      {mapError && (
+        <div className="absolute top-4 left-4 bg-yellow-100 border border-yellow-300 text-yellow-800 px-3 py-2 rounded-lg text-sm">
+          {mapError}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function TransportPage({ params }: Props) {
+  const { language } = useLanguage()
+
+  const t = translations[language as keyof typeof translations] || translations.es
+  const [transport, setTransport] = useState<TourTransport | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [selectedDate, setSelectedDate] = useState<string>("")
+  const [selectedTravelers, setSelectedTravelers] = useState<number>(1)
+  const [bookingNotes] = useState<string>("")
+  const [isBooking, setIsBooking] = useState(false)
+
+  const translateDay = (day: string): string => {
+    const dayTranslations: { [key: string]: { [key: string]: string } } = {
+      Monday: { es: "Lunes", en: "Monday", fr: "Lundi", de: "Montag", it: "Lunedì" },
+      Tuesday: { es: "Martes", en: "Tuesday", fr: "Mardi", de: "Dienstag", it: "Martedì" },
+      Wednesday: { es: "Miércoles", en: "Wednesday", fr: "Mercredi", de: "Mittwoch", it: "Mercoledì" },
+      Thursday: { es: "Jueves", en: "Thursday", fr: "Jeudi", de: "Donnerstag", it: "Giovedì" },
+      Friday: { es: "Viernes", en: "Friday", fr: "Vendredi", de: "Freitag", it: "Venerdì" },
+      Saturday: { es: "Sábado", en: "Saturday", fr: "Samedi", de: "Samstag", it: "Sabato" },
+      Sunday: { es: "Domingo", en: "Sunday", fr: "Dimanche", de: "Sonntag", it: "Domenica" },
+    }
+    return dayTranslations[day]?.[language] || day
+  }
+
+  useEffect(() => {
+    async function loadTransport() {
+      try {
+        const resolvedParams = await params
+        const { slug: paramSlug } = resolvedParams
+
+        const langParam = language !== "es" ? `?lang=${language}` : ""
+        console.log("[v0] Fetching transport with language:", language)
+
+        const response = await api.get<{ data: TourTransport[] }>(`/tour-transport${langParam}`)
+        const transports = response.data.data
+        console.log("[v0] All transports received:", transports?.length || 0)
+
+        if (transports && transports.length > 0) {
+          console.log(
+            "[v0] Available transport slugs:",
+            transports.map((t) => t.slug),
+          )
+          console.log("[v0] Looking for slug:", paramSlug)
         }
-        setError(errorMessage)
+
+        const foundTransport = transports?.find((t) => t.slug === paramSlug)
+        console.log(
+          "[v0] Found transport:",
+          foundTransport ? getTranslatedText(foundTransport.title, language) : "Not found",
+        )
+
+        if (!foundTransport) {
+          notFound()
+        }
+
+        setTransport(foundTransport)
+      } catch (error) {
+        console.error("Error fetching transport:", error)
+        notFound()
       } finally {
         setLoading(false)
       }
     }
 
-    if (slug) {
-      fetchTransportDetails()
-    }
-  }, [slug, language, t.tourNotFound, t.errorLoadingToursMessage])
-
-  const handleWhatsAppContact = () => {
-    const message = `${t.consultWhatsApp}: ${transport?.title} - ${transport?.originCity} → ${transport?.destinationCity}`
-    const whatsappUrl = `https://wa.me/51987654321?text=${encodeURIComponent(message)}`
-    window.open(whatsappUrl, "_blank")
-  }
-
-  const handlePhoneCall = () => {
-    window.open("tel:+51987654321", "_self")
-  }
-
-  const handleAddToCart = async () => {
-    if (!transport) return
-
-    // Create the cart item according to the CreateCartDto structure
-    const cartItem = {
-      productType: "TourTransport" as const, // Ensure it matches the enum exactly
-      productId: transport._id, // This should be the ObjectId string
-      startDate: `${selectedDate}T00:00:00.000Z`, // ISO string format
-      people: passengers,
-      pricePerPerson: transport.price,
-      total: transport.price * passengers,
-      notes: `${transport.title} - ${transport.originCity} → ${transport.destinationCity}`,
-      // Optional denormalized fields
-      productTitle: transport.title,
-      productImageUrl: transport.imageUrl || undefined,
-      productSlug: transport.slug || undefined,
-    }
-
-    // Create the payload according to CreateCartDto structure
-    const cartPayload = {
-      items: [cartItem], // Array of CartItemDto
-      totalPrice: transport.price * passengers,
-      // Do NOT include userId - backend adds it automatically
-    }
-
-    console.log("Cart payload being sent:", JSON.stringify(cartPayload, null, 2))
-    console.log("Individual cart item:", JSON.stringify(cartItem, null, 2))
-
-    try {
-      setIsProcessingPayment(true)
-      setError(null) // Clear any previous errors
-
-      // Add to cart via API
-      const response = await api.post("/cart", cartPayload)
-      console.log("Cart response:", response.data)
-
-      // Redirect to checkout page
-      router.push("/checkout")
-    } catch (err) {
-      console.error("Error adding to cart:", err)
-      if (isAxiosError(err)) {
-        console.error("Error response status:", err.response?.status)
-        console.error("Error response data:", err.response?.data)
-        console.error("Error response headers:", err.response?.headers)
-
-        let errorMessage = "Error al agregar al carrito. Por favor, inténtalo de nuevo."
-
-        if (err.response?.data) {
-          if (typeof err.response.data === "string") {
-            errorMessage = err.response.data
-          } else if (err.response.data.message) {
-            errorMessage = err.response.data.message
-          } else if (err.response.data.error) {
-            errorMessage = err.response.data.error
-          }
-        }
-        setError(errorMessage)
-      } else {
-        setError("Error al agregar al carrito. Por favor, inténtalo de nuevo.")
-      }
-    } finally {
-      setIsProcessingPayment(false)
-    }
-  }
+    loadTransport()
+  }, [params, language])
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pt-20 md:pt-32">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-4 border-t-transparent border-blue-500"></div>
-          <p className="text-xl md:text-2xl text-white font-light">{t.loading}...</p>
+      <>
+        <div className="min-h-screen bg-white flex items-center justify-center pt-24">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p className="text-gray-700 text-xl">{t.loading}</p>
+          </div>
         </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-red-900 via-red-800 to-red-900 pt-20 md:pt-32 px-4">
-        <p className="text-xl md:text-2xl text-white mb-6 text-center">{error}</p>
-        <Link
-          href="/"
-          className="px-6 md:px-8 py-3 md:py-4 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 transition-all duration-300 font-medium"
-        >
-          {t.backToHome}
-        </Link>
-      </div>
+      </>
     )
   }
 
   if (!transport) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-gray-800 to-slate-900 pt-20 md:pt-32">
-        <p className="text-xl md:text-2xl text-white font-light">{t.noToursAvailable}</p>
-      </div>
-    )
+    notFound()
+  }
+
+  console.log("[v0] Transport data:", transport)
+
+  const priceInSoles = Math.round(transport.price * 3.7)
+  const originCoords = `${transport.origin.lat.toString()}, ${transport.origin.lng.toString()}`
+  const destinationCoords = `${transport.destination.lat.toString()}, ${transport.destination.lng.toString()}`
+
+  const galleryImages = []
+  if (transport.imageUrl) {
+    galleryImages.push({
+      url: transport.imageUrl,
+      title: getTranslatedText(transport.title, language),
+      description: "Imagen principal del transporte",
+    })
+  }
+  if (transport.itinerary) {
+    transport.itinerary.forEach((day) => {
+      if (day.imageUrl) {
+        galleryImages.push({
+          url: day.imageUrl,
+          title: getTranslatedText(day.title, language),
+          description: getTranslatedText(day.description, language),
+        })
+      }
+    })
+  }
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length)
+  }
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length)
+  }
+
+  const handleReserveNow = async () => {
+    if (!transport) return
+
+    if (!selectedDate) {
+      alert(language === "es" ? "Por favor selects una fecha" : "Please select a date")
+      return
+    }
+
+    setIsBooking(true)
+
+    try {
+      const cartData: CreateCartDto = {
+        items: [
+          {
+            productType: CartItemType.Transport,
+            productId: transport._id,
+            startDate: selectedDate,
+            people: selectedTravelers,
+            pricePerPerson: transport.price,
+            total: transport.price * selectedTravelers,
+            notes: bookingNotes || "",
+            productTitle: getTranslatedText(transport.title, language),
+            productImageUrl: transport.imageUrl,
+            productSlug: transport.slug,
+          },
+        ],
+        totalPrice: transport.price * selectedTravelers,
+      }
+
+      console.log("[v0] Sending cart data:", cartData)
+
+      const response = await api.post("/cart", cartData)
+
+      console.log("[v0] Cart created successfully:", response.data)
+
+      toast.success(language === "es" ? "¡Agregado al carrito exitosamente!" : "Successfully added to cart!", {
+        description:
+          language === "es"
+            ? `${selectedTravelers} ${selectedTravelers === 1 ? "persona" : "personas"} - S/ ${(priceInSoles * selectedTravelers).toLocaleString()}`
+            : `${selectedTravelers} ${selectedTravelers === 1 ? "person" : "people"} - S/ ${(priceInSoles * selectedTravelers).toLocaleString()}`,
+        duration: 5000,
+        action: {
+          label: language === "es" ? "Ver Carrito" : "View Cart",
+          onClick: () => {
+            window.location.href = "/checkout"
+          },
+        },
+      })
+    } catch (error) {
+      console.error("[v0] Error creating cart:", error)
+      let errorMessage = "Unknown error"
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === "object" && error !== null && "response" in error) {
+        const responseError = error as { response?: { data?: { message?: string } } }
+        errorMessage = responseError.response?.data?.message || "Unknown error"
+      }
+
+      toast.error(language === "es" ? "Error al agregar al carrito" : "Error adding to cart", {
+        description: errorMessage,
+        duration: 4000,
+      })
+    } finally {
+      setIsBooking(false)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      {/* Hero Section - Full Height on Mobile */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="relative h-screen md:h-[80vh] overflow-hidden"
-      >
-        <Image
-          src={transport.imageUrl || "/placeholder.svg"}
-          alt={transport.title}
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
-
-        {/* Gallery Button */}
-        <button
-          onClick={() => setIsGalleryOpen(true)}
-          className="absolute top-20 md:top-32 right-4 md:right-6 bg-black/40 backdrop-blur-sm text-white p-2 md:p-3 rounded-full hover:bg-black/60 transition-all duration-300 z-10"
-        >
-          <Images size={20} className="md:w-6 md:h-6" />
-        </button>
-
-        {/* Hero Content */}
-        <div className="absolute inset-0 flex items-end">
-          <div className="w-full px-4 md:px-6 pb-8 md:pb-16 max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-white"
-            >
-              <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-4">
-                {transport.rating && (
-                  <div className="flex items-center space-x-1 bg-yellow-500/20 px-2 md:px-3 py-1 rounded-full backdrop-blur-sm">
-                    <Star size={14} fill="currentColor" className="md:w-4 md:h-4 text-yellow-400" />
-                    <span className="text-xs md:text-sm font-semibold">{transport.rating}</span>
-                  </div>
-                )}
+    <>
+      <div className="min-h-screen bg-white pt-20">
+        <section className="relative bg-white">
+          <div className="relative z-10 container mx-auto px-4 py-16">
+            <div className="max-w-4xl mx-auto text-center">
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gray-900 text-balance">
+                {getTranslatedText(transport.title, language)}
+              </h1>
+              <p className="text-lg md:text-xl mb-8 text-gray-600 leading-relaxed text-pretty">
+                {getTranslatedText(transport.description, language)}
+              </p>
+              <div className="flex flex-wrap justify-center items-center gap-6 mb-8">
+                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 text-gray-700 shadow-sm">
+                  <MapPin className="w-5 h-5 text-orange-500" />
+                  <span className="font-semibold">
+                    {transport.origin.name} → {transport.destination.name}
+                  </span>
+                </div>
                 {transport.durationInHours && (
-                  <div className="flex items-center space-x-1 bg-blue-500/20 px-2 md:px-3 py-1 rounded-full backdrop-blur-sm">
-                    <Timer size={14} className="md:w-4 md:h-4 text-blue-400" />
-                    <span className="text-xs md:text-sm font-semibold">
-                      {transport.durationInHours} {t.hours}
+                  <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 text-gray-700 shadow-sm">
+                    <Clock className="w-5 h-5 text-green-600" />
+                    <span className="font-semibold">
+                      {transport.durationInHours.toString()} {t.hours}
                     </span>
                   </div>
                 )}
-                <div className="bg-green-500/20 px-2 md:px-3 py-1 rounded-full backdrop-blur-sm">
-                  <span className="text-xs md:text-sm font-semibold text-green-400">{t.transport}</span>
+                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 text-gray-700 shadow-sm">
+                  <Star className="w-5 h-5 text-yellow-500" />
+                  <span className="font-semibold">{(transport.rating || 4.8).toString()}/5</span>
                 </div>
               </div>
-
-              <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-3 md:mb-4 leading-tight">
-                {transport.title}
-              </h1>
-              <p className="text-base md:text-xl lg:text-2xl font-light opacity-90 max-w-3xl mb-4 md:mb-6">
-                {transport.description}
-              </p>
-
-              {/* Route Preview - Responsive */}
-              <div className="flex items-center space-x-2 md:space-x-4 bg-black/30 backdrop-blur-sm rounded-xl md:rounded-2xl p-3 md:p-4 max-w-fit">
-                <div className="text-center">
-                  <div className="text-xs md:text-sm opacity-75">{t.originCity}</div>
-                  <div className="font-bold text-sm md:text-lg">{transport.originCity}</div>
-                </div>
-                <ArrowRight className="text-blue-400 md:w-6 md:h-6" size={20} />
-                <div className="text-center">
-                  <div className="text-xs md:text-sm opacity-75">{t.destinationCity}</div>
-                  <div className="font-bold text-sm md:text-lg">{transport.destinationCity}</div>
-                </div>
+              <div className="text-4xl font-bold py-4 px-8 rounded-full inline-block bg-orange-500 text-white shadow-lg">
+                S/ {priceInSoles.toLocaleString()} PEN
               </div>
-            </motion.div>
+            </div>
           </div>
-        </div>
-      </motion.div>
+        </section>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-          {/* Left Column - Route Map & Details */}
-          <div className="lg:col-span-2 space-y-6 md:space-y-8">
-            {/* Route Map Visualization */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-xl border border-slate-200 dark:border-slate-700"
-            >
-              <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-slate-800 dark:text-slate-100 flex items-center">
-                <Route className="mr-2 md:mr-3 text-blue-500 md:w-7 md:h-7" size={24} />
-                {t.panoramicRoute}
-              </h2>
-
-              {/* Route Visualization - Mobile Optimized */}
-              <div className="relative">
-                {/* Route Line */}
-                <div className="absolute left-6 md:left-8 top-12 md:top-16 bottom-12 md:bottom-16 w-0.5 md:w-1 bg-gradient-to-b from-blue-500 via-purple-500 to-green-500 rounded-full"></div>
-
-                {/* Origin */}
-                <div className="flex items-center mb-6 md:mb-8">
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                    <MapPin size={18} className="md:w-6 md:h-6" />
-                  </div>
-                  <div className="ml-4 md:ml-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl md:rounded-2xl p-3 md:p-4 flex-1">
-                    <div className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium">
-                      {t.originCity}
-                    </div>
-                    <div className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100">
-                      {transport.originCity}
-                    </div>
-                    {transport.departureTime && (
-                      <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1">
-                        {t.departureTime}: <span className="font-semibold">{transport.departureTime}</span>
-                      </div>
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-6xl mx-auto">
+            {galleryImages.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-xl p-8 mb-16 shadow-sm">
+                <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">{t.imageGallery}</h2>
+                <div className="relative">
+                  <div className="relative h-96 rounded-xl overflow-hidden mb-4 border border-gray-200">
+                    <Image
+                      src={galleryImages[currentImageIndex].url || "/placeholder.jpg"}
+                      alt={galleryImages[currentImageIndex].title}
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+                    {galleryImages.length > 1 && (
+                      <>
+                        <button
+                          onClick={prevImage}
+                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 transition-colors shadow-lg"
+                        >
+                          <ChevronLeft className="w-6 h-6 text-gray-700" />
+                        </button>
+                        <button
+                          onClick={nextImage}
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 transition-colors shadow-lg"
+                        >
+                          <ChevronRight className="w-6 h-6 text-gray-700" />
+                        </button>
+                      </>
                     )}
+                    <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg p-3 text-white">
+                      <h3 className="font-bold text-lg">{galleryImages[currentImageIndex].title}</h3>
+                      <p className="text-sm opacity-90">{galleryImages[currentImageIndex].description}</p>
+                    </div>
+                  </div>
+                  {galleryImages.length > 1 && (
+                    <div className="flex justify-center gap-2">
+                      {galleryImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`w-3 h-3 rounded-full transition-colors ${
+                            index === currentImageIndex ? "bg-orange-500" : "bg-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
+              <div className="bg-white border border-gray-200 rounded-xl p-6 text-center shadow-sm">
+                <Users className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                <div className="text-2xl font-bold text-gray-900">12+</div>
+                <p className="text-gray-600">{t.yearsExperience}</p>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-6 text-center shadow-sm">
+                <Award className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+                <div className="text-2xl font-bold text-gray-900">5000+</div>
+                <p className="text-gray-600">{t.satisfiedTourists}</p>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-6 text-center shadow-sm">
+                <Shield className="w-12 h-12 text-green-600 mx-auto mb-4" />
+                <div className="text-2xl font-bold text-gray-900">100%</div>
+                <p className="text-gray-600">{t.safeReliable}</p>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-6 text-center shadow-sm">
+                <Globe className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                <div className="text-2xl font-bold text-gray-900">24/7</div>
+                <p className="text-gray-600">{t.supportAvailable}</p>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-8 mb-16">
+              <div className="lg:col-span-2">
+                <div className="bg-white border border-gray-200 rounded-xl p-8 mb-8 shadow-sm">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-6">{t.packageDescription}</h2>
+                  <p className="text-lg leading-relaxed text-gray-700 mb-8">
+                    {getTranslatedText(transport.description, language)}
+                  </p>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                      <Users className="w-8 h-8 text-orange-500 mb-4" />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{t.smallGroup}</h3>
+                      <p className="text-gray-600 mb-3">{t.smallGroupDesc}</p>
+                      <ul className="mt-3 text-sm text-gray-500 space-y-1">
+                        <li>• {t.personalizedAttention}</li>
+                        <li>• {t.flexibilityStops}</li>
+                        <li>• {t.familyEnvironment}</li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                      <Navigation className="w-8 h-8 text-green-600 mb-4" />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{t.expertGuide}</h3>
+                      <p className="text-gray-600 mb-3">{t.expertGuideDesc}</p>
+                      <ul className="mt-3 text-sm text-gray-500 space-y-1">
+                        <li>• {t.officialCertification}</li>
+                        <li>• {t.historicalKnowledge}</li>
+                        <li>• {t.multilingual}</li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                      <Star className="w-8 h-8 text-yellow-500 mb-4" />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{t.allInclusive}</h3>
+                      <p className="text-gray-600 mb-3">{t.allInclusiveDesc}</p>
+                      <ul className="mt-3 text-sm text-gray-500 space-y-1">
+                        <li>• {t.premiumTransport}</li>
+                        <li>• {t.typicalMeals}</li>
+                        <li>• {t.siteEntries}</li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                      <Shield className="w-8 h-8 text-orange-500 mb-4" />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{t.travelInsurance}</h3>
+                      <p className="text-gray-600 mb-3">{t.travelInsuranceDesc}</p>
+                      <ul className="mt-3 text-sm text-gray-500 space-y-1">
+                        <li>• {t.medicalInsurance}</li>
+                        <li>• {t.assistance24}</li>
+                        <li>• {t.luggageCoverage}</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
 
-                {/* Intermediate Stops */}
-                {transport.intermediateStops && transport.intermediateStops.length > 0 && (
-                  <div className="mb-6 md:mb-8">
-                    <div className="flex items-center mb-3 md:mb-4">
-                      <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                        <Route size={16} className="md:w-5 md:h-5" />
-                      </div>
-                      <div className="ml-4 md:ml-6">
-                        <div className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100">
-                          {t.stopsOnRoute}
-                        </div>
-                        <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                          {transport.intermediateStops.length}{" "}
-                          {transport.intermediateStops.length === 1 ? t.stopOf : t.stopsOnRoute}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ml-16 md:ml-22 space-y-2">
-                      {transport.intermediateStops.map((stop, index) => (
-                        <div
-                          key={index}
-                          className="bg-purple-50 dark:bg-purple-900/20 rounded-lg md:rounded-xl p-2 md:p-3"
-                        >
-                          <div className="font-medium text-sm md:text-base text-slate-800 dark:text-slate-100">
-                            {stop}
+                {transport.itinerary && transport.itinerary.length > 0 && (
+                  <div className="bg-white border border-gray-200 rounded-xl p-8 mb-8 shadow-sm">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-8">{t.detailedItinerary}</h2>
+                    <div className="space-y-6">
+                      {transport.itinerary.map((day, index) => (
+                        <div key={index} className="relative">
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
+                                {day.day.toString()}
+                              </div>
+                              <h3 className="text-xl font-bold text-gray-900">
+                                {getTranslatedText(day.title, language)}
+                              </h3>
+                            </div>
+                            <p className="text-gray-700 mb-4 leading-relaxed">
+                              {getTranslatedText(day.description, language)}
+                            </p>
+                            {day.route && day.route.length > 0 && (
+                              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                                <h4 className="font-semibold text-gray-900 mb-3">{t.dayStops}:</h4>
+                                <div className="space-y-2">
+                                  {day.route.map((stop, stopIndex) => (
+                                    <div key={stopIndex} className="flex items-start gap-3 text-sm">
+                                      <MapPin className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                                      <div>
+                                        <span className="font-semibold text-gray-800">{stop.location}</span>
+                                        {stop.stopTime && (
+                                          <span className="text-green-600 ml-2">({stop.stopTime})</span>
+                                        )}
+                                        {stop.description && (
+                                          <p className="text-gray-600 mt-1">
+                                            {getTranslatedText(stop.description, language)}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {/* Destination */}
-                <div className="flex items-center">
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                    <MapPin size={18} className="md:w-6 md:h-6" />
-                  </div>
-                  <div className="ml-4 md:ml-6 bg-green-50 dark:bg-green-900/20 rounded-xl md:rounded-2xl p-3 md:p-4 flex-1">
-                    <div className="text-xs md:text-sm text-green-600 dark:text-green-400 font-medium">
-                      {t.destinationCity}
-                    </div>
-                    <div className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100">
-                      {transport.destinationCity}
-                    </div>
-                    {transport.arrivalTime && (
-                      <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1">
-                        {t.arrivalTime}: <span className="font-semibold">{transport.arrivalTime}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
-            </motion.div>
 
-            {/* Schedule & Availability - Mobile Optimized */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-xl border border-slate-200 dark:border-slate-700"
-            >
-              <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-slate-800 dark:text-slate-100 flex items-center">
-                <Calendar className="mr-2 md:mr-3 text-green-500 md:w-7 md:h-7" size={24} />
-                {t.schedulesAndAvailability}
-              </h2>
-              <div className="grid grid-cols-1 gap-4 md:gap-6">
-                {/* Schedule */}
-                <div className="bg-slate-50 dark:bg-slate-700 rounded-xl md:rounded-2xl p-4 md:p-6">
-                  <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-slate-800 dark:text-slate-100 flex items-center">
-                    <Clock className="mr-2 text-blue-500 md:w-5 md:h-5" size={18} />
-                    {t.schedule}
-                  </h3>
-                  <div className="space-y-2 md:space-y-3">
-                    {transport.departureTime && (
-                      <div className="flex justify-between">
-                        <span className="text-sm md:text-base text-slate-600 dark:text-slate-400">
-                          {t.departureTime}:
-                        </span>
-                        <span className="font-semibold text-sm md:text-base text-slate-800 dark:text-slate-100">
-                          {transport.departureTime}
-                        </span>
-                      </div>
-                    )}
-                    {transport.arrivalTime && (
-                      <div className="flex justify-between">
-                        <span className="text-sm md:text-base text-slate-600 dark:text-slate-400">
-                          {t.arrivalTime}:
-                        </span>
-                        <span className="font-semibold text-sm md:text-base text-slate-800 dark:text-slate-100">
-                          {transport.arrivalTime}
-                        </span>
-                      </div>
-                    )}
-                    {transport.durationInHours && (
-                      <div className="flex justify-between">
-                        <span className="text-sm md:text-base text-slate-600 dark:text-slate-400">{t.duration}:</span>
-                        <span className="font-semibold text-sm md:text-base text-slate-800 dark:text-slate-100">
-                          {transport.durationInHours} {t.hours}
-                        </span>
-                      </div>
-                    )}
+              <div className="lg:col-span-1">
+                <div className="bg-white border border-gray-200 rounded-xl p-6 sticky top-8 shadow-sm">
+                  <div className="text-center mb-6">
+                    <div className="text-4xl font-bold text-gray-900 mb-2">S/ {priceInSoles.toLocaleString()}</div>
+                    <div className="text-gray-600 mb-1">{t.perPerson}</div>
+                    <div className="text-sm text-green-600 font-semibold">{t.specialPriceForForeigners}</div>
+                    <div className="flex justify-center items-center gap-1 mt-3">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-5 h-5 fill-current text-yellow-500" />
+                      ))}
+                      <span className="ml-2 text-gray-600">({(transport.rating || 4.8).toString()})</span>
+                    </div>
                   </div>
-                  <div className="mt-3 md:mt-4 p-2 md:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg md:rounded-xl">
-                    <p className="text-xs md:text-sm text-blue-700 dark:text-blue-300">💡 {t.arriveEarly}</p>
-                  </div>
-                </div>
 
-                {/* Available Days */}
-                <div className="bg-slate-50 dark:bg-slate-700 rounded-xl md:rounded-2xl p-4 md:p-6">
-                  <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-slate-800 dark:text-slate-100 flex items-center">
-                    <Calendar className="mr-2 text-purple-500 md:w-5 md:h-5" size={18} />
-                    {t.availableDays}
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {transport.availableDays &&
-                    transport.availableDays.length > 0 &&
-                    !transport.availableDays.includes("all") ? (
-                      transport.availableDays.map((day, index) => (
-                        <span
-                          key={index}
-                          className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium"
-                        >
-                          {getTranslatedDay(day)}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium">
-                        {t.allDays}
-                      </span>
-                    )}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t.departureDate}</label>
+                    <input
+                      type="date"
+                      min={new Date().toISOString().split("T")[0]}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                    />
                   </div>
-                  <div className="mt-3 md:mt-4 p-2 md:p-3 bg-green-100 dark:bg-green-900/30 rounded-lg md:rounded-xl">
-                    <p className="text-xs md:text-sm text-green-700 dark:text-green-300">✅ {t.regularDepartures}</p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
 
-            {/* Terms and Conditions */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              className="bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-xl border border-slate-200 dark:border-slate-700"
-            >
-              <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-slate-800 dark:text-slate-100">
-                {t.termsOfService}
-              </h2>
-              <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-                {transport.termsAndConditions}
-              </p>
-            </motion.div>
-
-            {/* Itinerary Section - Enhanced */}
-            {transport.itinerary && transport.itinerary.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-                className="bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-xl border border-slate-200 dark:border-slate-700"
-              >
-                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-slate-800 dark:text-slate-100 flex items-center">
-                  <Calendar className="mr-2 md:mr-3 text-purple-500 md:w-7 md:h-7" size={24} />
-                  {t.itineraries}
-                </h2>
-                <div className="space-y-6 md:space-y-8">
-                  {transport.itinerary?.map((day, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                      className="relative"
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t.numberOfTravelers}</label>
+                    <select
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      value={selectedTravelers}
+                      onChange={(e) => setSelectedTravelers(Number(e.target.value))}
                     >
-                      {/* Day Header */}
-                      <div className="flex items-start space-x-4 mb-4">
-                        <div className="flex-shrink-0">
-                          <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                            <span className="text-sm md:text-lg">{day.day}</span>
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100 mb-2 leading-tight">
-                            {day.title}
-                          </h3>
-                          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-                            {day.description}
-                          </p>
-                        </div>
+                      <option value="1">1 {t.person}</option>
+                      <option value="2">2 {t.people}</option>
+                      <option value="3">3 {t.people}</option>
+                      <option value="4">4 {t.people}</option>
+                      <option value="5">5 {t.people}</option>
+                      <option value="6">6 {t.people}</option>
+                      <option value="7">7 {t.people}</option>
+                      <option value="8">8 {t.people}</option>
+                      <option value="9">9 {t.people}</option>
+                      <option value="10">10 {t.people}</option>
+                    </select>
+                  </div>
+
+                  {transport.availableDays && transport.availableDays.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-2">{t.availableDays}</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {transport.availableDays.map((day, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium border border-gray-200"
+                          >
+                            {translateDay(day)}
+                          </span>
+                        ))}
                       </div>
-
-                      {/* Day Image */}
-                      {day.imageUrl && (
-                        <motion.div
-                          className="mb-4 relative h-48 md:h-64 lg:h-72 rounded-xl md:rounded-2xl overflow-hidden shadow-lg group cursor-pointer"
-                          whileHover={{ scale: 1.02 }}
-                          transition={{ duration: 0.3 }}
-                          onClick={() => {
-                            const dayImageIndex = galleryImages.findIndex((img) => img === day.imageUrl)
-                            if (dayImageIndex !== -1) {
-                              setIsGalleryOpen(true)
-                            }
-                          }}
-                        >
-                          <Image
-                            src={day.imageUrl || "/placeholder.svg"}
-                            alt={day.title}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          <div className="absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <p className="text-sm font-medium bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
-                              {t.view} {day.title}
-                            </p>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* Route Stops */}
-                      {day.route && day.route.length > 0 && (
-                        <div className="mt-4">
-                          <h4 className="font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center">
-                            <Route className="mr-2 text-blue-500" size={18} />
-                            {t.stopsOnRoute}
-                          </h4>
-                          <div className="space-y-4">
-                            {day.route?.map((stop, stopIndex) => (
-                              <motion.div
-                                key={stopIndex}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.4, delay: stopIndex * 0.1 }}
-                                className="bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-700 dark:to-blue-900/20 rounded-xl p-4 border border-slate-200 dark:border-slate-600"
-                              >
-                                <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                                  {/* Stop Info */}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <h5 className="font-medium text-slate-800 dark:text-slate-100 text-base md:text-lg">
-                                        📍 {stop.location}
-                                      </h5>
-                                      {stop.stopTime && (
-                                        <div className="flex items-center space-x-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
-                                          <Clock size={14} />
-                                          <span>{stop.stopTime}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-                                      {stop.description}
-                                    </p>
-                                  </div>
-
-                                  {/* Stop Image */}
-                                  {stop.imageUrl && (
-                                    <motion.div
-                                      className="w-full lg:w-32 xl:w-40 h-24 lg:h-20 xl:h-24 relative rounded-lg overflow-hidden shadow-md group cursor-pointer flex-shrink-0"
-                                      whileHover={{ scale: 1.05 }}
-                                      transition={{ duration: 0.3 }}
-                                      onClick={() => {
-                                        const stopImageIndex = galleryImages.findIndex((img) => img === stop.imageUrl)
-                                        if (stopImageIndex !== -1) {
-                                          setIsGalleryOpen(true)
-                                        }
-                                      }}
-                                    >
-                                      <Image
-                                        src={stop.imageUrl || "/placeholder.svg"}
-                                        alt={stop.location}
-                                        fill
-                                        className="object-cover group-hover:scale-110 transition-transform duration-300"
-                                      />
-                                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                        <Images className="text-white" size={20} />
-                                      </div>
-                                    </motion.div>
-                                  )}
-                                </div>
-                              </motion.div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Connector Line (except for last item) */}
-                      {index < (transport.itinerary?.length || 0) - 1 && (
-                        <div className="flex justify-center mt-6 mb-2">
-                          <div className="w-0.5 h-8 bg-gradient-to-b from-purple-400 to-transparent rounded-full"></div>
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* Itinerary Summary */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.8 }}
-                  className="mt-8 p-4 md:p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-700"
-                >
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                          {transport.itinerary?.length || 0}
-                        </div>
-                        <div className="text-xs text-slate-600 dark:text-slate-400">
-                          {(transport.itinerary?.length || 0) === 1 ? "Día" : "Días"}
-                        </div>
-                      </div>
-                      <div className="w-px h-8 bg-purple-300 dark:bg-purple-600"></div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                          {transport.itinerary?.reduce((total, day) => total + (day.route?.length || 0), 0) || 0}
-                        </div>
-                        <div className="text-xs text-slate-600 dark:text-slate-400">Paradas</div>
-                      </div>
-                      {transport.durationInHours && (
-                        <>
-                          <div className="w-px h-8 bg-purple-300 dark:bg-purple-600"></div>
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                              {transport.durationInHours}h
-                            </div>
-                            <div className="text-xs text-slate-600 dark:text-slate-400">Duración</div>
-                          </div>
-                        </>
-                      )}
                     </div>
+                  )}
+
+                  <button
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-semibold transition-colors mb-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleReserveNow}
+                    disabled={isBooking || !selectedDate}
+                  >
+                    <Calendar className="w-5 h-5" />
+                    {isBooking ? (language === "es" ? "Procesando..." : "Processing...") : t.reserveNow}
+                  </button>
+
+                  <Link
+                    href="/checkout"
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 px-4 rounded-lg font-semibold transition-colors mb-4 flex items-center justify-center gap-2"
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    {language === "es" ? "Ver Carrito" : "View Cart"}
+                  </Link>
+
+                  <div className="space-y-3">
                     <button
-                      onClick={() => setIsGalleryOpen(true)}
-                      className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors duration-300"
+                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                      onClick={() =>
+                        window.open(
+                          `https://wa.me/51987654321?text=Hola, estoy interesado en el tour: ${getTranslatedText(transport.title, language)}`,
+                          "_blank",
+                        )
+                      }
                     >
-                      <Images size={18} />
-                      <span className="text-sm font-medium">Ver Galería</span>
+                      <MessageCircle className="w-5 h-5" />
+                      {t.consultWhatsApp}
+                    </button>
+
+                    <button
+                      className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors border border-gray-200"
+                      onClick={() => window.open("tel:+51987654321", "_self")}
+                    >
+                      <Phone className="w-5 h-5" />
+                      {t.callNow}: +51 987 654 321
                     </button>
                   </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </div>
 
-          {/* Right Column - Booking Panel - Mobile Optimized */}
-          <div className="lg:col-span-1">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="sticky top-24 md:top-40 bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-2xl border border-slate-200 dark:border-slate-700"
-            >
-              {/* Price Section */}
-              <div className="text-center mb-6 md:mb-8">
-                <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-slate-800 dark:text-slate-100">
-                  Precio
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-center space-x-2">
-                    <span className="text-lg text-slate-600 dark:text-slate-400">S/</span>
-                    <span className="text-3xl md:text-4xl font-bold text-green-600">{transport.price}</span>
+                  {(transport.departureTime || transport.arrivalTime) && (
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <h3 className="font-semibold text-gray-900 mb-3">{t.schedules}</h3>
+                      <div className="space-y-2 text-sm">
+                        {transport.departureTime && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">{t.departure}:</span>
+                            <span className="font-semibold">{transport.departureTime}</span>
+                          </div>
+                        )}
+                        {transport.arrivalTime && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">{t.arrival}:</span>
+                            <span className="font-semibold">{transport.arrivalTime}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                      <div className="text-xs">
+                        <Shield className="w-6 h-6 text-green-600 mx-auto mb-1" />
+                        <span className="text-gray-600">{t.securePayment}</span>
+                      </div>
+                      <div className="text-xs">
+                        <Award className="w-6 h-6 text-yellow-500 mx-auto mb-1" />
+                        <span className="text-gray-600">{t.certified}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs md:text-sm text-slate-500">{t.perPerson}</div>
                 </div>
               </div>
+            </div>
 
-              {/* Date Selection */}
-              <div className="mb-4 md:mb-6">
-                <DateSelector
-                  selectedDate={selectedDate}
-                  onDateChange={setSelectedDate}
-                  availableDays={transport.availableDays}
+            <div className="bg-white border border-gray-200 rounded-xl p-8 mb-8 shadow-sm">
+              <h2 className="text-3xl font-bold text-gray-900 mb-6">{t.roadRoute}</h2>
+              <div className="grid md:grid-cols-2 gap-8 mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">{t.routeInfo}</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-5 h-5 text-orange-500" />
+                      <div>
+                        <span className="font-semibold">{t.origin}:</span> {transport.origin.name}
+                        <div className="text-sm text-gray-600">
+                          {t.coordinates}: {originCoords}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-5 h-5 text-green-600" />
+                      <div>
+                        <span className="font-semibold">{t.destination}:</span> {transport.destination.name}
+                        <div className="text-sm text-gray-600">
+                          {t.coordinates}: {destinationCoords}
+                        </div>
+                      </div>
+                    </div>
+                    {transport.durationInHours && (
+                      <div className="flex items-center gap-3">
+                        <Clock className="w-5 h-5 text-yellow-500" />
+                        <div>
+                          <span className="font-semibold">{t.duration}:</span> {transport.durationInHours.toString()}{" "}
+                          {t.hours}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">{t.intermediateStops}</h3>
+                  {transport.intermediateStops && transport.intermediateStops.length > 0 ? (
+                    <ul className="space-y-2">
+                      {transport.intermediateStops.map((stop, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          <span>{stop.name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-600">{t.directTrip}</p>
+                  )}
+                </div>
+              </div>
+              <div className="rounded-lg overflow-hidden">
+                <GoogleMapComponent
+                  origin={transport.origin}
+                  destination={transport.destination}
+                  intermediateStops={transport.intermediateStops}
                 />
               </div>
+              <div className="mt-4 text-sm text-gray-600 text-center">
+                {t.interactiveRouteMap}: {transport.origin.name} a {transport.destination.name}
+                {transport.durationInHours && ` • ${transport.durationInHours.toString()} ${t.travelHours}`}
+              </div>
+            </div>
 
-              {/* Passenger Selection */}
-              <div className="mb-4 md:mb-6">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  {t.numberOfPassengers}
-                </label>
-                <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-700 rounded-xl p-3">
-                  <button
-                    onClick={() => setPassengers(Math.max(1, passengers - 1))}
-                    className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
-                  >
-                    -
-                  </button>
-                  <div className="flex items-center space-x-2">
-                    <Users size={18} className="md:w-5 md:h-5" />
-                    <span className="text-lg md:text-xl font-semibold text-slate-800 dark:text-slate-100">
-                      {passengers}
-                    </span>
-                    <span className="text-xs md:text-sm text-slate-500">
-                      {passengers === 1 ? t.passenger : t.passengers}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setPassengers(passengers + 1)}
-                    className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
-                  >
-                    +
-                  </button>
+            {transport.termsAndConditions && (
+              <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">{t.termsConditions}</h2>
+                <div className="prose prose-gray max-w-none">
+                  <p className="text-gray-700 leading-relaxed">
+                    {getTranslatedText(transport.termsAndConditions, language)}
+                  </p>
                 </div>
               </div>
-
-              {/* Total Price */}
-              <div className="mb-6 md:mb-8 p-3 md:p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl md:rounded-2xl border border-blue-200 dark:border-blue-700">
-                <div className="text-center">
-                  <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mb-1">{t.totalToPay}</div>
-                  <div className="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400">
-                    S/ {(transport.price * passengers).toFixed(0)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons - Mobile Optimized */}
-              <div className="space-y-3 md:space-y-4">
-                {/* Reserve Button */}
-                <button
-                  onClick={handleAddToCart}
-                  disabled={isProcessingPayment}
-                  className="w-full py-3 md:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isProcessingPayment ? (
-                    <>
-                      <Loader2 className="animate-spin mr-2" size={18} />
-                      <span>Agregando al carrito...</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart size={18} className="md:w-5 md:h-5" />
-                      <span className="text-sm md:text-base">Agregar al Carrito</span>
-                    </>
-                  )}
-                </button>
-
-                {/* WhatsApp Button */}
-                <button
-                  onClick={handleWhatsAppContact}
-                  className="w-full py-3 md:py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
-                >
-                  <MessageCircle size={18} className="md:w-5 md:h-5" />
-                  <span className="text-sm md:text-base">{t.consultWhatsApp}</span>
-                </button>
-
-                {/* Call Button */}
-                <button
-                  onClick={handlePhoneCall}
-                  className="w-full py-3 md:py-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
-                >
-                  <Phone size={18} className="md:w-5 md:h-5" />
-                  <span className="text-sm md:text-base">{t.callNow}</span>
-                </button>
-              </div>
-
-              {/* Additional Info */}
-              <div className="mt-4 md:mt-6 p-3 md:p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl md:rounded-2xl border border-yellow-200 dark:border-yellow-700">
-                <p className="text-xs md:text-sm text-yellow-700 dark:text-yellow-300 text-center">
-                  ⚡ {t.availableNow} - {t.confirmReservation}
-                </p>
-              </div>
-            </motion.div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Image Gallery Modal */}
-      <AnimatePresence>
-        {isGalleryOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
-            onClick={() => setIsGalleryOpen(false)}
-          >
-            <div className="relative w-full max-w-6xl h-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-              {/* Close Button */}
-              <button
-                onClick={() => setIsGalleryOpen(false)}
-                className="absolute top-4 right-4 z-10 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    </>
   )
 }

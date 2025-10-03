@@ -60,17 +60,16 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { toursApi } from "@/lib/tours-api"
-import type { Tour, PackageType, Difficulty, TourCategory } from "@/types/tour"
+import type { Tour, Difficulty, TourCategory, TranslatedText, PackageType } from "@/types/tour"
 
-// Interface for multilingual duration
-interface MultilingualDuration {
-  es?: string
-  en?: string
-}
-
-// Interface for raw tour data from API
-interface RawTour extends Omit<Tour, "duration"> {
-  duration: string | MultilingualDuration
+const getTranslatedText = (text: string | TranslatedText, lang = "es"): string => {
+  if (typeof text === "string") {
+    return text
+  }
+  if (text && typeof text === "object") {
+    return text[lang as keyof TranslatedText] || text.es || text.en || "Texto no disponible"
+  }
+  return "Texto no disponible"
 }
 
 export default function PaquetesPage() {
@@ -89,38 +88,17 @@ export default function PaquetesPage() {
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
 
-  // Helper function to extract duration string
-  const extractDuration = (duration: string | MultilingualDuration): string => {
-    if (typeof duration === "string") {
-      return duration
-    }
-    if (duration && typeof duration === "object") {
-      return duration.es || duration.en || "Duración no disponible"
-    }
-    return "Duración no disponible"
-  }
-
-  // Función para cargar tours con useCallback para evitar el warning de dependencias
   const loadTours = useCallback(async (page = 1) => {
     try {
       setLoading(true)
       const response = await toursApi.getAll(page, 12)
 
-      // Transform tours data to handle multilingual fields
-      const transformedTours = response.data.map((tour: RawTour) => {
-        return {
-          ...tour,
-          duration: extractDuration(tour.duration),
-        }
-      })
-
-      setTours(transformedTours)
+      setTours(response.data)
       if (response.pagination) {
         setCurrentPage(response.pagination.page)
         setTotalPages(response.pagination.totalPages)
         setTotalTours(response.pagination.total)
       }
-      // Check if we're using fallback data
       if (response.message.includes("desarrollo")) {
         toast.info("Usando datos de desarrollo", {
           description: "El servidor API no está disponible. Se están mostrando datos de prueba.",
@@ -145,10 +123,10 @@ export default function PaquetesPage() {
     loadTours()
   }, [loadTours])
 
-  // Filtrar tours
   const filteredTours = tours.filter((tour) => {
+    const titleText = getTranslatedText(tour.title)
     const matchesSearch =
-      tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      titleText.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tour.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tour.region.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = selectedType === "all" || tour.packageType === selectedType
@@ -158,7 +136,6 @@ export default function PaquetesPage() {
     return matchesSearch && matchesType && matchesDifficulty && matchesCategory
   })
 
-  // Manejar eliminación de tour
   const handleDeleteTour = async () => {
     if (!selectedTour) return
 
@@ -189,12 +166,7 @@ export default function PaquetesPage() {
   }
 
   const openViewDialog = (tour: Tour) => {
-    // Ensure duration is a string before setting
-    const transformedTour = {
-      ...tour,
-      duration: extractDuration(tour.duration as string | MultilingualDuration),
-    }
-    setSelectedTour(transformedTour)
+    setSelectedTour(tour)
     setIsViewDialogOpen(true)
   }
 
@@ -214,6 +186,8 @@ export default function PaquetesPage() {
             Básico
           </Badge>
         )
+      default:
+        return <Badge variant="secondary">{type}</Badge>
     }
   }
 
@@ -281,13 +255,11 @@ export default function PaquetesPage() {
   const premiumCount = tours.filter((t) => t.packageType === "Premium").length
   const basicoCount = tours.filter((t) => t.packageType === "Basico").length
 
-  // Estadísticas de tipos de tour
   const tourTypeStats = [
     { label: "Premium", count: premiumCount, color: "text-purple-600" },
     { label: "Básico", count: basicoCount, color: "text-green-600" },
   ]
 
-  // Estadísticas por categoría
   const categoryStats = [
     { label: "Aventura", count: tours.filter((t) => t.category === "Aventura").length, color: "text-orange-600" },
     { label: "Cultural", count: tours.filter((t) => t.category === "Cultural").length, color: "text-blue-600" },
@@ -327,7 +299,6 @@ export default function PaquetesPage() {
               <p className="text-xs text-muted-foreground">Paquetes disponibles</p>
             </CardContent>
           </Card>
-          {/* Mostrar estadísticas de tipos de tour */}
           {tourTypeStats.map((stat) => (
             <Card key={stat.label}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -344,7 +315,6 @@ export default function PaquetesPage() {
               </CardContent>
             </Card>
           ))}
-          {/* Estadística de categoría más popular */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Más Popular</CardTitle>
@@ -443,7 +413,7 @@ export default function PaquetesPage() {
                   <div className="w-full h-48 relative">
                     <Image
                       src={tour.imageUrl || "/placeholder.svg?height=200&width=400&text=Tour"}
-                      alt={tour.title}
+                      alt={getTranslatedText(tour.title)}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover"
@@ -489,9 +459,9 @@ export default function PaquetesPage() {
                 <CardContent className="p-4">
                   <div className="space-y-2">
                     <div className="flex items-start justify-between">
-                      <h3 className="font-semibold text-lg leading-tight">{tour.title}</h3>
+                      <h3 className="font-semibold text-lg leading-tight">{getTranslatedText(tour.title)}</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{tour.subtitle}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{getTranslatedText(tour.subtitle)}</p>
                     <div className="flex items-center gap-4 text-sm">
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -499,7 +469,7 @@ export default function PaquetesPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{tour.duration}</span>
+                        <span>{getTranslatedText(tour.duration)}</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
@@ -565,15 +535,15 @@ export default function PaquetesPage() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{selectedTour?.title}</DialogTitle>
-            <DialogDescription>{selectedTour?.subtitle}</DialogDescription>
+            <DialogTitle>{selectedTour && getTranslatedText(selectedTour.title)}</DialogTitle>
+            <DialogDescription>{selectedTour && getTranslatedText(selectedTour.subtitle)}</DialogDescription>
           </DialogHeader>
           {selectedTour && (
             <div className="space-y-6">
               <div className="w-full h-64 relative">
                 <Image
                   src={selectedTour.imageUrl || "/placeholder.svg"}
-                  alt={selectedTour.title}
+                  alt={getTranslatedText(selectedTour.title)}
                   fill
                   sizes="(max-width: 768px) 100vw, 700px"
                   className="object-cover rounded-lg"
@@ -592,7 +562,7 @@ export default function PaquetesPage() {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Duración:</span>
-                    <span>{selectedTour.duration}</span>
+                    <span>{getTranslatedText(selectedTour.duration)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -626,7 +596,7 @@ export default function PaquetesPage() {
                   <div className="flex flex-wrap gap-2">
                     {selectedTour.highlights.map((highlight, index) => (
                       <Badge key={index} variant="secondary">
-                        {highlight}
+                        {getTranslatedText(highlight)}
                       </Badge>
                     ))}
                   </div>
@@ -637,7 +607,7 @@ export default function PaquetesPage() {
                   <h4 className="font-semibold mb-2">Incluye</h4>
                   <ul className="list-disc list-inside space-y-1 text-sm">
                     {selectedTour.includes.map((item, index) => (
-                      <li key={index}>{item}</li>
+                      <li key={index}>{getTranslatedText(item)}</li>
                     ))}
                   </ul>
                 </div>
@@ -647,7 +617,7 @@ export default function PaquetesPage() {
                   <h4 className="font-semibold mb-2">No Incluye</h4>
                   <ul className="list-disc list-inside space-y-1 text-sm">
                     {selectedTour.notIncludes.map((item, index) => (
-                      <li key={index}>{item}</li>
+                      <li key={index}>{getTranslatedText(item)}</li>
                     ))}
                   </ul>
                 </div>
@@ -664,7 +634,7 @@ export default function PaquetesPage() {
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Se eliminará permanentemente el paquete{" "}
-              <strong>{selectedTour?.title}</strong> y todos sus datos asociados.
+              <strong>{selectedTour && getTranslatedText(selectedTour.title)}</strong> y todos sus datos asociados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

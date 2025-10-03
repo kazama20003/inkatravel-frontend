@@ -45,17 +45,24 @@ import {
 import { toast } from "sonner"
 import { toursApi } from "@/lib/tours-api"
 import { transportApi } from "@/lib/transport-api"
-import type { CreateTourDto, TransportOption } from "@/types/tour"
+import { TourCategory, type Difficulty, PackageType } from "@/types/tour" // Import PackageType
+import type { CreateTourDto, TransportOption, TranslatedText } from "@/types/tour"
 
 // Schema de validación completo con actividades multilingües
 const tourSchema = z.object({
   title: z.object({
     es: z.string().min(1, "El título en español es requerido"),
     en: z.string().optional(),
+    fr: z.string().optional(),
+    de: z.string().optional(),
+    it: z.string().optional(),
   }),
   subtitle: z.object({
     es: z.string().min(1, "El subtítulo en español es requerido"),
     en: z.string().optional(),
+    fr: z.string().optional(),
+    de: z.string().optional(),
+    it: z.string().optional(),
   }),
   imageUrl: z.string().min(1, "La imagen principal es requerida"),
   imageId: z.string().optional(),
@@ -64,32 +71,32 @@ const tourSchema = z.object({
   duration: z.object({
     es: z.string().min(1, "La duración en español es requerida"),
     en: z.string().optional(),
+    fr: z.string().optional(),
+    de: z.string().optional(),
+    it: z.string().optional(),
   }),
   rating: z.number().min(0).max(5, "El rating debe estar entre 0 y 5"),
   reviews: z.number().min(0, "Las reseñas deben ser 0 o más"),
   location: z.string().min(1, "La ubicación es requerida"),
   region: z.string().min(1, "La región es requerida"),
-  category: z.enum([
-    "Aventura",
-    "Cultural",
-    "Relajación",
-    "Naturaleza",
-    "Trekking",
-    "Panoramico",
-    "Transporte Turistico",
-  ]),
+  // Use TourCategory enum for category validation
+  category: z.nativeEnum(TourCategory),
   difficulty: z.enum(["Facil", "Moderado", "Difícil"]),
-  packageType: z.enum(["Basico", "Premium"]),
+  packageType: z.nativeEnum(PackageType), // Use PackageType enum
   highlights: z
     .array(
       z.object({
         es: z.string().min(1, "El highlight en español es requerido"),
         en: z.string().optional(),
+        fr: z.string().optional(),
+        de: z.string().optional(),
+        it: z.string().optional(),
       }),
     )
     .min(1, "Debe tener al menos un highlight"),
   featured: z.boolean().optional(),
   slug: z.string().min(1, "El slug es requerido"),
+  startTime: z.string().min(1, "La hora de inicio es requerida"),
   // Transportes obligatorios
   transportOptionIds: z.array(z.string()).min(1, "Debe seleccionar al menos un transporte para el paquete"),
   itinerary: z
@@ -99,10 +106,16 @@ const tourSchema = z.object({
         title: z.object({
           es: z.string().min(1, "El título del día es requerido"),
           en: z.string().optional(),
+          fr: z.string().optional(),
+          de: z.string().optional(),
+          it: z.string().optional(),
         }),
         description: z.object({
           es: z.string().min(1, "La descripción del día es requerida"),
           en: z.string().optional(),
+          fr: z.string().optional(),
+          de: z.string().optional(),
+          it: z.string().optional(),
         }),
         // ✅ Actividades ahora multilingües
         activities: z
@@ -110,24 +123,33 @@ const tourSchema = z.object({
             z.object({
               es: z.string().min(1, "La actividad en español es requerida"),
               en: z.string().optional(),
+              fr: z.string().optional(),
+              de: z.string().optional(),
+              it: z.string().optional(),
             }),
           )
           .min(1, "Debe tener al menos una actividad"),
         meals: z.array(z.string()).optional(),
         accommodation: z.string().optional(),
-        imageId: z.string().optional(),
-        imageUrl: z.string().optional(),
+        imageId: z.string().min(1, "El ID de imagen es requerido"),
+        imageUrl: z.string().min(1, "La URL de imagen es requerida"),
         route: z
           .array(
             z.object({
               location: z.object({
                 es: z.string().min(1, "La ubicación es requerida"),
                 en: z.string().optional(),
+                fr: z.string().optional(),
+                de: z.string().optional(),
+                it: z.string().optional(),
               }),
               description: z
                 .object({
                   es: z.string().optional(),
                   en: z.string().optional(),
+                  fr: z.string().optional(),
+                  de: z.string().optional(),
+                  it: z.string().optional(),
                 })
                 .optional(),
               imageId: z.string().optional(),
@@ -138,38 +160,51 @@ const tourSchema = z.object({
       }),
     )
     .min(1, "Debe tener al menos un día de itinerario"),
+  // includes, notIncludes, toBring, and conditions are now optional arrays
   includes: z
     .array(
       z.object({
         es: z.string().min(1, "El item incluido en español es requerido"),
         en: z.string().optional(),
+        fr: z.string().optional(),
+        de: z.string().optional(),
+        it: z.string().optional(),
       }),
     )
-    .min(1, "Debe especificar qué incluye el tour"),
+    .optional(),
   notIncludes: z
     .array(
       z.object({
         es: z.string().min(1, "El item no incluido en español es requerido"),
         en: z.string().optional(),
+        fr: z.string().optional(),
+        de: z.string().optional(),
+        it: z.string().optional(),
       }),
     )
-    .min(1, "Debe especificar qué no incluye el tour"),
+    .optional(),
   toBring: z
     .array(
       z.object({
         es: z.string().min(1, "El item a traer en español es requerido"),
         en: z.string().optional(),
+        fr: z.string().optional(),
+        de: z.string().optional(),
+        it: z.string().optional(),
       }),
     )
-    .min(1, "Debe especificar qué traer"),
+    .optional(),
   conditions: z
     .array(
       z.object({
         es: z.string().min(1, "La condición en español es requerida"),
         en: z.string().optional(),
+        fr: z.string().optional(),
+        de: z.string().optional(),
+        it: z.string().optional(),
       }),
     )
-    .min(1, "Debe especificar las condiciones del tour"),
+    .optional(),
 })
 
 type TourFormData = z.infer<typeof tourSchema>
@@ -183,48 +218,51 @@ export default function NewTourPage() {
   const form = useForm<TourFormData>({
     resolver: zodResolver(tourSchema),
     defaultValues: {
-      title: { es: "", en: "" },
-      subtitle: { es: "", en: "" },
+      title: { es: "", en: "", fr: "", de: "", it: "" }, // updated default values with new languages
+      subtitle: { es: "", en: "", fr: "", de: "", it: "" }, // updated default values with new languages
       imageUrl: "",
       imageId: "",
       price: 0,
       originalPrice: 0,
-      duration: { es: "", en: "" },
+      duration: { es: "", en: "", fr: "", de: "", it: "" }, // updated default values with new languages
       rating: 5,
       reviews: 0,
       location: "",
       region: "",
-      category: "Aventura",
+      // Set default category to the first value of TourCategory enum
+      category: TourCategory.AVENTURA,
       difficulty: "Facil",
-      packageType: "Basico",
-      highlights: [{ es: "", en: "" }],
+      packageType: PackageType.Basico, // Set default package type to Basico
+      highlights: [{ es: "", en: "", fr: "", de: "", it: "" }], // updated default values with new languages
       featured: false,
       slug: "",
+      // Added startTime default value
+      startTime: "09:00",
       transportOptionIds: [],
       itinerary: [
         {
           day: 1,
-          title: { es: "", en: "" },
-          description: { es: "", en: "" },
-          activities: [{ es: "", en: "" }], // ✅ Ahora multilingüe
+          title: { es: "", en: "", fr: "", de: "", it: "" }, // updated with new languages
+          description: { es: "", en: "", fr: "", de: "", it: "" }, // updated with new languages
+          activities: [{ es: "", en: "", fr: "", de: "", it: "" }], // updated with new languages
           meals: [],
           accommodation: "",
           imageId: "",
           imageUrl: "",
           route: [
             {
-              location: { es: "", en: "" },
-              description: { es: "", en: "" },
+              location: { es: "", en: "", fr: "", de: "", it: "" }, // updated with new languages
+              description: { es: "", en: "", fr: "", de: "", it: "" }, // updated with new languages
               imageId: "",
               imageUrl: "",
             },
           ],
         },
       ],
-      includes: [{ es: "", en: "" }],
-      notIncludes: [{ es: "", en: "" }],
-      toBring: [{ es: "", en: "" }],
-      conditions: [{ es: "", en: "" }],
+      includes: [{ es: "", en: "", fr: "", de: "", it: "" }], // updated default values with new languages
+      notIncludes: [{ es: "", en: "", fr: "", de: "", it: "" }], // updated default values with new languages
+      toBring: [{ es: "", en: "", fr: "", de: "", it: "" }], // updated default values with new languages
+      conditions: [{ es: "", en: "", fr: "", de: "", it: "" }], // updated default values with new languages
     },
   })
 
@@ -250,7 +288,17 @@ export default function NewTourPage() {
       try {
         setLoadingTransports(true)
         const response = await transportApi.getAll(1, 100) // Cargar todos los transportes
-        setAvailableTransports(response.data)
+        const convertedTransports: TransportOption[] = response.data.map((t) => ({
+          _id: t._id,
+          type: t.type === "Basico" ? PackageType.Basico : PackageType.Premium,
+          vehicle: t.vehicle,
+          services: t.services,
+          imageUrl: t.imageUrl || "",
+          imageId: t.imageId,
+          createdAt: t.createdAt,
+          updatedAt: t.updatedAt,
+        }))
+        setAvailableTransports(convertedTransports)
       } catch (error) {
         console.error("Error loading transports:", error)
         toast.error("Error al cargar transportes", {
@@ -319,7 +367,6 @@ export default function NewTourPage() {
     name: "conditions",
   })
 
-
   // Watch title changes to auto-generate slug
   const titleEs = form.watch("title.es")
   useEffect(() => {
@@ -334,17 +381,17 @@ export default function NewTourPage() {
     const newDay = itineraryFields.length + 1
     appendItinerary({
       day: newDay,
-      title: { es: "", en: "" },
-      description: { es: "", en: "" },
-      activities: [{ es: "", en: "" }], // ✅ Ahora multilingüe
+      title: { es: "", en: "", fr: "", de: "", it: "" }, // updated with new languages
+      description: { es: "", en: "", fr: "", de: "", it: "" }, // updated with new languages
+      activities: [{ es: "", en: "", fr: "", de: "", it: "" }], // updated with new languages
       meals: [],
       accommodation: "",
       imageId: "",
       imageUrl: "",
       route: [
         {
-          location: { es: "", en: "" },
-          description: { es: "", en: "" },
+          location: { es: "", en: "", fr: "", de: "", it: "" }, // updated with new languages
+          description: { es: "", en: "", fr: "", de: "", it: "" }, // updated with new languages
           imageId: "",
           imageUrl: "",
         },
@@ -355,7 +402,10 @@ export default function NewTourPage() {
   // ✅ Funciones actualizadas para actividades multilingües
   const addActivityToDay = (dayIndex: number) => {
     const currentActivities = form.getValues(`itinerary.${dayIndex}.activities`)
-    form.setValue(`itinerary.${dayIndex}.activities`, [...currentActivities, { es: "", en: "" }])
+    form.setValue(`itinerary.${dayIndex}.activities`, [
+      ...currentActivities,
+      { es: "", en: "", fr: "", de: "", it: "" },
+    ]) // updated with new languages
   }
 
   const removeActivityFromDay = (dayIndex: number, activityIndex: number) => {
@@ -371,8 +421,8 @@ export default function NewTourPage() {
     form.setValue(`itinerary.${dayIndex}.route`, [
       ...currentRoute,
       {
-        location: { es: "", en: "" },
-        description: { es: "", en: "" },
+        location: { es: "", en: "", fr: "", de: "", it: "" }, // updated with new languages
+        description: { es: "", en: "", fr: "", de: "", it: "" }, // updated with new languages
         imageId: "",
         imageUrl: "",
       },
@@ -395,9 +445,61 @@ export default function NewTourPage() {
     try {
       setLoading(true)
 
+      const transformTranslatedText = (text: {
+        es?: string
+        en?: string
+        fr?: string
+        de?: string
+        it?: string
+      }): TranslatedText => ({
+        es: text.es || "",
+        en: text.en || text.es || "",
+        fr: text.fr || text.es || "",
+        de: text.de || text.es || "",
+        it: text.it || text.es || "",
+      })
+
       const tourData: CreateTourDto = {
-        ...data,
+        category: data.category as TourCategory,
+        difficulty: data.difficulty as Difficulty,
+        packageType: data.packageType === PackageType.Basico ? PackageType.Basico : PackageType.Premium,
+        title: transformTranslatedText(data.title),
+        subtitle: transformTranslatedText(data.subtitle),
+        duration: transformTranslatedText(data.duration),
+        imageUrl: data.imageUrl,
+        imageId: data.imageId,
+        price: data.price,
+        originalPrice: data.originalPrice,
+        rating: data.rating,
+        reviews: data.reviews,
+        location: data.location,
+        region: data.region,
+        slug: data.slug,
+        startTime: data.startTime,
+        featured: data.featured,
+        transportOptionIds: data.transportOptionIds,
+        highlights: data.highlights.map(transformTranslatedText),
+        includes: data.includes?.map(transformTranslatedText) || [],
+        notIncludes: data.notIncludes?.map(transformTranslatedText) || [],
+        toBring: data.toBring?.map(transformTranslatedText) || [],
+        conditions: data.conditions?.map(transformTranslatedText) || [],
+        itinerary: data.itinerary.map((day) => ({
+          ...day,
+          title: transformTranslatedText(day.title),
+          description: transformTranslatedText(day.description),
+          activities: day.activities?.map(transformTranslatedText) || [],
+          imageUrl: day.imageUrl || "",
+          imageId: day.imageId || "",
+          // </CHANGE> Convert TranslatedText to string for RouteStop type compatibility
+          route:
+            day.route?.map((stop) => ({
+              ...stop,
+              location: stop.location.es, // Extract Spanish text from TranslatedText
+              description: stop.description?.es || "", // Extract Spanish text or empty string
+            })) || [],
+        })),
       }
+      // </CHANGE>
 
       await toursApi.create(tourData)
 
@@ -495,6 +597,48 @@ export default function NewTourPage() {
                   />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="title.fr"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Título (Francés)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Machu Picchu 2 jours" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="title.de"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Título (Alemán)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Machu Picchu 2 Tage" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="title.it"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Título (Italiano)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Machu Picchu 2 giorni" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -517,6 +661,48 @@ export default function NewTourPage() {
                         <FormLabel>Subtítulo (Inglés)</FormLabel>
                         <FormControl>
                           <Textarea placeholder="Brief tour description..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="subtitle.fr"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subtítulo (Francés)</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Brève description du tour..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="subtitle.de"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subtítulo (Alemán)</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Kurze Tour-Beschreibung..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="subtitle.it"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subtítulo (Italiano)</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Breve descrizione del tour..." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -626,13 +812,12 @@ export default function NewTourPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Aventura">Aventura</SelectItem>
-                            <SelectItem value="Cultural">Cultural</SelectItem>
-                            <SelectItem value="Relajación">Relajación</SelectItem>
-                            <SelectItem value="Naturaleza">Naturaleza</SelectItem>
-                            <SelectItem value="Trekking">Trekking</SelectItem>
-                            <SelectItem value="Panoramico">Panorámico</SelectItem>
-                            <SelectItem value="Transporte Turistico">Transporte Turístico</SelectItem>
+                            {/* Map over TourCategory enum values to create SelectItems */}
+                            {Object.values(TourCategory).map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {category}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -677,8 +862,8 @@ export default function NewTourPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Basico">Básico</SelectItem>
-                            <SelectItem value="Premium">Premium</SelectItem>
+                            <SelectItem value={PackageType.Basico}>Básico</SelectItem>
+                            <SelectItem value={PackageType.Premium}>Premium</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -709,6 +894,48 @@ export default function NewTourPage() {
                         <FormLabel>Duración (Inglés)</FormLabel>
                         <FormControl>
                           <Input placeholder="2 days and 1 night" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="duration.fr"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Duración (Francés)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="2 jours et 1 nuit" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="duration.de"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Duración (Alemán)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="2 Tage und 1 Nacht" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="duration.it"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Duración (Italiano)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="2 giorni e 1 notte" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -795,6 +1022,23 @@ export default function NewTourPage() {
                   />
                 </div>
 
+                {/* Added startTime field */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="startTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Hora de Inicio *</FormLabel>
+                        <FormControl>
+                          <Input type="time" placeholder="09:00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="featured"
@@ -825,7 +1069,7 @@ export default function NewTourPage() {
                 <CardDescription>
                   Selecciona los transportes disponibles para este paquete{" "}
                   {packageType && (
-                    <span className="font-medium">({packageType === "Premium" ? "Premium" : "Básico"})</span>
+                    <span className="font-medium">({packageType === PackageType.Premium ? "Premium" : "Básico"})</span>
                   )}
                 </CardDescription>
               </CardHeader>
@@ -918,16 +1162,51 @@ export default function NewTourPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {highlightFields.map((field, index) => (
-                  <div key={field.id} className="flex gap-4 items-end">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                  <div key={field.id} className="space-y-4">
+                    <div className="flex gap-4 items-end">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                        <FormField
+                          control={form.control}
+                          name={`highlights.${index}.es`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Highlight {index + 1} (Español) *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ej: Machu Picchu" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`highlights.${index}.en`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Highlight {index + 1} (Inglés)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ex: Machu Picchu" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      {highlightFields.length > 1 && (
+                        <Button type="button" variant="outline" size="icon" onClick={() => removeHighlight(index)}>
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
-                        name={`highlights.${index}.es`}
+                        name={`highlights.${index}.fr`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Highlight {index + 1} (Español) *</FormLabel>
+                            <FormLabel>Highlight {index + 1} (Francés)</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ej: Machu Picchu" {...field} />
+                              <Input placeholder="Ex: Machu Picchu" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -935,10 +1214,23 @@ export default function NewTourPage() {
                       />
                       <FormField
                         control={form.control}
-                        name={`highlights.${index}.en`}
+                        name={`highlights.${index}.de`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Highlight {index + 1} (Inglés)</FormLabel>
+                            <FormLabel>Highlight {index + 1} (Alemán)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: Machu Picchu" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`highlights.${index}.it`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Highlight {index + 1} (Italiano)</FormLabel>
                             <FormControl>
                               <Input placeholder="Ex: Machu Picchu" {...field} />
                             </FormControl>
@@ -947,17 +1239,12 @@ export default function NewTourPage() {
                         )}
                       />
                     </div>
-                    {highlightFields.length > 1 && (
-                      <Button type="button" variant="outline" size="icon" onClick={() => removeHighlight(index)}>
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 ))}
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => appendHighlight({ es: "", en: "" })}
+                  onClick={() => appendHighlight({ es: "", en: "", fr: "", de: "", it: "" })} // updated with new languages
                   className="w-full"
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -1020,6 +1307,48 @@ export default function NewTourPage() {
                         />
                       </div>
 
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`itinerary.${dayIndex}.title.fr`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Título del día (Francés)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ex: Arrivée à Cusco" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`itinerary.${dayIndex}.title.de`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Título del día (Alemán)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ex: Ankunft in Cusco" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`itinerary.${dayIndex}.title.it`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Título del día (Italiano)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ex: Arrivo a Cusco" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -1042,6 +1371,48 @@ export default function NewTourPage() {
                               <FormLabel>Descripción (Inglés)</FormLabel>
                               <FormControl>
                                 <Textarea placeholder="Detailed day description..." {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`itinerary.${dayIndex}.description.fr`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descripción (Francés)</FormLabel>
+                              <FormControl>
+                                <Textarea placeholder="Description détaillée de la journée..." {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`itinerary.${dayIndex}.description.de`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descripción (Alemán)</FormLabel>
+                              <FormControl>
+                                <Textarea placeholder="Detaillierte Tagesbeschreibung..." {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`itinerary.${dayIndex}.description.it`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descripción (Italiano)</FormLabel>
+                              <FormControl>
+                                <Textarea placeholder="Descrizione dettagliata della giornata..." {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -1090,6 +1461,47 @@ export default function NewTourPage() {
                                       <FormLabel>Actividad (Inglés)</FormLabel>
                                       <FormControl>
                                         <Input placeholder="Ex: Visit to Sacsayhuamán" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                <FormField
+                                  control={form.control}
+                                  name={`itinerary.${dayIndex}.activities.${activityIndex}.fr`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Actividad (Francés)</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="Ex: Visite de Sacsayhuamán" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name={`itinerary.${dayIndex}.activities.${activityIndex}.de`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Actividad (Alemán)</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="Ex: Besuch von Sacsayhuamán" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name={`itinerary.${dayIndex}.activities.${activityIndex}.it`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Actividad (Italiano)</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="Ex: Visita a Sacsayhuamán" {...field} />
                                       </FormControl>
                                       <FormMessage />
                                     </FormItem>
@@ -1152,6 +1564,47 @@ export default function NewTourPage() {
                                   )}
                                 />
                               </div>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                <FormField
+                                  control={form.control}
+                                  name={`itinerary.${dayIndex}.route.${routeIndex}.location.fr`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Ubicación (Francés)</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="Ex: Place d'Armes" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name={`itinerary.${dayIndex}.route.${routeIndex}.location.de`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Ubicación (Alemán)</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="Ex: Hauptplatz" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name={`itinerary.${dayIndex}.route.${routeIndex}.location.it`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Ubicación (Italiano)</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="Ex: Piazza d'Armi" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                 <FormField
                                   control={form.control}
@@ -1174,6 +1627,47 @@ export default function NewTourPage() {
                                       <FormLabel>Descripción (Inglés)</FormLabel>
                                       <FormControl>
                                         <Textarea placeholder="Point description..." {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                <FormField
+                                  control={form.control}
+                                  name={`itinerary.${dayIndex}.route.${routeIndex}.description.fr`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Descripción (Francés)</FormLabel>
+                                      <FormControl>
+                                        <Textarea placeholder="Description du point..." {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name={`itinerary.${dayIndex}.route.${routeIndex}.description.de`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Descripción (Alemán)</FormLabel>
+                                      <FormControl>
+                                        <Textarea placeholder="Punktbeschreibung..." {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name={`itinerary.${dayIndex}.route.${routeIndex}.description.it`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Descripción (Italiano)</FormLabel>
+                                      <FormControl>
+                                        <Textarea placeholder="Descrizione del punto..." {...field} />
                                       </FormControl>
                                       <FormMessage />
                                     </FormItem>
@@ -1224,16 +1718,51 @@ export default function NewTourPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {includesFields.map((field, index) => (
-                  <div key={field.id} className="flex gap-4 items-end">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                  <div key={field.id} className="space-y-4">
+                    <div className="flex gap-4 items-end">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                        <FormField
+                          control={form.control}
+                          name={`includes.${index}.es`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Incluye {index + 1} (Español) *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ej: Transporte turístico" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`includes.${index}.en`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Incluye {index + 1} (Inglés)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ex: Tourist transport" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      {includesFields.length > 1 && (
+                        <Button type="button" variant="outline" size="icon" onClick={() => removeIncludes(index)}>
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
-                        name={`includes.${index}.es`}
+                        name={`includes.${index}.fr`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Incluye {index + 1} (Español) *</FormLabel>
+                            <FormLabel>Incluye {index + 1} (Francés)</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ej: Transporte turístico" {...field} />
+                              <Input placeholder="Ex: Transport touristique" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1241,29 +1770,37 @@ export default function NewTourPage() {
                       />
                       <FormField
                         control={form.control}
-                        name={`includes.${index}.en`}
+                        name={`includes.${index}.de`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Incluye {index + 1} (Inglés)</FormLabel>
+                            <FormLabel>Incluye {index + 1} (Alemán)</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ex: Tourist transport" {...field} />
+                              <Input placeholder="Ex: Touristentransport" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`includes.${index}.it`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Incluye {index + 1} (Italiano)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: Trasporto turistico" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
-                    {includesFields.length > 1 && (
-                      <Button type="button" variant="outline" size="icon" onClick={() => removeIncludes(index)}>
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 ))}
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => appendIncludes({ es: "", en: "" })}
+                  onClick={() => appendIncludes({ es: "", en: "", fr: "", de: "", it: "" })} // updated with new languages
                   className="w-full"
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -1283,16 +1820,51 @@ export default function NewTourPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {notIncludesFields.map((field, index) => (
-                  <div key={field.id} className="flex gap-4 items-end">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                  <div key={field.id} className="space-y-4">
+                    <div className="flex gap-4 items-end">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                        <FormField
+                          control={form.control}
+                          name={`notIncludes.${index}.es`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>No Incluye {index + 1} (Español) *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ej: Almuerzos" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`notIncludes.${index}.en`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>No Incluye {index + 1} (Inglés)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ex: Lunches" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      {notIncludesFields.length > 1 && (
+                        <Button type="button" variant="outline" size="icon" onClick={() => removeNotIncludes(index)}>
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
-                        name={`notIncludes.${index}.es`}
+                        name={`notIncludes.${index}.fr`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>No Incluye {index + 1} (Español) *</FormLabel>
+                            <FormLabel>No Incluye {index + 1} (Francés)</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ej: Almuerzos" {...field} />
+                              <Input placeholder="Ex: Déjeuners" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1300,29 +1872,37 @@ export default function NewTourPage() {
                       />
                       <FormField
                         control={form.control}
-                        name={`notIncludes.${index}.en`}
+                        name={`notIncludes.${index}.de`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>No Incluye {index + 1} (Inglés)</FormLabel>
+                            <FormLabel>No Incluye {index + 1} (Alemán)</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ex: Lunches" {...field} />
+                              <Input placeholder="Ex: Mittagessen" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`notIncludes.${index}.it`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>No Incluye {index + 1} (Italiano)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: Pranzi" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
-                    {notIncludesFields.length > 1 && (
-                      <Button type="button" variant="outline" size="icon" onClick={() => removeNotIncludes(index)}>
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 ))}
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => appendNotIncludes({ es: "", en: "" })}
+                  onClick={() => appendNotIncludes({ es: "", en: "", fr: "", de: "", it: "" })} // updated with new languages
                   className="w-full"
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -1342,16 +1922,51 @@ export default function NewTourPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {toBringFields.map((field, index) => (
-                  <div key={field.id} className="flex gap-4 items-end">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                  <div key={field.id} className="space-y-4">
+                    <div className="flex gap-4 items-end">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                        <FormField
+                          control={form.control}
+                          name={`toBring.${index}.es`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Traer {index + 1} (Español) *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ej: Ropa abrigadora" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`toBring.${index}.en`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Traer {index + 1} (Inglés)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ex: Warm clothing" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      {toBringFields.length > 1 && (
+                        <Button type="button" variant="outline" size="icon" onClick={() => removeToBring(index)}>
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
-                        name={`toBring.${index}.es`}
+                        name={`toBring.${index}.fr`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Traer {index + 1} (Español) *</FormLabel>
+                            <FormLabel>Traer {index + 1} (Francés)</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ej: Ropa abrigadora" {...field} />
+                              <Input placeholder="Ex: Vêtements chauds" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1359,29 +1974,37 @@ export default function NewTourPage() {
                       />
                       <FormField
                         control={form.control}
-                        name={`toBring.${index}.en`}
+                        name={`toBring.${index}.de`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Traer {index + 1} (Inglés)</FormLabel>
+                            <FormLabel>Traer {index + 1} (Alemán)</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ex: Warm clothing" {...field} />
+                              <Input placeholder="Ex: Warme Kleidung" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`toBring.${index}.it`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Traer {index + 1} (Italiano)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: Abbigliamento caldo" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
-                    {toBringFields.length > 1 && (
-                      <Button type="button" variant="outline" size="icon" onClick={() => removeToBring(index)}>
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 ))}
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => appendToBring({ es: "", en: "" })}
+                  onClick={() => appendToBring({ es: "", en: "", fr: "", de: "", it: "" })} // updated with new languages
                   className="w-full"
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -1401,16 +2024,51 @@ export default function NewTourPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {conditionsFields.map((field, index) => (
-                  <div key={field.id} className="flex gap-4 items-end">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                  <div key={field.id} className="space-y-4">
+                    <div className="flex gap-4 items-end">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                        <FormField
+                          control={form.control}
+                          name={`conditions.${index}.es`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Condición {index + 1} (Español) *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ej: Mínimo 2 personas" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`conditions.${index}.en`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Condición {index + 1} (Inglés)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ex: Minimum 2 people" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      {conditionsFields.length > 1 && (
+                        <Button type="button" variant="outline" size="icon" onClick={() => removeConditions(index)}>
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
-                        name={`conditions.${index}.es`}
+                        name={`conditions.${index}.fr`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Condición {index + 1} (Español) *</FormLabel>
+                            <FormLabel>Condición {index + 1} (Francés)</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ej: Mínimo 2 personas" {...field} />
+                              <Input placeholder="Ex: Minimum 2 personnes" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1418,29 +2076,37 @@ export default function NewTourPage() {
                       />
                       <FormField
                         control={form.control}
-                        name={`conditions.${index}.en`}
+                        name={`conditions.${index}.de`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Condición {index + 1} (Inglés)</FormLabel>
+                            <FormLabel>Condición {index + 1} (Alemán)</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ex: Minimum 2 people" {...field} />
+                              <Input placeholder="Ex: Mindestens 2 Personen" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`conditions.${index}.it`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Condición {index + 1} (Italiano)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: Minimo 2 persone" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
-                    {conditionsFields.length > 1 && (
-                      <Button type="button" variant="outline" size="icon" onClick={() => removeConditions(index)}>
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 ))}
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => appendConditions({ es: "", en: "" })}
+                  onClick={() => appendConditions({ es: "", en: "", fr: "", de: "", it: "" })} // updated with new languages
                   className="w-full"
                 >
                   <Plus className="mr-2 h-4 w-4" />

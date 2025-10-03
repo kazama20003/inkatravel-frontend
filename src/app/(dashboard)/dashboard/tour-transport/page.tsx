@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import {
   Breadcrumb,
@@ -27,13 +28,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { api } from "@/lib/axiosInstance"
-import type { Order, OrderApiResponse } from "@/types/order"
-import { getStatusBadgeVariant, getStatusLabel, getPaymentMethodLabel } from "@/types/order"
-import { ShoppingCart, Calendar, Users, CreditCard, Trash2, Eye, Tag } from "lucide-react"
+import type { TourTransport, TourTransportApiResponse } from "@/types/tour-transport"
+import { getTranslatedText } from "@/types/tour-transport"
+import { MapPin, Clock, Calendar, Star, Pencil, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
-export default function BookingsPage() {
-  const [orders, setOrders] = useState<Order[]>([])
+export default function ToursTransportPage() {
+  const [transports, setTransports] = useState<TourTransport[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -41,22 +42,22 @@ export default function BookingsPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchTransports = async () => {
       try {
         setLoading(true)
-        const response = await api.get<OrderApiResponse>("/orders")
-        const orderData = response.data.data || []
-        setOrders(orderData)
+        const response = await api.get<TourTransportApiResponse>("/tour-transport")
+        const transportData = response.data.data || []
+        setTransports(transportData)
         setError(null)
       } catch (err) {
-        console.error("Error fetching orders:", err)
-        setError("Error al cargar las reservas. Por favor, intenta nuevamente.")
+        console.error("Error fetching tour transports:", err)
+        setError("Error al cargar los transportes. Por favor, intenta nuevamente.")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchOrders()
+    fetchTransports()
   }, [])
 
   const handleDelete = async () => {
@@ -64,28 +65,24 @@ export default function BookingsPage() {
 
     try {
       setDeleting(true)
-      await api.delete(`/orders/${deleteId}`)
-      setOrders((prev) => prev.filter((o) => o._id !== deleteId))
+      await api.delete(`/tour-transport/${deleteId}`)
+      setTransports((prev) => prev.filter((t) => t._id !== deleteId))
       toast.success("Eliminado exitosamente", {
-        description: "La reserva ha sido eliminada.",
+        description: "El tour de transporte ha sido eliminado.",
       })
       setDeleteId(null)
     } catch (err) {
-      console.error("Error deleting order:", err)
+      console.error("Error deleting transport:", err)
       toast.error("Error al eliminar", {
-        description: "No se pudo eliminar la reserva. Intenta nuevamente.",
+        description: "No se pudo eliminar el tour de transporte. Intenta nuevamente.",
       })
     } finally {
       setDeleting(false)
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-PE", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
+  const handleEdit = (id: string) => {
+    router.push(`/dashboard/tour-transport/edit/${id}`)
   }
 
   return (
@@ -101,7 +98,7 @@ export default function BookingsPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Reservas</BreadcrumbPage>
+                <BreadcrumbPage>Tours Transport</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -111,12 +108,12 @@ export default function BookingsPage() {
       <div className="flex flex-1 flex-col gap-6 p-6 md:gap-8 md:p-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Reservas</h1>
-            <p className="text-muted-foreground mt-2">Gestiona todas las reservas de tours y transportes</p>
+            <h1 className="text-3xl font-bold">Tours de Transporte</h1>
+            <p className="text-muted-foreground mt-2">Gestiona los tours de transporte disponibles</p>
           </div>
-          <Button onClick={() => router.push("/dashboard/bookings/new")} size="lg" className="gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Nueva Reserva
+          <Button onClick={() => router.push("/dashboard/tour-transport/new")} size="lg" className="gap-2">
+            <MapPin className="h-5 w-5" />
+            Crear Transporte
           </Button>
         </div>
 
@@ -138,75 +135,79 @@ export default function BookingsPage() {
               </Card>
             ))}
           </div>
-        ) : orders.length === 0 ? (
+        ) : transports.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <ShoppingCart className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium">No hay reservas disponibles</p>
-              <p className="text-sm text-muted-foreground mt-2">Las reservas aparecerán aquí cuando se agreguen</p>
+              <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-lg font-medium">No hay tours de transporte disponibles</p>
+              <p className="text-sm text-muted-foreground mt-2">Los tours aparecerán aquí cuando se agreguen</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {orders.map((order) => (
+            {transports.map((transport) => (
               <Card
-                key={order._id}
+                key={transport._id}
                 className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/20"
               >
-                <CardHeader className="space-y-3 bg-gradient-to-br from-muted/50 to-muted/20">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-xl line-clamp-1">{order.customer.fullName}</CardTitle>
-                    <Badge variant={getStatusBadgeVariant(order.status)}>{getStatusLabel(order.status)}</Badge>
+                {transport.imageUrl && (
+                  <div className="aspect-video relative overflow-hidden bg-gradient-to-br from-muted to-muted/50">
+                    <Image
+                      src={transport.imageUrl || "/placeholder.svg"}
+                      alt={getTranslatedText(transport.title)}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    {transport.isFeatured && (
+                      <Badge className="absolute top-3 right-3 shadow-lg" variant="default">
+                        ⭐ Destacado
+                      </Badge>
+                    )}
+                    {!transport.isActive && (
+                      <Badge className="absolute top-3 left-3 shadow-lg" variant="secondary">
+                        Inactivo
+                      </Badge>
+                    )}
                   </div>
-                  <CardDescription className="line-clamp-1">{order.customer.email}</CardDescription>
+                )}
+
+                <CardHeader className="space-y-3">
+                  <CardTitle className="line-clamp-2 text-xl group-hover:text-primary transition-colors">
+                    {getTranslatedText(transport.title) || "Sin título"}
+                  </CardTitle>
+                  <CardDescription className="line-clamp-3 text-sm leading-relaxed">
+                    {getTranslatedText(transport.description) || "Sin descripción"}
+                  </CardDescription>
                 </CardHeader>
 
-                <CardContent className="space-y-4 pt-6">
+                <CardContent className="space-y-4">
                   <div className="space-y-3">
-                    {order.startDate && (
+                    <div className="flex items-start gap-3 text-sm">
+                      <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <span className="font-medium text-foreground">{transport.origin.name}</span>
+                        <div className="h-px bg-border w-8" />
+                        <span className="font-medium text-foreground">{transport.destination.name}</span>
+                      </div>
+                    </div>
+
+                    {transport.duration && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <Clock className="h-5 w-5 text-primary shrink-0" />
+                        <span className="text-muted-foreground">
+                          <span className="font-medium text-foreground">{transport.duration}</span> de viaje
+                        </span>
+                      </div>
+                    )}
+
+                    {transport.availableDays && transport.availableDays.length > 0 && (
                       <div className="flex items-center gap-3 text-sm">
                         <Calendar className="h-5 w-5 text-primary shrink-0" />
                         <span className="text-muted-foreground">
-                          <span className="font-medium text-foreground">{formatDate(order.startDate)}</span>
-                        </span>
-                      </div>
-                    )}
-
-                    {order.people && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <Users className="h-5 w-5 text-primary shrink-0" />
-                        <span className="text-muted-foreground">
-                          <span className="font-medium text-foreground">{order.people}</span>{" "}
-                          {order.people === 1 ? "persona" : "personas"}
-                        </span>
-                      </div>
-                    )}
-
-                    {order.items.length > 0 && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <ShoppingCart className="h-5 w-5 text-primary shrink-0" />
-                        <span className="text-muted-foreground">
-                          <span className="font-medium text-foreground">{order.items.length}</span>{" "}
-                          {order.items.length === 1 ? "item" : "items"}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-3 text-sm">
-                      <CreditCard className="h-5 w-5 text-primary shrink-0" />
-                      <span className="text-muted-foreground">
-                        <span className="font-medium text-foreground">
-                          {getPaymentMethodLabel(order.paymentMethod)}
-                        </span>
-                      </span>
-                    </div>
-
-                    {order.appliedOffer && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <Tag className="h-5 w-5 text-green-600 shrink-0" />
-                        <span className="text-muted-foreground">
-                          <span className="font-medium text-green-600">{order.appliedOffer.discountPercentage}%</span>{" "}
-                          descuento
+                          <span className="font-medium text-foreground">{transport.availableDays.length}</span> días
+                          disponibles
                         </span>
                       </div>
                     )}
@@ -217,16 +218,19 @@ export default function BookingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-baseline gap-1">
                       <span className="text-lg font-semibold text-primary">S/</span>
-                      <span className="text-2xl font-bold text-primary">{order.totalPrice}</span>
+                      <span className="text-2xl font-bold text-primary">{transport.price}</span>
                       <span className="text-sm text-muted-foreground">Soles</span>
                     </div>
-                  </div>
 
-                  {order.notes && (
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <p className="text-xs text-muted-foreground line-clamp-2">{order.notes}</p>
-                    </div>
-                  )}
+                    {transport.rating && (
+                      <div className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-950/20 px-2.5 py-1 rounded-full">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-semibold text-yellow-700 dark:text-yellow-400">
+                          {transport.rating}
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
                   <Separator />
 
@@ -235,16 +239,16 @@ export default function BookingsPage() {
                       variant="outline"
                       size="sm"
                       className="flex-1 gap-2 bg-transparent"
-                      onClick={() => router.push(`/dashboard/bookings/${order._id}`)}
+                      onClick={() => handleEdit(transport._id)}
                     >
-                      <Eye className="h-4 w-4" />
-                      Ver
+                      <Pencil className="h-4 w-4" />
+                      Editar
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       className="flex-1 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent"
-                      onClick={() => setDeleteId(order._id)}
+                      onClick={() => setDeleteId(transport._id)}
                     >
                       <Trash2 className="h-4 w-4" />
                       Eliminar
@@ -262,7 +266,7 @@ export default function BookingsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. La reserva será eliminada permanentemente.
+              Esta acción no se puede deshacer. El tour de transporte será eliminado permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

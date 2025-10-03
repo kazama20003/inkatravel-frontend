@@ -1,8 +1,8 @@
 "use client"
 
 import type React from "react"
-import AnimatedHeader from "@/components/home/AnimatedHeader"
 import Footer from "@/components/home/Footer"
+import Header from "@/components/home/header"
 
 export default function HomeLayout({
   children,
@@ -11,7 +11,7 @@ export default function HomeLayout({
 }) {
   return (
     <>
-      <AnimatedHeader useCustomScroll={false} />
+      <Header/>
       <main>{children}</main>
       <Footer />
     </>

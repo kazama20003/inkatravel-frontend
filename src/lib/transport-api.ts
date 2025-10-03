@@ -1,39 +1,13 @@
-import { api } from "@/lib/axiosInstance"
-import type { TransportOption, PackageType } from "@/types/tour"
+import { api } from "./axiosInstance"
+import type { TransportOption, TransportResponse } from "@/types/transport"
+import { PackageType } from "@/types/tour"
 
-interface TransportResponse {
-  success: boolean
-  message: string
-  data: TransportOption[]
-  meta: {
-    total: number
-    page: number
-    limit: number
-    totalPages: number
-  }
-}
-
-export interface CreateTransportDto {
-  type: PackageType
-  vehicle: string
-  services: string[]
-  imageUrl?: string
-  imageId?: string
-}
-
-export interface UpdateTransportDto {
-  type?: PackageType
-  vehicle?: string
-  services?: string[]
-  imageUrl?: string
-  imageId?: string
-}
-
-// Datos mock para fallback durante desarrollo
 const mockTransportsData: TransportOption[] = [
   {
     _id: "685abac224654a2b186c0e13",
-    type: "Premium",
+    name: "Toyota Runner",
+    description: "Vehículo cómodo y confiable para tours básicos",
+    type: PackageType.Basico,
     vehicle: "Toyota Runner",
     services: ["Aire Acondicionado", "WiFi", "Asientos Cómodos"],
     imageUrl: "/placeholder.svg?height=200&width=300&text=Toyota+Runner",
@@ -43,7 +17,9 @@ const mockTransportsData: TransportOption[] = [
   },
   {
     _id: "685abc97bf63385f7004c534",
-    type: "Basico",
+    name: "Vans Sprinter",
+    description: "Van premium con todas las comodidades para grupos",
+    type: PackageType.Premium,
     vehicle: "Vans Sprinter",
     services: ["Aire Acondicionado", "WiFi", "Asientos Reclinables"],
     imageUrl: "/placeholder.svg?height=200&width=300&text=Vans+Sprinter",
@@ -53,18 +29,15 @@ const mockTransportsData: TransportOption[] = [
   },
 ]
 
-// API para manejar transportes
 export const transportApi = {
-  // GET /transport - Obtener todos los transportes con paginación
+  // GET /transport - Get all transports with pagination
   getAll: async (page = 1, limit = 10): Promise<TransportResponse> => {
     try {
       const response = await api.get(`/transport?page=${page}&limit=${limit}`)
       return response.data
     } catch (error) {
       console.warn("API endpoint for transports not available, using fallback data:", error)
-      // Fallback data when API is not available
       console.info("Using fallback data for transports")
-      // Mock transports data for development
       const startIndex = (page - 1) * limit
       const endIndex = startIndex + limit
       const paginatedTransports = mockTransportsData.slice(startIndex, endIndex)
@@ -83,24 +56,23 @@ export const transportApi = {
     }
   },
 
-  // GET /transport/:id - Obtener un transporte por ID
+  // GET /transport/:id - Get transport by ID
   getById: async (id: string): Promise<TransportOption> => {
     try {
       const response = await api.get(`/transport/${id}`)
       return response.data.data || response.data
     } catch (error) {
       console.warn(`API endpoint for transport ${id} not available, using fallback data:`, error)
-      // Fallback data when API is not available
       console.info(`Using fallback data for transport ${id}`)
-      // Try to find the transport in mock data first
       const mockTransport = mockTransportsData.find((transport) => transport._id === id)
       if (mockTransport) {
         return mockTransport
       }
-      // Return a generic mock transport with the requested ID
       return {
         _id: id,
-        type: "Basico",
+        name: "Transporte Genérico",
+        description: "Servicio de transporte básico",
+        type: PackageType.Basico,
         vehicle: "Transporte Genérico",
         services: ["Servicio básico"],
         imageUrl: "/placeholder.svg?height=200&width=300&text=Transporte",
@@ -111,16 +83,17 @@ export const transportApi = {
     }
   },
 
-  // POST /transport - Crear un nuevo transporte
-  create: async (data: CreateTransportDto): Promise<TransportOption> => {
+  // POST /transport - Create a new transport
+  create: async (data: Omit<TransportOption, "_id" | "createdAt" | "updatedAt">): Promise<TransportOption> => {
     try {
       const response = await api.post("/transport", data)
       return response.data.data || response.data
     } catch (error) {
       console.warn("API endpoint for creating transport not available, using fallback:", error)
-      // Fallback behavior for development
       const newTransport: TransportOption = {
         _id: `mock-${Date.now()}`,
+        name: data.name,
+        description: data.description,
         type: data.type,
         vehicle: data.vehicle,
         services: data.services,
@@ -134,14 +107,13 @@ export const transportApi = {
     }
   },
 
-  // PATCH /transport/:id - Actualizar un transporte
-  update: async (id: string, data: UpdateTransportDto): Promise<TransportOption> => {
+  // PATCH /transport/:id - Update a transport
+  update: async (id: string, data: Partial<TransportOption>): Promise<TransportOption> => {
     try {
       const response = await api.patch(`/transport/${id}`, data)
       return response.data.data || response.data
     } catch (error) {
       console.warn(`API endpoint for updating transport ${id} not available, using fallback:`, error)
-      // Fallback behavior for development
       const index = mockTransportsData.findIndex((t) => t._id === id)
       if (index !== -1) {
         mockTransportsData[index] = {
@@ -155,14 +127,13 @@ export const transportApi = {
     }
   },
 
-  // DELETE /transport/:id - Eliminar un transporte
+  // DELETE /transport/:id - Delete a transport
   delete: async (id: string): Promise<{ success: boolean; message: string }> => {
     try {
       const response = await api.delete(`/transport/${id}`)
       return response.data
     } catch (error) {
       console.warn(`API endpoint for deleting transport ${id} not available, using fallback:`, error)
-      // Fallback behavior for development
       const index = mockTransportsData.findIndex((t) => t._id === id)
       if (index !== -1) {
         mockTransportsData.splice(index, 1)
@@ -171,4 +142,14 @@ export const transportApi = {
       throw new Error(`Transport with ID ${id} not found`)
     }
   },
+}
+
+export async function getTransportOptions(): Promise<TransportOption[]> {
+  try {
+    const response = await transportApi.getAll(1, 100) // Get first 100 transports
+    return response.data
+  } catch (error) {
+    console.error("Error fetching transport options:", error)
+    return []
+  }
 }

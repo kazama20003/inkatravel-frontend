@@ -47,21 +47,35 @@ interface TourTransport {
   __v: number
 }
 
-interface ApiResponse {
-  data: TourTransport[]
-  total: number
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params
+  console.log("[v0] Raw params object:", params)
+  const resolvedParams = await params
+  console.log("[v0] Resolved params:", resolvedParams)
+  const { slug } = resolvedParams
+  console.log("[v0] Extracted slug:", slug)
+  console.log("[v0] Slug type:", typeof slug)
+  console.log("[v0] Slug length:", slug?.length)
 
   try {
-    // Obtener datos del transporte específico usando el endpoint correcto
-    const response = await api.get<ApiResponse>("/tour-transport")
-    const apiResponseData: ApiResponse = response.data
-    const transport = apiResponseData.data.find((t: TourTransport) => t.slug === slug)
+    console.log("[v0] Generating metadata for slug:", slug)
+    const response = await api.get<{ data: TourTransport[] }>("/tour-transport")
+    const transports = response.data.data
+    console.log("[v0] All transports received:", transports?.length || 0)
+
+    if (transports && transports.length > 0) {
+      console.log(
+        "[v0] Available transport slugs:",
+        transports.map((t) => t.slug),
+      )
+      console.log("[v0] Looking for slug:", slug)
+    }
+
+    // Find the specific transport by slug
+    const transport = transports?.find((t) => t.slug === slug)
+    console.log("[v0] Found transport:", transport ? transport.title : "Not found")
 
     if (!transport) {
+      console.log("[v0] Transport not found for slug:", slug)
       return {
         title: "Transporte no encontrado | Peru Travel",
         description:
@@ -76,14 +90,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       }
     }
 
-    const transportTitle = `${transport.title} - ${transport.originCity} a ${transport.destinationCity} | Peru Travel`
-    const transportDescription = `${transport.description} Viaja de ${transport.originCity} a ${transport.destinationCity}. Precio desde $${transport.price} USD. ${transport.durationInHours ? `Duración: ${transport.durationInHours} horas.` : ""} Reserva online con Peru Travel.`
+    const safeTitle = transport.title || "Transporte"
+    const safeOriginCity = transport.originCity || "Origen"
+    const safeDestinationCity = transport.destinationCity || "Destino"
+    const safeDescription = transport.description || "Servicio de transporte turístico"
+
+    const transportTitle = `${safeTitle} - ${safeOriginCity} a ${safeDestinationCity} | Peru Travel`
+    const transportDescription = `${safeDescription} Viaja de ${safeOriginCity} a ${safeDestinationCity}. Precio desde $${transport.price} USD. ${transport.durationInHours ? `Duración: ${transport.durationInHours} horas.` : ""} Reserva online con Peru Travel.`
 
     const keywords = [
-      transport.title.toLowerCase(),
-      `transporte ${transport.originCity.toLowerCase()}`,
-      `transporte ${transport.destinationCity.toLowerCase()}`,
-      `${transport.originCity.toLowerCase()} ${transport.destinationCity.toLowerCase()}`,
+      safeTitle.toLowerCase(),
+      `transporte ${safeOriginCity.toLowerCase()}`,
+      `transporte ${safeDestinationCity.toLowerCase()}`,
+      `${safeOriginCity.toLowerCase()} ${safeDestinationCity.toLowerCase()}`,
       "peru travel",
       "transporte turistico peru",
       "viajes peru",
@@ -104,7 +123,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: transport.imageUrl || "/placeholder.svg?height=630&width=1200",
             width: 1200,
             height: 630,
-            alt: transport.title,
+            alt: safeTitle,
           },
         ],
         locale: "es_PE",
@@ -134,15 +153,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         "product:brand": "Peru Travel",
         "product:category": "Transport Service",
         "geo.region": "PE",
-        "geo.placename": `${transport.originCity}, ${transport.destinationCity}`,
+        "geo.placename": `${safeOriginCity}, ${safeDestinationCity}`,
         ...(transport.durationInHours && { "travel:duration": `${transport.durationInHours} hours` }),
         "travel:type": "Transport",
-        "travel:origin": transport.originCity,
-        "travel:destination": transport.destinationCity,
+        "travel:origin": safeOriginCity,
+        "travel:destination": safeDestinationCity,
       },
     }
   } catch (error) {
     console.error("Error generating transport metadata:", error)
+    if (error instanceof Error) {
+      console.log("[v0] Metadata error details:", {
+        message: error.message,
+        name: error.name,
+        slug: slug,
+      })
+    }
     return {
       title: "Transporte | Peru Travel",
       description:

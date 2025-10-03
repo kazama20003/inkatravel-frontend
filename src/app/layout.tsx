@@ -1,12 +1,25 @@
 import "./globals.css"
-import { bebasNeue, inter } from "./local-fonts"
+import { Inter, Bebas_Neue } from "next/font/google"
 import type { Metadata } from "next"
 import type React from "react"
 import { Toaster } from "@/components/ui/sonner"
 import { LanguageProvider } from "@/contexts/LanguageContext"
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+})
+
+const bebasNeue = Bebas_Neue({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-bebas-neue",
+  display: "swap",
+})
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://cabanacondecuscobybus.com"),
+  metadataBase: new URL("https://incatravelperu.com"),
   title: {
     default: "Inca Travel Peru - Agencia de Turismo | Tours Cusco, Cabanaconde, Arequipa",
     template: "%s | Inca Travel Peru - Agencia de Turismo",
@@ -42,8 +55,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_PE",
-    alternateLocale: ["en_US", "fr_FR", "de_DE"],
-    url: "https://cabanacondecuscobybus.com",
+    alternateLocale: ["en_US", "fr_FR", "de_DE", "it_IT"],
+    url: "https://incatravelperu.com",
     siteName: "Inca Travel Peru",
     title: "Inca Travel Peru - Agencia de Turismo | Tours Cusco, Cabanaconde, Arequipa",
     description:
@@ -68,8 +81,7 @@ export const metadata: Metadata = {
     site: "@InkaTravelPeru",
     creator: "@InkaTravelPeru",
     title: "Inka Travel Peru - Agencia de Turismo | Tours Cusco, Cabanaconde",
-    description:
-      "Tours a Cusco, Cabanaconde, Arequipa, Machu Picchu. Transporte seguro y paquetes turísticos en Perú.",
+    description: "Tours a Cusco, Cabanaconde, Arequipa, Machu Picchu. Transporte seguro y paquetes turísticos en Perú.",
     images: ["/twitter.png"],
   },
   robots: {
@@ -86,13 +98,14 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://cabanacondecuscobybus.com",
+    canonical: "https://incatravelperu.com",
     languages: {
-      "es-PE": "https://cabanacondecuscobybus.com",
-      es: "https://cabanacondecuscobybus.com/es",
-      en: "https://cabanacondecuscobybus.com/en",
-      fr: "https://cabanacondecuscobybus.com/fr",
-      de: "https://cabanacondecuscobybus.com/de",
+      "es-PE": "https://incatravelperu.com",
+      es: "https://incatravelperu.com/es",
+      en: "https://incatravelperu.com/en",
+      fr: "https://incatravelperu.com/fr",
+      de: "https://incatravelperu.com/de",
+      it: "https://incatravelperu.com/it",
     },
   },
   verification: {
@@ -110,8 +123,7 @@ export const metadata: Metadata = {
     "DC.title": "Inka Travel Peru - Agencia de Turismo en Arequipa",
     "DC.creator": "Inka Travel Peru",
     "DC.subject": "Tours Arequipa, Turismo, Cabanaconde, Cusco, Perú",
-    "DC.description":
-      "Agencia de turismo con sede en Arequipa especializada en tours por Perú.",
+    "DC.description": "Agencia de turismo con sede en Arequipa especializada en tours por Perú.",
     rating: "general",
     distribution: "global",
     "revisit-after": "7 days",
@@ -127,11 +139,12 @@ export default function RootLayout({
     <html lang="es" className={`${bebasNeue.variable} ${inter.variable}`}>
       <head>
         {/* Hreflang para SEO internacional */}
-        <link rel="alternate" hrefLang="es" href="https://cabanacondecuscobybus.com/es" />
-        <link rel="alternate" hrefLang="en" href="https://cabanacondecuscobybus.com/en" />
-        <link rel="alternate" hrefLang="fr" href="https://cabanacondecuscobybus.com/fr" />
-        <link rel="alternate" hrefLang="de" href="https://cabanacondecuscobybus.com/de" />
-        <link rel="alternate" hrefLang="x-default" href="https://cabanacondecuscobybus.com" />
+        <link rel="alternate" hrefLang="es" href="https://incatravelperu.com/es" />
+        <link rel="alternate" hrefLang="en" href="https://incatravelperu.com/en" />
+        <link rel="alternate" hrefLang="fr" href="https://incatravelperu.com/fr" />
+        <link rel="alternate" hrefLang="de" href="https://incatravelperu.com/de" />
+        <link rel="alternate" hrefLang="it" href="https://incatravelperu.com/it" />
+        <link rel="alternate" hrefLang="x-default" href="https://incatravelperu.com" />
 
         {/* Optimización carga de fuentes */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -156,9 +169,9 @@ export default function RootLayout({
               name: "Inca Travel Peru",
               description:
                 "Agencia de turismo líder en Perú especializada en tours a Cusco, Cabanaconde, Arequipa y Machu Picchu",
-              url: "https://cabanacondecuscobybus.com",
-              logo: "https://cabanacondecuscobybus.com/logo.png",
-              image: "https://cabanacondecuscobybus.com/screenshot/image.png",
+              url: "https://incatravelperu.com",
+              logo: "https://incatravelperu.com/logo.png",
+              image: "https://incatravelperu.com/screenshot/image.png",
               telephone: "+51-996-407-040",
               email: "incatravelperu21@gmail.com",
               address: {
@@ -222,7 +235,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} antialiased`}>
         <LanguageProvider>
-          {children}
+          <main className="relative">{children}</main>
           <Toaster
             position="top-right"
             richColors

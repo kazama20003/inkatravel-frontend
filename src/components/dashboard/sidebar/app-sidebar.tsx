@@ -113,29 +113,29 @@ const data = {
         },
       ],
     },
-    // {
-    //   title: "Finanzas",
-    //   url: "/finanzas",
-    //   icon: CreditCard,
-    //   items: [
-    //     {
-    //       title: "Facturación",
-    //       url: "/finanzas/facturacion",
-    //     },
-    //     {
-    //       title: "Pagos",
-    //       url: "/finanzas/pagos",
-    //     },
-    //     {
-    //       title: "Comisiones",
-    //       url: "/finanzas/comisiones",
-    //     },
-    //     {
-    //       title: "Reportes Financieros",
-    //       url: "/finanzas/reportes",
-    //     },
-    //   ],
-    // },
+    {
+      title: "Transportes Turisticos",
+      url: "/dashboard/tour-transport",
+      icon: Car,
+      items: [
+        {
+          title: "Facturación",
+          url: "/finanzas/facturacion",
+        },
+        {
+          title: "Pagos",
+          url: "/finanzas/pagos",
+        },
+        {
+          title: "Comisiones",
+          url: "/finanzas/comisiones",
+        },
+        {
+          title: "Reportes Financieros",
+          url: "/finanzas/reportes",
+        },
+      ],
+    },
   ],
   navSecondary: [
     {

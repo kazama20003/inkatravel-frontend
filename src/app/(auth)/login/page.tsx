@@ -6,8 +6,8 @@ function LoginPageLoading() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="text-center">
-        <div className="w-8 h-8 border-4 border-peru-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-peru-dark body-text">Cargando...</p>
+        <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-700 text-sm">Cargando...</p>
       </div>
     </div>
   )

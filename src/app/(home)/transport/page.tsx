@@ -1,963 +1,586 @@
 "use client"
-import { useState, useEffect, useCallback, useMemo } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
+
+import { useState } from "react"
 import {
-  MapPin,
-  Clock,
-  AlertCircle,
   Search,
+  MapPin,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
   Filter,
   X,
-  ChevronDown,
   Star,
-  Route,
-  Calendar,
-  Timer,
-  ArrowRight,
-  Users,
-  Fuel,
+  Zap,
   Shield,
   Wifi,
-  Coffee,
-  AirVent,
 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { TransportCard } from "@/components/transport-card"
+import { useLanguage } from "@/contexts/LanguageContext"
+import { motion, AnimatePresence } from "framer-motion"
+import useSWR from "swr"
 import { api } from "@/lib/axiosInstance"
-import { useLanguage, type SupportedLanguage } from "@/contexts/LanguageContext"
+import type { TourTransportResponse, PackageType } from "@/types/tour"
+import { Card } from "@/components/ui/card"
+import { Slider } from "@/components/ui/slider"
 
-// Define the TranslatedText interface (for API data)
-interface TranslatedText {
-  es: string
-  en: string
-  fr: string
-  de: string
+const fetcher = async (url: string) => {
+  const response = await api.get(url)
+  return response.data
 }
 
-// Define the ItineraryItem interface
-interface ItineraryItem {
-  day: number
-  title: TranslatedText
-  description: TranslatedText
-  imageUrl?: string
-  imageId?: string
-}
+export default function TransportToursPage() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [showFilters, setShowFilters] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [limit] = useState(9)
 
-// Define the TourTransport interface based on the provided DTO
-interface TourTransport {
-  _id: string
-  title: TranslatedText
-  description: TranslatedText
-  termsAndConditions: TranslatedText
-  originCity: string
-  destinationCity: string
-  intermediateStops?: string[]
-  availableDays: string[] // "Monday", "Tuesday", etc.
-  departureTime?: string
-  arrivalTime?: string
-  durationInHours?: number
-  price: number
-  rating?: number
-  vehicleId?: string
-  routeCode?: string
-  isActive?: boolean
-  slug: string
-  itinerary?: ItineraryItem[]
-  imageUrl?: string
-  imageId?: string
-  createdAt: string
-  updatedAt: string
-  __v: number
-  capacity?: number
-  vehicleType?: string
-  amenities?: string[]
-  distance?: number
-  fuelType?: string
-  hasWifi?: boolean
-  hasAC?: boolean
-  hasRefreshments?: boolean
-  insurance?: boolean
-}
+  const [, setSelectedPackageTypes] = useState<PackageType[]>([])
+  const [priceRange, setPriceRange] = useState([0, 500])
+  const [selectedRating, setSelectedRating] = useState(0)
+  const [selectedDuration, setSelectedDuration] = useState("")
 
-// Helper function to safely get translated string from a TranslatedText object (for API data)
-const getSafeTranslatedString = (
-  translatedText: TranslatedText | undefined,
-  currentLang: SupportedLanguage,
-): string => {
-  if (!translatedText) {
-    return "" // Return empty string if the translatedText object itself is undefined/null
-  }
-  // Fallback to English, then empty string if the specific language translation is missing
-  return translatedText[currentLang] || translatedText.en || ""
-}
+  const { language } = useLanguage()
 
-// Componente para el texto circular giratorio
-const SpinningText = ({ text }: { text?: string }) => {
-  const { t } = useLanguage()
-  const defaultText = `${t.reserve} • ${t.viewDetails} • `
-  return (
-    <div className="relative w-10 h-10 md:w-12 md:h-12 lg:w-16 lg:h-16">
-      <motion.div
-        className="absolute inset-0"
-        animate={{ rotate: 360 }}
-        transition={{
-          duration: 8,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: "linear",
-        }}
-      >
-        <svg className="w-full h-full" viewBox="0 0 100 100">
-          <defs>
-            <path id="circle" d="M 50, 50 m -28, 0 a 28,28 0 1,1 56,0 a 28,28 0 1,1 -56,0" />
-          </defs>
-          <text className="text-[4px] md:text-[5px] lg:text-[6px] fill-white font-medium tracking-wider brand-text">
-            <textPath href="#circle" startOffset="0%">
-              {text || defaultText}
-            </textPath>
-          </text>
-        </svg>
-      </motion.div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-3 h-3 md:w-4 md:h-4 lg:w-6 lg:h-6 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-          <ArrowRight className="w-1.5 h-1.5 md:w-2 md:h-2 lg:w-3 lg:h-3 text-white" />
-        </div>
-      </div>
-    </div>
+  const { data, error, isLoading } = useSWR<TourTransportResponse>(
+    `/tour-transport?lang=${language}&page=${currentPage}&limit=${limit}`,
+    fetcher,
+    {
+      fallbackData: {
+        success: true,
+        message: "Fallback data",
+        data: [],
+        meta: { total: 0, page: 1, limit: 9, totalPages: 0 },
+      },
+    },
   )
-}
 
-// Componente de Loading Skeleton mejorado
-const LoadingSkeleton = () => {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <motion.div
-          key={index}
-          className="relative h-[55vh] md:h-[65vh] lg:h-[75vh] bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse rounded-2xl overflow-hidden"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: index * 0.1 }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-400 via-gray-200 to-transparent rounded-2xl" />
-          <div className="absolute top-4 left-4">
-            <div className="bg-gray-400 h-6 w-20 rounded-full animate-pulse" />
-          </div>
-          <div className="absolute bottom-4 left-4 right-4 space-y-3">
-            <div className="bg-gray-400 h-6 w-3/4 rounded animate-pulse" />
-            <div className="bg-gray-400 h-4 w-1/2 rounded animate-pulse" />
-            <div className="bg-gray-400 h-16 w-full rounded-lg animate-pulse" />
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  )
-}
+  const tours = data?.data || []
 
-// Componente de Error State mejorado
-const ErrorState = ({ onRetry }: { onRetry: () => void }) => {
-  const { t } = useLanguage()
-  return (
-    <motion.div
-      className="flex flex-col items-center justify-center py-16"
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}>
-        <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-      </motion.div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">{t.errorLoadingTours}</h3>
-      <p className="text-gray-600 mb-4 text-center max-w-md">{t.errorLoadingToursMessage}</p>
-      <motion.button
-        onClick={onRetry}
-        className="bg-peru-orange text-white px-6 py-3 rounded-xl hover:bg-peru-orange/90 transition-all duration-300 shadow-lg hover:shadow-xl"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        {t.retry}
-      </motion.button>
-    </motion.div>
-  )
-}
+  const filteredTours = tours.filter((tour) => {
+    const matchesSearch = searchQuery.trim()
+      ? tour.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tour.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tour.origin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tour.destination.name.toLowerCase().includes(searchQuery.toLowerCase())
+      : true
 
-// Componente de Filtros mejorado y mobile-friendly
-const FiltersPanel = ({
-  filters,
-  onFiltersChange,
-  onClearFilters,
-  isOpen,
-  onToggle,
-}: {
-  filters: { originCity?: string; destinationCity?: string; availableDay?: string }
-  onFiltersChange: (
-    newFilters: Partial<{ originCity?: string; destinationCity?: string; availableDay?: string }>,
-  ) => void
-  onClearFilters: () => void
-  isOpen: boolean
-  onToggle: () => void
-}) => {
-  const { t } = useLanguage()
-  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    const matchesPrice = tour.price >= priceRange[0] && tour.price <= priceRange[1]
+    const matchesRating = selectedRating === 0 || tour.rating >= selectedRating
+    const matchesDuration = selectedDuration === "" || tour.duration.includes(selectedDuration)
 
-  const getTranslatedDay = (day: string) => {
-    switch (day) {
-      case "Monday":
-        return t.monday
-      case "Tuesday":
-        return t.tuesday
-      case "Wednesday":
-        return t.wednesday
-      case "Thursday":
-        return t.thursday
-      case "Friday":
-        return t.friday
-      case "Saturday":
-        return t.saturday
-      case "Sunday":
-        return t.sunday
-      default:
-        return day
-    }
+    return matchesSearch && matchesPrice && matchesRating && matchesDuration
+  })
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
   }
 
-  return (
-    <div className="relative">
-      <motion.button
-        onClick={onToggle}
-        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <Filter size={16} />
-        <span className="text-sm font-medium hidden sm:inline">{t.filters}</span>
-        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.3 }}>
-          <ChevronDown size={14} />
-        </motion.div>
-      </motion.button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Mobile Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/20 z-40 md:hidden"
-              onClick={onToggle}
-            />
-
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="absolute top-12 right-0 md:left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 w-80 max-w-[90vw] md:max-w-sm"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <Filter size={16} />
-                  {t.searchFilters}
-                </h3>
-                <button
-                  onClick={onToggle}
-                  className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              <div className="space-y-4 max-h-80 overflow-y-auto">
-                {/* Origin City */}
-                <div>
-                  <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
-                    <MapPin size={14} />
-                    {t.originCity}
-                  </label>
-                  <input
-                    type="text"
-                    value={filters.originCity || ""}
-                    onChange={(e) => onFiltersChange({ originCity: e.target.value || undefined })}
-                    placeholder={`${t.search} ${t.originCity.toLowerCase()}...`}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm transition-all duration-300"
-                  />
-                </div>
-
-                {/* Destination City */}
-                <div>
-                  <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
-                    <MapPin size={14} />
-                    {t.destinationCity}
-                  </label>
-                  <input
-                    type="text"
-                    value={filters.destinationCity || ""}
-                    onChange={(e) => onFiltersChange({ destinationCity: e.target.value || undefined })}
-                    placeholder={`${t.search} ${t.destinationCity.toLowerCase()}...`}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm transition-all duration-300"
-                  />
-                </div>
-
-                {/* Available Day */}
-                <div>
-                  <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
-                    <Calendar size={14} />
-                    {t.availableDays}
-                  </label>
-                  <select
-                    value={filters.availableDay || ""}
-                    onChange={(e) => onFiltersChange({ availableDay: e.target.value || undefined })}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-peru-orange focus:border-transparent text-sm transition-all duration-300"
-                  >
-                    <option value="">{t.allDays}</option>
-                    {daysOfWeek.map((day) => (
-                      <option key={day} value={day}>
-                        {getTranslatedDay(day)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Botones */}
-              <div className="flex gap-2 pt-4 border-t mt-4">
-                <motion.button
-                  onClick={onClearFilters}
-                  className="flex-1 px-4 py-2.5 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-300 text-sm font-medium"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {t.clear}
-                </motion.button>
-                <motion.button
-                  onClick={onToggle}
-                  className="flex-1 px-4 py-2.5 bg-peru-orange text-white rounded-lg hover:bg-peru-orange/90 transition-all duration-300 text-sm font-medium shadow-md"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {t.apply}
-                </motion.button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-export default function TransportPage() {
-  const { t, language } = useLanguage()
-  const [transportTours, setTransportTours] = useState<TourTransport[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filters, setFilters] = useState<{ originCity?: string; destinationCity?: string; availableDay?: string }>({})
-
-  // Function to fetch transport tours
-  const fetchTransportTours = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await api.get(`/tour-transport?lang=${language}`)
-      setTransportTours(response.data.data || [])
-    } catch (err) {
-      console.error("Error fetching transport tours:", err)
-      setError(t.errorLoadingTours)
-    } finally {
-      setLoading(false)
-    }
-  }, [language, t.errorLoadingTours])
-
-  // Fetch tours on component mount and when language changes
-  useEffect(() => {
-    fetchTransportTours()
-  }, [fetchTransportTours])
-
-  // Function to update filters
-  const handleFiltersChange = useCallback((newFilters: Partial<typeof filters>) => {
-    setFilters((prev) => ({
-      ...prev,
-      ...newFilters,
-    }))
-  }, [])
-
-  // Function to clear filters
-  const handleClearFilters = useCallback(() => {
-    setFilters({})
-    setSearchTerm("")
-    setFiltersOpen(false)
-  }, [])
-
-  // Filter tours by search term and filters
-  const filteredTours = useMemo(() => {
-    let currentFilteredTours = transportTours
-
-    // Apply text search
-    if (searchTerm) {
-      currentFilteredTours = currentFilteredTours.filter(
-        (tour) =>
-          getSafeTranslatedString(tour.title, language).toLowerCase().includes(searchTerm.toLowerCase()) ||
-          getSafeTranslatedString(tour.description, language).toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tour.originCity.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tour.destinationCity.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tour.intermediateStops?.some((stop) => stop.toLowerCase().includes(searchTerm.toLowerCase())),
-      )
-    }
-
-    // Apply filters
-    if (filters.originCity) {
-      currentFilteredTours = currentFilteredTours.filter((tour) =>
-        tour.originCity.toLowerCase().includes(filters.originCity!.toLowerCase()),
-      )
-    }
-    if (filters.destinationCity) {
-      currentFilteredTours = currentFilteredTours.filter((tour) =>
-        tour.destinationCity.toLowerCase().includes(filters.destinationCity!.toLowerCase()),
-      )
-    }
-    if (filters.availableDay) {
-      currentFilteredTours = currentFilteredTours.filter((tour) => tour.availableDays.includes(filters.availableDay!))
-    }
-
-    return currentFilteredTours
-  }, [transportTours, searchTerm, filters, language])
-
-  const formatPrice = (price: number) => {
-    return `S/ ${price.toLocaleString("es-PE")}`
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    setSearchQuery("")
   }
 
-  const getTranslatedDay = (day: string) => {
-    switch (day) {
-      case "Monday":
-        return t.monday
-      case "Tuesday":
-        return t.tuesday
-      case "Wednesday":
-        return t.wednesday
-      case "Thursday":
-        return t.thursday
-      case "Friday":
-        return t.friday
-      case "Saturday":
-        return t.saturday
-      case "Sunday":
-        return t.sunday
-      default:
-        return day
-    }
+  const clearFilters = () => {
+    setSelectedPackageTypes([])
+    setPriceRange([0, 500])
+    setSelectedRating(0)
+    setSelectedDuration("")
+    setSearchQuery("")
   }
 
-  // Function to truncate text - made more defensive
-  const truncateText = (text: string | undefined | null, maxLength: number) => {
-    const safeText = String(text || "")
-    if (safeText.length <= maxLength) return safeText
-    return safeText.substring(0, maxLength) + "..."
+  const searchTexts = {
+    es: {
+      title: "Tours de Transporte Premium",
+      subtitle: "Descubre nuestros servicios de transporte de lujo con experiencias únicas",
+      searchPlaceholder: "Buscar destinos, rutas o ciudades...",
+      filterButton: "Filtros",
+      resultsFound: "tours encontrados",
+      noResults: "No se encontraron tours",
+      noResultsDesc: "Intenta con otros términos de búsqueda o ajusta los filtros",
+      loading: "Cargando tours...",
+      error: "Error al cargar los tours",
+      featured: "Destacados",
+      allTours: "Todos los Tours",
+      showAllTours: "Ver todos los tours",
+      page: "Página",
+      of: "de",
+      previous: "Anterior",
+      next: "Siguiente",
+      filters: {
+        title: "Filtros",
+        clearAll: "Limpiar todo",
+        packageType: "Tipo de Paquete",
+        priceRange: "Rango de Precio",
+        rating: "Calificación",
+        duration: "Duración",
+        apply: "Aplicar Filtros",
+      },
+    },
+    en: {
+      title: "Premium Transport Tours",
+      subtitle: "Discover our luxury transport services with unique experiences",
+      searchPlaceholder: "Search destinations, routes or cities...",
+      filterButton: "Filters",
+      resultsFound: "tours found",
+      noResults: "No tours found",
+      noResultsDesc: "Try different search terms or adjust filters",
+      loading: "Loading tours...",
+      error: "Error loading tours",
+      featured: "Featured",
+      allTours: "All Tours",
+      showAllTours: "Show all tours",
+      page: "Page",
+      of: "of",
+      previous: "Previous",
+      next: "Next",
+      filters: {
+        title: "Filters",
+        clearAll: "Clear all",
+        packageType: "Package Type",
+        priceRange: "Price Range",
+        rating: "Rating",
+        duration: "Duration",
+        apply: "Apply Filters",
+      },
+    },
+    fr: {
+      title: "Tours de Transport Premium",
+      subtitle: "Découvrez nos services de transport de luxe avec des expériences uniques",
+      searchPlaceholder: "Rechercher destinations, routes ou villes...",
+      filterButton: "Filtres",
+      resultsFound: "tours trouvés",
+      noResults: "Aucun tour trouvé",
+      noResultsDesc: "Essayez d'autres termes de recherche ou ajustez les filtres",
+      loading: "Chargement des tours...",
+      error: "Erreur lors du chargement des tours",
+      featured: "En vedette",
+      allTours: "Tous les Tours",
+      showAllTours: "Voir tous les tours",
+      page: "Page",
+      of: "de",
+      previous: "Précédent",
+      next: "Suivant",
+      filters: {
+        title: "Filtres",
+        clearAll: "Tout effacer",
+        packageType: "Type de Forfait",
+        priceRange: "Gamme de Prix",
+        rating: "Évaluation",
+        duration: "Durée",
+        apply: "Appliquer les Filtres",
+      },
+    },
+    de: {
+      title: "Premium Transport Touren",
+      subtitle: "Entdecken Sie unsere Luxus-Transportdienste mit einzigartigen Erlebnissen",
+      searchPlaceholder: "Ziele, Routen oder Städte suchen...",
+      filterButton: "Filter",
+      resultsFound: "Touren gefunden",
+      noResults: "Keine Touren gefunden",
+      noResultsDesc: "Versuchen Sie andere Suchbegriffe oder passen Sie die Filter an",
+      loading: "Touren werden geladen...",
+      error: "Fehler beim Laden der Touren",
+      featured: "Empfohlen",
+      allTours: "Alle Touren",
+      showAllTours: "Alle Touren anzeigen",
+      page: "Seite",
+      of: "von",
+      previous: "Zurück",
+      next: "Weiter",
+      filters: {
+        title: "Filter",
+        clearAll: "Alle löschen",
+        packageType: "Pakettyp",
+        priceRange: "Preisbereich",
+        rating: "Bewertung",
+        duration: "Dauer",
+        apply: "Filter anwenden",
+      },
+    },
+    it: {
+      title: "Tour di Trasporto Premium",
+      subtitle: "Scopri i nostri servizi di trasporto di lusso con esperienze uniche",
+      searchPlaceholder: "Cerca destinazioni, rotte o città...",
+      filterButton: "Filtri",
+      resultsFound: "tour trovati",
+      noResults: "Nessun tour trovato",
+      noResultsDesc: "Prova altri termini di ricerca o regola i filtri",
+      loading: "Caricamento tour...",
+      error: "Errore nel caricamento dei tour",
+      featured: "In evidenza",
+      allTours: "Tutti i Tour",
+      showAllTours: "Mostra tutti i tour",
+      page: "Pagina",
+      of: "di",
+      previous: "Precedente",
+      next: "Successivo",
+      filters: {
+        title: "Filtri",
+        clearAll: "Cancella tutto",
+        packageType: "Tipo di Pacchetto",
+        priceRange: "Fascia di Prezzo",
+        rating: "Valutazione",
+        duration: "Durata",
+        apply: "Applica Filtri",
+      },
+    },
   }
 
-  // Function to get amenity icon
-  const getAmenityIcon = (amenity: string) => {
-    switch (amenity.toLowerCase()) {
-      case "wifi":
-        return <Wifi size={12} />
-      case "ac":
-      case "air conditioning":
-        return <AirVent size={12} />
-      case "refreshments":
-      case "snacks":
-        return <Coffee size={12} />
-      case "insurance":
-        return <Shield size={12} />
-      default:
-        return <div className="w-3 h-3 bg-current rounded-full" />
-    }
-  }
+  const currentTexts = searchTexts[language as keyof typeof searchTexts] || searchTexts.es
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
-        <div className="pt-24 md:pt-32 pb-4 md:pb-6 px-4 md:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="mb-6">
-              <div className="h-8 md:h-12 bg-gray-200 rounded w-1/2 md:w-1/3 mb-4 animate-pulse" />
-              <div className="h-4 md:h-6 bg-gray-200 rounded w-3/4 md:w-1/2 animate-pulse" />
-            </div>
-            <div className="mb-8">
-              <div className="flex gap-4 mb-4">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="h-8 md:h-10 bg-gray-200 rounded w-20 md:w-24 animate-pulse" />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="px-4 md:px-8">
-          <div className="max-w-7xl mx-auto">
-            <LoadingSkeleton />
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-700 font-medium">{currentTexts.loading}</p>
         </div>
       </div>
     )
   }
 
-  if (error) {
+  if (error && tours.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-white">
-        <div className="pt-24 md:pt-32 pb-4 md:pb-6 px-4 md:px-8">
-          <div className="max-w-7xl mx-auto">
-            <ErrorState onRetry={() => fetchTransportTours()} />
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+        <div className="text-center">
+          <p className="text-red-600 mb-2 font-medium">{currentTexts.error}</p>
+          <p className="text-gray-600">{error.message}</p>
         </div>
       </div>
     )
   }
 
+  const featuredTours = filteredTours.filter((tour) => tour.isFeatured)
+  const regularTours = filteredTours.filter((tour) => !tour.isFeatured)
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      {/* Header Section */}
-      <div className="pt-24 md:pt-32 pb-6 md:pb-8 px-4 md:px-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Main Title */}
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+      <div className="relative bg-gradient-to-br from-orange-600 via-amber-600 to-yellow-500 pt-16 pb-16 overflow-hidden">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="absolute inset-0 bg-[url('/peru-mountains-landscape-transport-tourism.jpg')] bg-cover bg-center opacity-20"></div>
+
+        {/* Decorative elements */}
+        <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-10 right-20 w-48 h-48 bg-yellow-300/20 rounded-full blur-2xl"></div>
+
+        <div className="container mx-auto px-4 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="mb-8"
+            className="text-center max-w-4xl mx-auto mt-16"
           >
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <Route className="w-6 h-6 md:w-8 md:h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-4xl lg:text-6xl font-light text-gray-900 leading-none brand-text">
-                  {t.transport}
-                </h1>
-                <div className="w-20 md:w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mt-2"></div>
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">{currentTexts.title}</h1>
+            <p className="text-xl text-white/90 mb-12 leading-relaxed">{currentTexts.subtitle}</p>
+
+            <div className="max-w-2xl mx-auto">
+              <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl p-2 shadow-2xl">
+                <div className="flex items-center gap-3">
+                  <Search className="text-gray-400 w-6 h-6 ml-4" />
+                  <Input
+                    type="text"
+                    placeholder={currentTexts.searchPlaceholder}
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="flex-1 border-0 bg-transparent text-lg placeholder:text-gray-500 focus:ring-0 focus:outline-none"
+                  />
+                  <Button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 hover:scale-105"
+                  >
+                    <SlidersHorizontal className="w-5 h-5 mr-2" />
+                    {currentTexts.filterButton}
+                  </Button>
+                </div>
               </div>
             </div>
-            <p className="text-sm md:text-base lg:text-lg text-gray-600 body-text max-w-3xl leading-relaxed">
-              {t.carouselSubtitle}
-            </p>
-          </motion.div>
 
-          {/* Search and Filters */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-6"
-          >
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 items-stretch sm:items-center">
-              {/* Search Bar */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                <input
-                  type="text"
-                  placeholder={t.searchToursPlaceholder}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all duration-300 shadow-sm"
-                />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-2">500+</div>
+                <div className="text-white/80 text-sm">Tours Realizados</div>
               </div>
-
-              {/* Filters */}
-              <FiltersPanel
-                filters={filters}
-                onFiltersChange={handleFiltersChange}
-                onClearFilters={handleClearFilters}
-                isOpen={filtersOpen}
-                onToggle={() => setFiltersOpen(!filtersOpen)}
-              />
-            </div>
-
-            {/* Active Filters Display */}
-            {(filters.originCity || filters.destinationCity || filters.availableDay) && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="flex flex-wrap gap-2 mt-4"
-              >
-                <span className="text-xs md:text-sm text-gray-600 font-medium">{t.activeFilters}</span>
-                {filters.originCity && (
-                  <motion.span
-                    className="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-full flex items-center gap-1 font-medium"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                  >
-                    <MapPin size={10} />
-                    {filters.originCity}
-                    <button
-                      onClick={() => handleFiltersChange({ originCity: undefined })}
-                      className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
-                    >
-                      <X size={10} />
-                    </button>
-                  </motion.span>
-                )}
-                {filters.destinationCity && (
-                  <motion.span
-                    className="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full flex items-center gap-1 font-medium"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                  >
-                    <MapPin size={10} />
-                    {filters.destinationCity}
-                    <button
-                      onClick={() => handleFiltersChange({ destinationCity: undefined })}
-                      className="hover:bg-purple-200 rounded-full p-0.5 transition-colors"
-                    >
-                      <X size={10} />
-                    </button>
-                  </motion.span>
-                )}
-                {filters.availableDay && (
-                  <motion.span
-                    className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1 font-medium"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                  >
-                    <Calendar size={10} />
-                    {getTranslatedDay(filters.availableDay)}
-                    <button
-                      onClick={() => handleFiltersChange({ availableDay: undefined })}
-                      className="hover:bg-green-200 rounded-full p-0.5 transition-colors"
-                    >
-                      <X size={10} />
-                    </button>
-                  </motion.span>
-                )}
-              </motion.div>
-            )}
-          </motion.div>
-
-          {/* Results Count */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-6"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <p className="text-sm md:text-base text-gray-600 font-medium">
-                {filteredTours.length} {filteredTours.length === 1 ? t.toursFoundSingular : t.toursFoundPlural}
-              </p>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-2">4.9</div>
+                <div className="text-white/80 text-sm">Calificación</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-2">24/7</div>
+                <div className="text-white/80 text-sm">Soporte</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white mb-2">15+</div>
+                <div className="text-white/80 text-sm">Destinos</div>
+              </div>
             </div>
           </motion.div>
         </div>
       </div>
 
-      {/* Transport Tours Grid */}
-      <div className="px-4 md:px-8 pb-12">
-        <div className="max-w-7xl mx-auto">
-          {filteredTours.length === 0 ? (
-            <motion.div
-              className="flex flex-col items-center justify-center py-16"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <motion.div
-                animate={{
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Number.POSITIVE_INFINITY,
-                  ease: "easeInOut",
-                }}
-                className="text-6xl md:text-8xl mb-6"
-              >
-                🚌
-              </motion.div>
-              <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">{t.noToursAvailableTitle}</h3>
-              <p className="text-sm md:text-base text-gray-600 text-center max-w-md">{t.noToursAvailableMessage}</p>
-            </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
-            >
-              {filteredTours.map((tour, index) => (
-                <motion.div
-                  key={`transport-tour-${tour._id}`}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="group cursor-pointer"
-                >
-                  <Link href={`/transport/${tour.slug}`}>
-                    <div className="relative h-[55vh] md:h-[65vh] lg:h-[75vh] overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 rounded-2xl bg-white">
-                      {/* Background Image */}
-                      <div className="absolute inset-0">
-                        <Image
-                          src={tour.imageUrl || "/placeholder.svg?height=800&width=600&text=Transport+Image"}
-                          alt={getSafeTranslatedString(tour.title, language)}
-                          fill
-                          className="object-cover transition-transform duration-700 group-hover:scale-110"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        />
-                        {/* Enhanced Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent group-hover:from-black/98 transition-all duration-500" />
-                      </div>
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white border-b border-gray-200 shadow-lg"
+          >
+            <div className="container mx-auto px-4 py-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                  <Filter className="w-6 h-6 text-orange-500" />
+                  {currentTexts.filters.title}
+                </h3>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={clearFilters}
+                    className="text-gray-600 hover:text-gray-900 bg-transparent"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    {currentTexts.filters.clearAll}
+                  </Button>
+                  <Button
+                    onClick={() => setShowFilters(false)}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    {currentTexts.filters.apply}
+                  </Button>
+                </div>
+              </div>
 
-                      {/* Category Badge */}
-                      <div className="absolute top-4 left-4 z-20">
-                        <motion.div
-                          className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center space-x-2 shadow-lg"
-                          whileHover={{ scale: 1.05 }}
-                        >
-                          <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
-                          <span className="text-xs font-semibold text-gray-800 brand-text">{t.transport}</span>
-                        </motion.div>
-                      </div>
-
-                      {/* Rating Badge */}
-                      {tour.rating && (
-                        <div className="absolute top-4 right-4 z-20">
-                          <motion.div
-                            className="bg-yellow-500/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center space-x-1 shadow-lg"
-                            whileHover={{ scale: 1.05 }}
-                          >
-                            <Star size={12} fill="white" className="text-white" />
-                            <span className="text-xs font-bold text-white">{tour.rating}</span>
-                          </motion.div>
-                        </div>
-                      )}
-
-                      {/* Capacity Badge */}
-                      {tour.capacity && (
-                        <div className="absolute top-16 right-4 z-20">
-                          <motion.div
-                            className="bg-blue-500/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center space-x-1 shadow-lg"
-                            whileHover={{ scale: 1.05 }}
-                          >
-                            <Users size={12} className="text-white" />
-                            <span className="text-xs font-bold text-white">{tour.capacity}</span>
-                          </motion.div>
-                        </div>
-                      )}
-
-                      {/* Spinning Text - Appears on hover */}
-                      <div className="absolute top-28 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-2 group-hover:translate-x-0">
-                        <SpinningText />
-                      </div>
-
-                      {/* Content */}
-                      <div className="absolute inset-0 p-4 md:p-6 flex flex-col justify-between z-10">
-                        {/* Top Section - Title and Description */}
-                        <div className="mt-16 md:mt-20">
-                          <motion.h3
-                            className="text-lg md:text-xl lg:text-2xl font-bold text-white brand-text mb-2 leading-tight"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 + 0.3 }}
-                          >
-                            {truncateText(getSafeTranslatedString(tour.title, language), 40)}
-                          </motion.h3>
-                          <motion.p
-                            className="text-white/90 text-sm lg:text-base body-text mb-3 leading-relaxed"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 + 0.4 }}
-                          >
-                            {truncateText(getSafeTranslatedString(tour.description, language), 80)}
-                          </motion.p>
-                        </div>
-
-                        {/* Middle Section - Enhanced Route Info (visible on hover) */}
-                        <div className="flex-1 flex items-center opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0">
-                          <div className="w-full space-y-3">
-                            {/* Route Visualization */}
-                            <div className="bg-black/50 backdrop-blur-sm rounded-xl p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center text-blue-300 text-xs font-medium">
-                                  <MapPin size={12} className="mr-1" />
-                                  {truncateText(tour.originCity, 12)}
-                                </div>
-                                <ArrowRight size={14} className="text-white/60" />
-                                <div className="flex items-center text-purple-300 text-xs font-medium">
-                                  <MapPin size={12} className="mr-1" />
-                                  {truncateText(tour.destinationCity, 12)}
-                                </div>
-                              </div>
-
-                              {/* Distance and Duration */}
-                              <div className="flex justify-between text-xs text-white/70">
-                                {tour.distance && (
-                                  <span className="flex items-center gap-1">
-                                    <Route size={10} />
-                                    {tour.distance} km
-                                  </span>
-                                )}
-                                {tour.durationInHours && (
-                                  <span className="flex items-center gap-1">
-                                    <Timer size={10} />
-                                    {tour.durationInHours}h
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Intermediate Stops */}
-                              {tour.intermediateStops && tour.intermediateStops.length > 0 && (
-                                <div className="border-t border-white/20 pt-2 mt-2">
-                                  <p className="text-white/70 text-xs mb-1">{t.stopsOnRoute}:</p>
-                                  <div className="flex flex-wrap gap-1">
-                                    {tour.intermediateStops.slice(0, 2).map((stop, idx) => (
-                                      <span
-                                        key={idx}
-                                        className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full"
-                                      >
-                                        {truncateText(stop, 12)}
-                                      </span>
-                                    ))}
-                                    {tour.intermediateStops.length > 2 && (
-                                      <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
-                                        +{tour.intermediateStops.length - 2}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Vehicle Info and Amenities */}
-                            <div className="bg-black/50 backdrop-blur-sm rounded-xl p-3">
-                              <div className="flex justify-between items-center mb-2">
-                                {tour.vehicleType && (
-                                  <span className="text-xs text-green-300 font-medium">🚌 {tour.vehicleType}</span>
-                                )}
-                                {tour.fuelType && (
-                                  <span className="flex items-center gap-1 text-xs text-yellow-300">
-                                    <Fuel size={10} />
-                                    {tour.fuelType}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Amenities */}
-                              {tour.amenities && tour.amenities.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                  {tour.amenities.slice(0, 4).map((amenity, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="flex items-center gap-1 text-xs bg-white/20 text-white px-2 py-0.5 rounded-full"
-                                    >
-                                      {getAmenityIcon(amenity)}
-                                      {amenity}
-                                    </span>
-                                  ))}
-                                  {tour.amenities.length > 4 && (
-                                    <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
-                                      +{tour.amenities.length - 4}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Quick Amenities Icons */}
-                              <div className="flex justify-center gap-3 mt-2 pt-2 border-t border-white/20">
-                                {tour.hasWifi && (
-                                  <div className="flex items-center text-blue-300">
-                                    <Wifi size={12} />
-                                  </div>
-                                )}
-                                {tour.hasAC && (
-                                  <div className="flex items-center text-cyan-300">
-                                    <AirVent size={12} />
-                                  </div>
-                                )}
-                                {tour.hasRefreshments && (
-                                  <div className="flex items-center text-orange-300">
-                                    <Coffee size={12} />
-                                  </div>
-                                )}
-                                {tour.insurance && (
-                                  <div className="flex items-center text-green-300">
-                                    <Shield size={12} />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Bottom Section - Enhanced Transport Info */}
-                        <motion.div
-                          className="bg-black/80 backdrop-blur-md p-4 space-y-3 rounded-xl border border-white/10"
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 + 0.5 }}
-                        >
-                          {/* Price and Main Info */}
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xl md:text-2xl font-bold text-white brand-text">
-                                {formatPrice(tour.price)}
-                              </span>
-                              <span className="text-white/70 text-xs body-text">PEN</span>
-                            </div>
-                            {tour.durationInHours && (
-                              <div className="flex items-center text-blue-300 text-sm">
-                                <Timer size={14} className="mr-1" />
-                                <span className="body-text font-medium">{tour.durationInHours}h</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Schedule and Capacity Info */}
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="flex items-center text-white/80">
-                              <Clock size={12} className="mr-1 text-green-400" />
-                              <span className="body-text">{tour.departureTime || t.notAvailable}</span>
-                            </div>
-                            <div className="flex items-center text-white/80">
-                              <Clock size={12} className="mr-1 text-orange-400" />
-                              <span className="body-text">{tour.arrivalTime || t.notAvailable}</span>
-                            </div>
-                          </div>
-
-                          {/* Available Days and Route Code */}
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-1">
-                              <Calendar size={12} className="text-purple-400" />
-                              {tour.availableDays && tour.availableDays.length > 0 ? (
-                                <span className="px-2 py-1 text-xs brand-text rounded-full bg-gradient-to-r from-purple-500/30 to-blue-500/30 text-white border border-white/20">
-                                  {getTranslatedDay(tour.availableDays[0])}
-                                  {tour.availableDays.length > 1 && ` +${tour.availableDays.length - 1}`}
-                                </span>
-                              ) : (
-                                <span className="px-2 py-1 text-xs brand-text rounded-full bg-gray-600/50 text-white">
-                                  {t.allDays}
-                                </span>
-                              )}
-                            </div>
-                            {tour.routeCode && (
-                              <span className="px-2 py-1 text-xs bg-white/20 text-white rounded-full font-mono">
-                                {tour.routeCode}
-                              </span>
-                            )}
-                          </div>
-                        </motion.div>
-                      </div>
-
-                      {/* Enhanced Hover Effect */}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-t from-blue-600/20 via-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"
-                        whileHover={{ scale: 1.02 }}
-                        transition={{ duration: 0.3 }}
-                      />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Price Range Filter */}
+                <Card className="p-6 border-2 border-gray-100 hover:border-orange-200 transition-colors">
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                    {currentTexts.filters.priceRange}
+                  </h4>
+                  <div className="space-y-4">
+                    <Slider
+                      value={priceRange}
+                      onValueChange={setPriceRange}
+                      max={500}
+                      min={0}
+                      step={10}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>S/{priceRange[0]}</span>
+                      <span>S/{priceRange[1]}</span>
                     </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
+                  </div>
+                </Card>
+
+                {/* Rating Filter */}
+                <Card className="p-6 border-2 border-gray-100 hover:border-orange-200 transition-colors">
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                    {currentTexts.filters.rating}
+                  </h4>
+                  <div className="space-y-3">
+                    {[0, 3, 4, 4.5].map((rating) => (
+                      <label key={rating} className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="rating"
+                          value={rating}
+                          checked={selectedRating === rating}
+                          onChange={(e) => setSelectedRating(Number(e.target.value))}
+                          className="text-orange-500 focus:ring-orange-500"
+                        />
+                        <div className="flex items-center gap-1">
+                          {rating === 0 ? (
+                            <span className="text-sm text-gray-600">Todas</span>
+                          ) : (
+                            <>
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                                  }`}
+                                />
+                              ))}
+                              <span className="text-sm text-gray-600 ml-1">y más</span>
+                            </>
+                          )}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Duration Filter */}
+                <Card className="p-6 border-2 border-gray-100 hover:border-orange-200 transition-colors">
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                    {currentTexts.filters.duration}
+                  </h4>
+                  <div className="space-y-3">
+                    {["", "1 día", "2 días", "3+ días"].map((duration) => (
+                      <label key={duration} className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="duration"
+                          value={duration}
+                          checked={selectedDuration === duration}
+                          onChange={(e) => setSelectedDuration(e.target.value)}
+                          className="text-orange-500 focus:ring-orange-500"
+                        />
+                        <span className="text-sm text-gray-700">{duration || "Todas las duraciones"}</span>
+                      </label>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Features */}
+                <Card className="p-6 border-2 border-gray-100 hover:border-orange-200 transition-colors">
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                    Características
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Wifi className="w-4 h-4 text-blue-500" />
+                      <span>WiFi Gratis</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Shield className="w-4 h-4 text-green-500" />
+                      <span>Seguro Incluido</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Zap className="w-4 h-4 text-yellow-500" />
+                      <span>Servicio Premium</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="container mx-auto px-4 py-12">
+        {/* Results Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
+              <MapPin className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {filteredTours.length} {currentTexts.resultsFound}
+              </h2>
+              {searchQuery && (
+                <p className="text-gray-600 mt-1">
+                  Resultados para: <span className="font-semibold">{searchQuery}</span>
+                </p>
+              )}
+            </div>
+          </div>
         </div>
+
+        {filteredTours.length === 0 ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
+            <div className="max-w-md mx-auto">
+              <div className="w-24 h-24 bg-gradient-to-r from-orange-100 to-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Search className="w-12 h-12 text-orange-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">{currentTexts.noResults}</h3>
+              <p className="text-gray-600 mb-6">{currentTexts.noResultsDesc}</p>
+              <Button
+                onClick={() => {
+                  handleSearchChange("")
+                  clearFilters()
+                }}
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                {currentTexts.showAllTours}
+              </Button>
+            </div>
+          </motion.div>
+        ) : (
+          <div className="space-y-12">
+            {/* Featured Tours */}
+            {featuredTours.length > 0 && (
+              <motion.section
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <div className="flex items-center gap-4 mb-8">
+                  <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 text-sm font-semibold">
+                    <Star className="w-4 h-4 mr-2" />
+                    {currentTexts.featured}
+                  </Badge>
+                  <div className="h-px bg-gradient-to-r from-orange-200 to-transparent flex-1"></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {featuredTours.map((tour, index) => {
+                    if (!tour) return null
+                    return <TransportCard key={tour._id} tour={tour} index={index} />
+                  })}
+                </div>
+              </motion.section>
+            )}
+
+            {/* Regular Tours */}
+            {regularTours.length > 0 && (
+              <motion.section
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <div className="flex items-center gap-4 mb-8">
+                  <h3 className="text-2xl font-bold text-gray-900">{currentTexts.allTours}</h3>
+                  <div className="h-px bg-gradient-to-r from-gray-200 to-transparent flex-1"></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {regularTours.map((tour, index) => {
+                    if (!tour) return null
+                    return <TransportCard key={tour._id} tour={tour} index={index + featuredTours.length} />
+                  })}
+                </div>
+              </motion.section>
+            )}
+
+            {/* Pagination */}
+            {!searchQuery && data?.meta && data.meta.totalPages > 1 && (
+              <div className="flex items-center justify-center gap-6 mt-16 pb-8">
+                <Button
+                  variant="outline"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                  className="flex items-center gap-2 px-6 py-3 border-2 border-orange-200 hover:border-orange-300 hover:bg-orange-50 transition-all duration-300"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                  {currentTexts.previous}
+                </Button>
+
+                <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-xl shadow-md border border-gray-200">
+                  <span className="text-gray-700 font-medium">
+                    {currentTexts.page} {currentPage} {currentTexts.of} {data.meta.totalPages}
+                  </span>
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage >= data.meta.totalPages}
+                  className="flex items-center gap-2 px-6 py-3 border-2 border-orange-200 hover:border-orange-300 hover:bg-orange-50 transition-all duration-300"
+                >
+                  {currentTexts.next}
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -228,24 +228,28 @@ export default function CheckoutPage() {
   const updateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1 || !cart) return
 
-    try {
-      // Crear una copia del carrito con la cantidad actualizada
-      const updatedItems = cart.items.map((item) => {
-        if (item._id === itemId) {
-          const newTotal = newQuantity * item.pricePerPerson
-          return {
-            ...item,
-            people: newQuantity,
-            total: newTotal,
-          }
+    const updatedItems = cart.items.map((item) => {
+      if (item._id === itemId) {
+        const newTotal = newQuantity * item.pricePerPerson
+        return {
+          ...item,
+          people: newQuantity,
+          total: newTotal,
         }
-        return item
-      })
+      }
+      return item
+    })
 
-      // Recalcular el precio total
-      const newTotalPrice = updatedItems.reduce((sum, item) => sum + item.total, 0)
+    const newTotalPrice = updatedItems.reduce((sum, item) => sum + item.total, 0)
 
-      // Preparar el payload según el DTO del backend
+    // Update local state immediately
+    setCart({
+      ...cart,
+      items: updatedItems,
+      totalPrice: newTotalPrice,
+    })
+
+    try {
       const updatePayload: UpdateCartDto = {
         items: updatedItems.map(cartItemToDto),
         totalPrice: newTotalPrice,
@@ -253,16 +257,12 @@ export default function CheckoutPage() {
 
       console.log("Update quantity payload:", updatePayload)
 
-      const response = await api.patch("/cart", updatePayload)
-
-      if (response.data) {
-        // Recargar el carrito completo después de la actualización
-        await loadCart()
-        toast.success("Cantidad actualizada")
-      }
+      await api.patch("/cart", updatePayload)
+      toast.success("Cantidad actualizada")
     } catch (err) {
       console.error("Error updating quantity:", err)
       toast.error("Error al actualizar la cantidad")
+      await loadCart()
     }
   }
 
@@ -270,31 +270,39 @@ export default function CheckoutPage() {
   const removeItem = async (itemId: string) => {
     if (!cart) return
 
+    const updatedItems = cart.items.filter((item) => item._id !== itemId)
+    const newTotalPrice = updatedItems.reduce((sum, item) => sum + item.total, 0)
+
+    // Update local state immediately
+    setCart({
+      ...cart,
+      items: updatedItems,
+      totalPrice: newTotalPrice,
+    })
+
     try {
-      // Crear una copia del carrito sin el item a eliminar
-      const updatedItems = cart.items.filter((item) => item._id !== itemId)
-
-      // Recalcular el precio total
-      const newTotalPrice = updatedItems.reduce((sum, item) => sum + item.total, 0)
-
-      // Preparar el payload según el DTO del backend
-      const updatePayload: UpdateCartDto = {
-        items: updatedItems.map(cartItemToDto),
-        totalPrice: newTotalPrice,
-      }
-
-      console.log("Remove item payload:", updatePayload)
-
-      const response = await api.patch("/cart", updatePayload)
-
-      if (response.data) {
-        // Recargar el carrito completo después de eliminar
-        await loadCart()
-        toast.success("Tour eliminado del carrito")
-      }
+      console.log("Removing cart item with _id:", itemId)
+      await api.delete(`/cart/items/${itemId}`)
+      toast.success("Tour eliminado del carrito")
     } catch (err) {
       console.error("Error removing item:", err)
       toast.error("Error al eliminar el tour")
+      await loadCart()
+    }
+  }
+
+  const clearCart = async () => {
+    try {
+      console.log("Clearing entire cart...")
+      const response = await api.delete("/cart")
+
+      if (response.data) {
+        await loadCart()
+        toast.success("Carrito vaciado")
+      }
+    } catch (err) {
+      console.error("Error clearing cart:", err)
+      toast.error("Error al vaciar el carrito")
     }
   }
 
@@ -302,39 +310,36 @@ export default function CheckoutPage() {
   const updateDate = async (itemId: string, newDate: string) => {
     if (!cart) return
 
-    try {
-      // Crear una copia del carrito con la fecha actualizada
-      const updatedItems = cart.items.map((item) => {
-        if (item._id === itemId) {
-          return {
-            ...item,
-            startDate: `${newDate}T00:00:00.000Z`,
-          }
+    const updatedItems = cart.items.map((item) => {
+      if (item._id === itemId) {
+        return {
+          ...item,
+          startDate: `${newDate}T00:00:00.000Z`,
         }
-        return item
-      })
+      }
+      return item
+    })
 
-      // El precio total no cambia al actualizar la fecha
-      const newTotalPrice = cart.totalPrice
+    // Update local state immediately
+    setCart({
+      ...cart,
+      items: updatedItems,
+    })
 
-      // Preparar el payload según el DTO del backend
+    try {
       const updatePayload: UpdateCartDto = {
         items: updatedItems.map(cartItemToDto),
-        totalPrice: newTotalPrice,
+        totalPrice: cart.totalPrice,
       }
 
       console.log("Update date payload:", updatePayload)
 
-      const response = await api.patch("/cart", updatePayload)
-
-      if (response.data) {
-        // Recargar el carrito completo después de la actualización
-        await loadCart()
-        toast.success("Fecha actualizada")
-      }
+      await api.patch("/cart", updatePayload)
+      toast.success("Fecha actualizada")
     } catch (err) {
       console.error("Error updating date:", err)
       toast.error("Error al actualizar la fecha")
+      await loadCart()
     }
   }
 
@@ -403,7 +408,7 @@ export default function CheckoutPage() {
       setShowPaymentModal(true)
     } catch (err: unknown) {
       console.error("Error generating payment form token:", err)
-      let errorMessage = t.errorProcessingPayment || "Error processing payment. Please try again."
+      let errorMessage = t("errorProcessingPayment") || "Error processing payment. Please try again."
 
       if (isAxiosError(err)) {
         if (err.response?.data && typeof err.response.data === "object" && "message" in err.response.data) {
@@ -608,42 +613,54 @@ export default function CheckoutPage() {
           transition={{ delay: 0.1 }}
           className="mb-12"
         >
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
-            <div className="flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-4 sm:p-6 md:p-8">
+            <div className="flex items-center justify-between max-w-3xl mx-auto">
               {[
                 { step: 1, title: "Carrito", icon: ShoppingCart },
                 { step: 2, title: "Datos", icon: User },
                 { step: 3, title: "Pago", icon: CreditCard },
                 { step: 4, title: "Confirmar", icon: CheckCircle },
               ].map((item, index) => (
-                <div key={`progress-step-${item.step}`} className="flex items-center">
-                  <div className="flex flex-col items-center">
+                <div key={`progress-step-${item.step}`} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center flex-1">
+                    {/* Icon Circle */}
                     <div
-                      className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-sm sm:text-base font-bold transition-all duration-300 ${
+                      className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-sm sm:text-base font-bold transition-all duration-300 ${
                         item.step <= currentStep
                           ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg scale-110"
                           : "bg-gray-100 text-gray-400"
                       }`}
                     >
                       {item.step < currentStep ? (
-                        <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                       ) : (
-                        <item.icon className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <item.icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                       )}
                     </div>
+                    {/* Label - Hidden on very small screens, visible on sm+ */}
                     <span
-                      className={`mt-2 text-xs sm:text-sm font-medium ${
+                      className={`mt-2 text-[10px] sm:text-xs md:text-sm font-medium text-center hidden xs:block ${
                         item.step <= currentStep ? "text-purple-600" : "text-gray-500"
                       }`}
                     >
                       {item.title}
                     </span>
+                    {/* Mobile-only step number */}
+                    <span
+                      className={`mt-1 text-[10px] font-bold xs:hidden ${
+                        item.step <= currentStep ? "text-purple-600" : "text-gray-400"
+                      }`}
+                    >
+                      {item.step}
+                    </span>
                   </div>
+                  {/* Connecting Line */}
                   {index < 3 && (
                     <div
-                      className={`w-12 sm:w-16 h-1 mx-4 rounded-full transition-all duration-300 ${
+                      className={`h-1 flex-1 mx-1 sm:mx-2 md:mx-4 rounded-full transition-all duration-300 ${
                         item.step < currentStep ? "bg-gradient-to-r from-purple-500 to-blue-500" : "bg-gray-200"
                       }`}
+                      style={{ maxWidth: "80px" }}
                     />
                   )}
                 </div>
@@ -942,7 +959,7 @@ export default function CheckoutPage() {
                               : "border-gray-200 hover:border-gray-300 hover:shadow-md"
                           }`}
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center">
                               <div
                                 className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center ${
@@ -953,16 +970,63 @@ export default function CheckoutPage() {
                               </div>
                               <div>
                                 <p className="font-bold text-gray-900 text-lg">💳 Tarjeta de Crédito/Débito</p>
-                                <p className="text-sm text-gray-600">Visa, Mastercard, American Express</p>
-                                <div className="flex items-center mt-2 space-x-2">
-                                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">VISA</span>
-                                  <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">MASTERCARD</span>
-                                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">AMEX</span>
-                                </div>
+                                <p className="text-sm text-gray-600">Aceptamos todas las tarjetas principales</p>
                               </div>
                             </div>
                             <div className="text-teal-600">
                               <CheckCircle className="w-6 h-6" />
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="border-t border-gray-200 pt-4">
+                              <p className="text-xs font-semibold text-gray-700 mb-3">Tarjetas Aceptadas:</p>
+
+                              {/* Main International Cards */}
+                              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
+                                <div className="bg-white border-2 border-blue-200 rounded-lg p-2 flex items-center justify-center hover:shadow-md transition-shadow">
+                                  <span className="text-xs font-bold text-blue-700">VISA</span>
+                                </div>
+                                <div className="bg-white border-2 border-red-200 rounded-lg p-2 flex items-center justify-center hover:shadow-md transition-shadow">
+                                  <span className="text-xs font-bold text-red-700">MASTERCARD</span>
+                                </div>
+                                <div className="bg-white border-2 border-blue-200 rounded-lg p-2 flex items-center justify-center hover:shadow-md transition-shadow">
+                                  <span className="text-xs font-bold text-blue-800">AMEX</span>
+                                </div>
+                                <div className="bg-white border-2 border-orange-200 rounded-lg p-2 flex items-center justify-center hover:shadow-md transition-shadow">
+                                  <span className="text-xs font-bold text-orange-700">DINERS</span>
+                                </div>
+                                <div className="bg-white border-2 border-purple-200 rounded-lg p-2 flex items-center justify-center hover:shadow-md transition-shadow">
+                                  <span className="text-xs font-bold text-purple-700">DISCOVER</span>
+                                </div>
+                                <div className="bg-white border-2 border-green-200 rounded-lg p-2 flex items-center justify-center hover:shadow-md transition-shadow">
+                                  <span className="text-xs font-bold text-green-700">JCB</span>
+                                </div>
+                              </div>
+
+                              {/* Additional International Cards */}
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <div className="bg-white border-2 border-red-200 rounded-lg p-2 flex items-center justify-center hover:shadow-md transition-shadow">
+                                  <span className="text-xs font-bold text-red-600">UNIONPAY</span>
+                                </div>
+                                <div className="bg-white border-2 border-indigo-200 rounded-lg p-2 flex items-center justify-center hover:shadow-md transition-shadow">
+                                  <span className="text-xs font-bold text-indigo-700">MAESTRO</span>
+                                </div>
+                                <div className="bg-white border-2 border-teal-200 rounded-lg p-2 flex items-center justify-center hover:shadow-md transition-shadow">
+                                  <span className="text-xs font-bold text-teal-700">VISA ELECTRON</span>
+                                </div>
+                                <div className="bg-white border-2 border-pink-200 rounded-lg p-2 flex items-center justify-center hover:shadow-md transition-shadow">
+                                  <span className="text-xs font-bold text-pink-700">CARNET</span>
+                                </div>
+                              </div>
+
+                              {/* Info Text */}
+                              <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-teal-50 rounded-lg border border-blue-200">
+                                <p className="text-xs text-gray-700 flex items-center">
+                                  <CheckCircle className="w-4 h-4 mr-2 text-teal-600" />
+                                  <span>Aceptamos tarjetas de crédito y débito de todo el mundo</span>
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1128,6 +1192,18 @@ export default function CheckoutPage() {
                     <p className="text-purple-600 font-semibold mt-2">*Solo para demostración</p>
                   </div>
                 </div>
+
+                {/* Clear Cart Button */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <Button
+                    variant="destructive"
+                    onClick={clearCart}
+                    size="lg"
+                    className="w-full bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    Vaciar Carrito
+                  </Button>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -1144,7 +1220,10 @@ export default function CheckoutPage() {
             className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
             onClick={() => setShowPaymentModal(false)}
           >
-            <div
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
               className="relative w-full max-w-lg h-full max-h-[95vh] bg-white rounded-2xl shadow-2xl p-6 flex flex-col overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
@@ -1153,7 +1232,7 @@ export default function CheckoutPage() {
                 onClick={() => setShowPaymentModal(false)}
                 className="absolute top-4 right-4 z-10 bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-full transition-colors duration-200"
               >
-                <X size={20} />
+                <X className="w-5 h-5" />
               </button>
 
               {/* Header */}
@@ -1205,7 +1284,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

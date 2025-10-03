@@ -1,8 +1,11 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
+import { useLanguage } from "@/contexts/LanguageContext"
 import {
   Sun,
   Cloud,
@@ -20,17 +23,351 @@ import {
   TrendingUp,
 } from "lucide-react"
 
-// Datos de las estaciones y regiones
-const seasonalData = {
-  "Temporada Seca": {
-    months: "Mayo - Septiembre",
-    description: "La mejor época para visitar la mayoría del Perú",
+const translations = {
+  es: {
+    // Hero Section
+    heroTitle: "Cuándo Viajar",
+    heroSubtitle: "al Perú",
+    heroDescription:
+      "Descubre el momento perfecto para cada destino y vive la experiencia de tu vida en el país de los incas",
+    planYourTrip: "PLANIFICA TU VIAJE",
+
+    // Stats
+    stats: {
+      days: "Días de aventura",
+      regions: "Regiones climáticas",
+      months: "Meses únicos",
+      destinations: "Destinos increíbles",
+    },
+
+    // Navigation
+    exploreByCategory: "Explora por categoría",
+    choosePlanningMethod: "Elige cómo quieres planificar tu viaje perfecto",
+    bySeasons: "Por Estaciones",
+    monthByMonth: "Mes a Mes",
+    byDestinations: "Por Destinos",
+
+    // Seasons
+    drySeasonTitle: "Temporada Seca",
+    drySeasonMonths: "Mayo - Septiembre",
+    drySeasonDescription: "La mejor época para visitar la mayoría del Perú",
+    rainySeasonTitle: "Temporada de Lluvias",
+    rainySeasonMonths: "Octubre - Abril",
+    rainySeasonDescription: "Paisajes verdes y menos turistas",
+
+    // Regions
+    coast: "Costa",
+    sierra: "Sierra",
+    jungle: "Selva",
+    weather: "Clima",
+    temperature: "Temperatura",
+    recommendedActivities: "Actividades recomendadas",
+    whatToBring: "Qué llevar",
+
+    // Monthly
+    monthlyClimateTitle: "Clima Mes a Mes",
+    monthlyDescription:
+      "Información detallada del clima en cada región del Perú durante todo el año para planificar tu viaje perfecto.",
+    popularity: "Popularidad",
+    tourismLevel: "Nivel Turístico",
+    advantages: "Ventajas",
+    consider: "Considerar",
+
+    // Tourism levels
+    veryHigh: "Muy alta",
+    high: "Alta",
+    medium: "Media",
+    low: "Baja",
+
+    // Destinations
+    bestTimeByDestination: "Mejor Época por Destino",
+    destinationDescription:
+      "Cada destino del Perú tiene su época ideal. Descubre cuándo visitar cada lugar para vivir la mejor experiencia.",
+    bestMonthsToVisit: "Mejores meses para visitar",
+    monthsToAvoid: "Meses a evitar",
+    expertTips: "Consejos de expertos",
+
+    // Why Choose Us
+    whyChooseUs: "¿Por qué planificar con nosotros?",
+    whyDescription:
+      "Nuestra experiencia y conocimiento local te garantizan el viaje perfecto en cualquier época del año",
+
+    // Features
+    localExperts: "Expertos Locales",
+    localExpertsDesc: "Guías certificados con más de 10 años de experiencia en cada región del Perú",
+    perfectPlanning: "Planificación Perfecta",
+    perfectPlanningDesc: "Te ayudamos a elegir las mejores dates según tus intereses y preferencias",
+    guaranteedWeather: "Clima Garantizado",
+    guaranteedWeatherDesc: "Monitoreamos las condiciones climáticas para asegurar tu mejor experiencia",
+    optimizedRoutes: "Rutas Optimizadas",
+    optimizedRoutesDesc: "Itinerarios diseñados para aprovechar al máximo cada destino en su mejor época",
+    smallGroups: "Grupos Pequeños",
+    smallGroupsDesc: "Experiencias más personales con grupos reducidos para mayor comodidad",
+    uniqueMoments: "Momentos Únicos",
+    uniqueMomentsDesc: "Captura los mejores momentos con condiciones climáticas y de luz ideales",
+
+    // CTA
+    ctaTitle: "Tu aventura perfecta",
+    ctaSubtitle: "te está esperando",
+    ctaDescription:
+      "Ahora que conoces cuándo viajar, es momento de convertir tus sueños en realidad. Nuestros expertos están listos para diseñar tu experiencia única.",
+    bookNow: "RESERVAR AHORA",
+    freeConsultation: "CONSULTA GRATUITA",
+
+    // Months
+    months: {
+      january: "Enero",
+      february: "Febrero",
+      march: "Marzo",
+      april: "Abril",
+      may: "Mayo",
+      june: "Junio",
+      july: "Julio",
+      august: "Agosto",
+      september: "Septiembre",
+      october: "Octubre",
+      november: "Noviembre",
+      december: "Diciembre",
+    },
+
+    // Seasons short
+    dry: "Seca",
+    rainy: "Lluvias",
+    transition: "Transición",
+  },
+  en: {
+    // Hero Section
+    heroTitle: "When to Travel",
+    heroSubtitle: "to Peru",
+    heroDescription:
+      "Discover the perfect time for each destination and live the experience of your life in the land of the Incas",
+    planYourTrip: "PLAN YOUR TRIP",
+
+    // Stats
+    stats: {
+      days: "Days of adventure",
+      regions: "Climate regions",
+      months: "Unique months",
+      destinations: "Incredible destinations",
+    },
+
+    // Navigation
+    exploreByCategory: "Explore by category",
+    choosePlanningMethod: "Choose how you want to plan your perfect trip",
+    bySeasons: "By Seasons",
+    monthByMonth: "Month by Month",
+    byDestinations: "By Destinations",
+
+    // Seasons
+    drySeasonTitle: "Dry Season",
+    drySeasonMonths: "May - September",
+    drySeasonDescription: "The best time to visit most of Peru",
+    rainySeasonTitle: "Rainy Season",
+    rainySeasonMonths: "October - April",
+    rainySeasonDescription: "Green landscapes and fewer tourists",
+
+    // Regions
+    coast: "Coast",
+    sierra: "Highlands",
+    jungle: "Jungle",
+    weather: "Weather",
+    temperature: "Temperature",
+    recommendedActivities: "Recommended activities",
+    whatToBring: "What to bring",
+
+    // Monthly
+    monthlyClimateTitle: "Month by Month Climate",
+    monthlyDescription:
+      "Detailed weather information for each region of Peru throughout the year to plan your perfect trip.",
+    popularity: "Popularity",
+    tourismLevel: "Tourism Level",
+    advantages: "Advantages",
+    consider: "Consider",
+
+    // Tourism levels
+    veryHigh: "Very high",
+    high: "High",
+    medium: "Medium",
+    low: "Low",
+
+    // Destinations
+    bestTimeByDestination: "Best Time by Destination",
+    destinationDescription:
+      "Each destination in Peru has its ideal time. Discover when to visit each place for the best experience.",
+    bestMonthsToVisit: "Best months to visit",
+    monthsToAvoid: "Months to avoid",
+    expertTips: "Expert tips",
+
+    // Why Choose Us
+    whyChooseUs: "Why plan with us?",
+    whyDescription: "Our experience and local knowledge guarantee you the perfect trip at any time of year",
+
+    // Features
+    localExperts: "Local Experts",
+    localExpertsDesc: "Certified guides with over 10 years of experience in each region of Peru",
+    perfectPlanning: "Perfect Planning",
+    perfectPlanningDesc: "We help you choose the best dates according to your interests and preferences",
+    guaranteedWeather: "Guaranteed Weather",
+    guaranteedWeatherDesc: "We monitor weather conditions to ensure your best experience",
+    optimizedRoutes: "Optimized Routes",
+    optimizedRoutesDesc: "Itineraries designed to make the most of each destination in its best season",
+    smallGroups: "Small Groups",
+    smallGroupsDesc: "More personal experiences with small groups for greater comfort",
+    uniqueMoments: "Unique Moments",
+    uniqueMomentsDesc: "Capture the best moments with ideal weather and lighting conditions",
+
+    // CTA
+    ctaTitle: "Your perfect adventure",
+    ctaSubtitle: "is waiting for you",
+    ctaDescription:
+      "Now that you know when to travel, it's time to turn your dreams into reality. Our experts are ready to design your unique experience.",
+    bookNow: "BOOK NOW",
+    freeConsultation: "FREE CONSULTATION",
+
+    // Months
+    months: {
+      january: "January",
+      february: "February",
+      march: "March",
+      april: "April",
+      may: "May",
+      june: "June",
+      july: "July",
+      august: "August",
+      september: "September",
+      october: "October",
+      november: "November",
+      december: "December",
+    },
+
+    // Seasons short
+    dry: "Dry",
+    rainy: "Rainy",
+    transition: "Transition",
+  },
+  fr: {
+    // Hero Section
+    heroTitle: "Quand Voyager",
+    heroSubtitle: "au Pérou",
+    heroDescription:
+      "Découvrez le moment parfait pour chaque destination et vivez l'expérience de votre vie au pays des Incas",
+    planYourTrip: "PLANIFIEZ VOTRE VOYAGE",
+
+    // Stats
+    stats: {
+      days: "Jours d'aventure",
+      regions: "Régions climatiques",
+      months: "Mois uniques",
+      destinations: "Destinations incroyables",
+    },
+
+    // Navigation
+    exploreByCategory: "Explorer par catégorie",
+    choosePlanningMethod: "Choisissez comment planifier votre voyage parfait",
+    bySeasons: "Par Saisons",
+    monthByMonth: "Mois par Mois",
+    byDestinations: "Par Destinations",
+
+    // Seasons
+    drySeasonTitle: "Saison Sèche",
+    drySeasonMonths: "Mai - Septembre",
+    drySeasonDescription: "La meilleure période pour visiter la plupart du Pérou",
+    rainySeasonTitle: "Saison des Pluies",
+    rainySeasonMonths: "Octobre - Avril",
+    rainySeasonDescription: "Paysages verts et moins de touristes",
+
+    // Regions
+    coast: "Côte",
+    sierra: "Montagnes",
+    jungle: "Jungle",
+    weather: "Météo",
+    temperature: "Température",
+    recommendedActivities: "Activités recommandées",
+    whatToBring: "Quoi apporter",
+
+    // Monthly
+    monthlyClimateTitle: "Climat Mois par Mois",
+    monthlyDescription:
+      "Informations météorologiques détaillées pour chaque région du Pérou tout au long de l'année pour planifier votre voyage parfait.",
+    popularity: "Popularité",
+    tourismLevel: "Niveau Touristique",
+    advantages: "Avantages",
+    consider: "À considérer",
+
+    // Tourism levels
+    veryHigh: "Très élevé",
+    high: "Élevé",
+    medium: "Moyen",
+    low: "Faible",
+
+    // Destinations
+    bestTimeByDestination: "Meilleure Période par Destination",
+    destinationDescription:
+      "Chaque destination du Pérou a sa période idéale. Découvrez quand visiter chaque lieu pour la meilleure expérience.",
+    bestMonthsToVisit: "Meilleurs mois pour visiter",
+    monthsToAvoid: "Mois à éviter",
+    expertTips: "Conseils d'experts",
+
+    // Why Choose Us
+    whyChooseUs: "Pourquoi planifier avec nous?",
+    whyDescription:
+      "Notre expérience et connaissance locale vous garantissent le voyage parfait à tout moment de l'année",
+
+    // Features
+    localExperts: "Experts Locaux",
+    localExpertsDesc: "Guides certifiés avec plus de 10 ans d'expérience dans chaque région du Pérou",
+    perfectPlanning: "Planification Parfaite",
+    perfectPlanningDesc: "Nous vous aidons à choisir les meilleures dates selon vos intérêts et préférences",
+    guaranteedWeather: "Météo Garantie",
+    guaranteedWeatherDesc: "Nous surveillons les conditions météorologiques pour assurer votre meilleure expérience",
+    optimizedRoutes: "Routes Optimisées",
+    optimizedRoutesDesc: "Itinéraires conçus pour profiter au maximum de chaque destination en sa meilleure saison",
+    smallGroups: "Petits Groupes",
+    smallGroupsDesc: "Expériences plus personnelles avec des groupes réduits pour plus de confort",
+    uniqueMoments: "Moments Uniques",
+    uniqueMomentsDesc: "Capturez les meilleurs moments avec des conditions météorologiques et d'éclairage idéales",
+
+    // CTA
+    ctaTitle: "Votre aventure parfaite",
+    ctaSubtitle: "vous attend",
+    ctaDescription:
+      "Maintenant que vous savez quand voyager, il est temps de transformer vos rêves en réalité. Nos experts sont prêts à concevoir votre expérience unique.",
+    bookNow: "RÉSERVER MAINTENANT",
+    freeConsultation: "CONSULTATION GRATUITE",
+
+    // Months
+    months: {
+      january: "Janvier",
+      february: "Février",
+      march: "Mars",
+      april: "Avril",
+      may: "Mai",
+      june: "Juin",
+      july: "Juillet",
+      august: "Août",
+      september: "Septembre",
+      october: "Octobre",
+      november: "Novembre",
+      december: "Décembre",
+    },
+
+    // Seasons short
+    dry: "Sèche",
+    rainy: "Pluies",
+    transition: "Transition",
+  },
+}
+
+const getSeasonalData = (t: typeof translations.es) => ({
+  [t.drySeasonTitle]: {
+    months: t.drySeasonMonths,
+    description: t.drySeasonDescription,
     icon: Sun,
     color: "text-yellow-500",
     bgColor: "bg-yellow-50",
     regions: [
       {
-        name: "Costa",
+        name: t.coast,
         weather: "Soleado y seco",
         temperature: "18°C - 25°C",
         description: "Cielos despejados, ideal para actividades al aire libre",
@@ -40,7 +377,7 @@ const seasonalData = {
         rating: 4.8,
       },
       {
-        name: "Sierra",
+        name: t.sierra,
         weather: "Seco y fresco",
         temperature: "5°C - 20°C",
         description: "Días soleados, noches frías, perfectos para trekking",
@@ -50,7 +387,7 @@ const seasonalData = {
         rating: 4.9,
       },
       {
-        name: "Selva",
+        name: t.jungle,
         weather: "Menos lluvias",
         temperature: "22°C - 32°C",
         description: "Menor precipitación, mejor para navegación",
@@ -61,15 +398,15 @@ const seasonalData = {
       },
     ],
   },
-  "Temporada de Lluvias": {
-    months: "Octubre - Abril",
-    description: "Paisajes verdes y menos turistas",
+  [t.rainySeasonTitle]: {
+    months: t.rainySeasonMonths,
+    description: t.rainySeasonDescription,
     icon: CloudRain,
     color: "text-blue-500",
     bgColor: "bg-blue-50",
     regions: [
       {
-        name: "Costa",
+        name: t.coast,
         weather: "Nublado y húmedo",
         temperature: "15°C - 22°C",
         description: "Garúa limeña, ambiente romántico",
@@ -79,7 +416,7 @@ const seasonalData = {
         rating: 4.3,
       },
       {
-        name: "Sierra",
+        name: t.sierra,
         weather: "Lluvioso",
         temperature: "3°C - 18°C",
         description: "Paisajes verdes, pero senderos difíciles",
@@ -89,7 +426,7 @@ const seasonalData = {
         rating: 4.1,
       },
       {
-        name: "Selva",
+        name: t.jungle,
         weather: "Muy lluvioso",
         temperature: "24°C - 35°C",
         description: "Ríos altos, exuberante vegetación",
@@ -100,138 +437,137 @@ const seasonalData = {
       },
     ],
   },
-}
+})
 
-// Datos mensuales detallados
-const monthlyData = [
+const getMonthlyData = (t: typeof translations.es) => [
   {
-    month: "Enero",
-    season: "Lluvias",
+    month: t.months.january,
+    season: t.rainy,
     coast: { temp: "20-26°C", weather: "Nublado", rain: "Baja", icon: Cloud },
     sierra: { temp: "5-18°C", weather: "Lluvioso", rain: "Alta", icon: CloudRain },
     jungle: { temp: "24-32°C", weather: "Muy lluvioso", rain: "Muy alta", icon: CloudRain },
-    tourism: "Baja",
+    tourism: t.low,
     highlights: ["Menos turistas", "Paisajes verdes", "Precios bajos"],
     avoid: ["Camino Inca cerrado", "Senderos difíciles"],
     popularity: 65,
   },
   {
-    month: "Febrero",
-    season: "Lluvias",
+    month: t.months.february,
+    season: t.rainy,
     coast: { temp: "21-27°C", weather: "Nublado", rain: "Baja", icon: Cloud },
     sierra: { temp: "5-18°C", weather: "Lluvioso", rain: "Muy alta", icon: CloudRain },
     jungle: { temp: "24-32°C", weather: "Muy lluvioso", rain: "Muy alta", icon: CloudRain },
-    tourism: "Baja",
+    tourism: t.low,
     highlights: ["Carnavales", "Menos multitudes"],
     avoid: ["Camino Inca cerrado", "Inundaciones posibles"],
     popularity: 60,
   },
   {
-    month: "Marzo",
-    season: "Lluvias",
+    month: t.months.march,
+    season: t.rainy,
     coast: { temp: "20-26°C", weather: "Nublado", rain: "Baja", icon: Cloud },
     sierra: { temp: "5-18°C", weather: "Lluvioso", rain: "Alta", icon: CloudRain },
     jungle: { temp: "24-32°C", weather: "Lluvioso", rain: "Alta", icon: CloudRain },
-    tourism: "Baja",
+    tourism: t.low,
     highlights: ["Fin de lluvias", "Paisajes verdes"],
     avoid: ["Senderos embarrados"],
     popularity: 70,
   },
   {
-    month: "Abril",
-    season: "Transición",
+    month: t.months.april,
+    season: t.transition,
     coast: { temp: "18-24°C", weather: "Mixto", rain: "Baja", icon: Cloud },
     sierra: { temp: "5-19°C", weather: "Mixto", rain: "Media", icon: Cloud },
     jungle: { temp: "23-31°C", weather: "Lluvioso", rain: "Media", icon: CloudRain },
-    tourism: "Media",
+    tourism: t.medium,
     highlights: ["Transición", "Buen clima", "Pocos turistas"],
     avoid: ["Clima impredecible"],
     popularity: 75,
   },
   {
-    month: "Mayo",
-    season: "Seca",
+    month: t.months.may,
+    season: t.dry,
     coast: { temp: "16-22°C", weather: "Seco", rain: "Muy baja", icon: Sun },
     sierra: { temp: "3-20°C", weather: "Seco", rain: "Muy baja", icon: Sun },
     jungle: { temp: "22-30°C", weather: "Seco", rain: "Baja", icon: Sun },
-    tourism: "Alta",
+    tourism: t.high,
     highlights: ["Inicio temporada seca", "Excelente clima", "Camino Inca abierto"],
     avoid: ["Más turistas"],
     popularity: 90,
   },
   {
-    month: "Junio",
-    season: "Seca",
+    month: t.months.june,
+    season: t.dry,
     coast: { temp: "15-20°C", weather: "Seco", rain: "Muy baja", icon: Sun },
     sierra: { temp: "2-20°C", weather: "Seco", rain: "Muy baja", icon: Sun },
     jungle: { temp: "21-29°C", weather: "Seco", rain: "Baja", icon: Sun },
-    tourism: "Muy alta",
+    tourism: t.veryHigh,
     highlights: ["Mejor clima", "Inti Raymi", "Cielos despejados"],
     avoid: ["Multitudes", "Precios altos"],
     popularity: 95,
   },
   {
-    month: "Julio",
-    season: "Seca",
+    month: t.months.july,
+    season: t.dry,
     coast: { temp: "14-19°C", weather: "Seco", rain: "Muy baja", icon: Sun },
     sierra: { temp: "1-20°C", weather: "Seco", rain: "Muy baja", icon: Sun },
     jungle: { temp: "20-28°C", weather: "Seco", rain: "Baja", icon: Sun },
-    tourism: "Muy alta",
+    tourism: t.veryHigh,
     highlights: ["Temporada alta", "Clima perfecto"],
     avoid: ["Multitudes", "Reservas necesarias"],
     popularity: 98,
   },
   {
-    month: "Agosto",
-    season: "Seca",
+    month: t.months.august,
+    season: t.dry,
     coast: { temp: "14-19°C", weather: "Seco", rain: "Muy baja", icon: Sun },
     sierra: { temp: "2-21°C", weather: "Seco", rain: "Muy baja", icon: Sun },
     jungle: { temp: "21-29°C", weather: "Seco", rain: "Baja", icon: Sun },
-    tourism: "Muy alta",
+    tourism: t.veryHigh,
     highlights: ["Excelente clima", "Vientos fuertes en sierra"],
     avoid: ["Vientos en montaña", "Multitudes"],
     popularity: 96,
   },
   {
-    month: "Septiembre",
-    season: "Seca",
+    month: t.months.september,
+    season: t.dry,
     coast: { temp: "15-20°C", weather: "Seco", rain: "Muy baja", icon: Sun },
     sierra: { temp: "3-21°C", weather: "Seco", rain: "Muy baja", icon: Sun },
     jungle: { temp: "22-30°C", weather: "Seco", rain: "Baja", icon: Sun },
-    tourism: "Alta",
+    tourism: t.high,
     highlights: ["Fin temporada seca", "Menos turistas", "Buen clima"],
     avoid: ["Vientos ocasionales"],
     popularity: 88,
   },
   {
-    month: "Octubre",
-    season: "Transición",
+    month: t.months.october,
+    season: t.transition,
     coast: { temp: "16-22°C", weather: "Mixto", rain: "Baja", icon: Cloud },
     sierra: { temp: "5-20°C", weather: "Mixto", rain: "Media", icon: Cloud },
     jungle: { temp: "23-31°C", weather: "Lluvioso", rain: "Media", icon: CloudRain },
-    tourism: "Media",
+    tourism: t.medium,
     highlights: ["Inicio lluvias", "Menos turistas", "Paisajes cambiantes"],
     avoid: ["Clima impredecible"],
     popularity: 78,
   },
   {
-    month: "Noviembre",
-    season: "Lluvias",
+    month: t.months.november,
+    season: t.rainy,
     coast: { temp: "17-23°C", weather: "Nublado", rain: "Baja", icon: Cloud },
     sierra: { temp: "5-19°C", weather: "Lluvioso", rain: "Alta", icon: CloudRain },
     jungle: { temp: "24-32°C", weather: "Lluvioso", rain: "Alta", icon: CloudRain },
-    tourism: "Baja",
+    tourism: t.low,
     highlights: ["Paisajes verdes", "Menos turistas"],
     avoid: ["Senderos difíciles"],
     popularity: 68,
   },
   {
-    month: "Diciembre",
-    season: "Lluvias",
+    month: t.months.december,
+    season: t.rainy,
     coast: { temp: "19-25°C", weather: "Nublado", rain: "Baja", icon: Cloud },
     sierra: { temp: "5-18°C", weather: "Lluvioso", rain: "Alta", icon: CloudRain },
     jungle: { temp: "24-32°C", weather: "Lluvioso", rain: "Alta", icon: CloudRain },
-    tourism: "Media",
+    tourism: t.medium,
     highlights: ["Fiestas navideñas", "Menos turistas"],
     avoid: ["Lluvias frecuentes"],
     popularity: 72,
@@ -310,17 +646,27 @@ const destinationData = [
   },
 ]
 
-// Estadísticas
-const stats = [
-  { number: "365", label: "Días de aventura", icon: Calendar },
-  { number: "3", label: "Regiones climáticas", icon: MapPin },
-  { number: "12", label: "Meses únicos", icon: Sun },
-  { number: "100+", label: "Destinos increíbles", icon: Camera },
-]
-
 export default function WhenToGoPage() {
+  const { language } = useLanguage()
   const [activeTab, setActiveTab] = useState<"seasons" | "monthly" | "destinations">("seasons")
-  const [selectedSeason, setSelectedSeason] = useState<"Temporada Seca" | "Temporada de Lluvias">("Temporada Seca")
+  const [selectedSeason, setSelectedSeason] = useState<string>("")
+
+  const t = translations[language as keyof typeof translations] || translations.es
+
+  const seasonalData = getSeasonalData(t)
+  const monthlyData = getMonthlyData(t)
+
+  const seasonKeys = Object.keys(seasonalData)
+  if (!selectedSeason && seasonKeys.length > 0) {
+    setSelectedSeason(String(seasonKeys[0]))
+  }
+
+  const stats = [
+    { number: "365", label: t.stats.days, icon: Calendar },
+    { number: "3", label: t.stats.regions, icon: MapPin },
+    { number: "12", label: t.stats.months, icon: Sun },
+    { number: "100+", label: t.stats.destinations, icon: Camera },
+  ]
 
   return (
     <div className="min-h-screen bg-white">
@@ -340,19 +686,17 @@ export default function WhenToGoPage() {
           <div className="max-w-7xl mx-auto px-4 md:px-8 text-center">
             <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-light text-white leading-none brand-text mb-6">
-                Cuándo Viajar
+                {t.heroTitle}
                 <br />
-                <span className="text-peru-orange">al Perú</span>
+                <span className="text-peru-orange">{t.heroSubtitle}</span>
               </h1>
-              <p className="text-xl md:text-2xl text-white/90 body-text max-w-4xl mx-auto mb-8">
-                Descubre el momento perfecto para cada destino y vive la experiencia de tu vida en el país de los incas
-              </p>
+              <p className="text-xl md:text-2xl text-white/90 body-text max-w-4xl mx-auto mb-8">{t.heroDescription}</p>
               <motion.button
                 className="px-12 py-4 bg-peru-orange text-white brand-text text-xl hover:bg-peru-orange/90 transition-all duration-300 shadow-2xl"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
               >
-                PLANIFICA TU VIAJE
+                {t.planYourTrip}
               </motion.button>
             </motion.div>
           </div>
@@ -407,15 +751,15 @@ export default function WhenToGoPage() {
       <div className="bg-white border-b border-gray-200 py-8">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-8">
-            <h3 className="text-2xl md:text-3xl font-light text-black brand-text mb-2">Explora por categoría</h3>
-            <p className="text-gray-600 body-text">Elige cómo quieres planificar tu viaje perfecto</p>
+            <h3 className="text-2xl md:text-3xl font-light text-black brand-text mb-2">{t.exploreByCategory}</h3>
+            <p className="text-gray-600 body-text">{t.choosePlanningMethod}</p>
           </div>
           <nav className="flex justify-center">
             <div className="flex space-x-2 bg-gray-100 p-2 rounded-xl shadow-lg">
               {[
-                { key: "seasons" as const, label: "Por Estaciones", icon: Sun },
-                { key: "monthly" as const, label: "Mes a Mes", icon: Calendar },
-                { key: "destinations" as const, label: "Por Destinos", icon: MapPin },
+                { key: "seasons" as const, label: t.bySeasons, icon: Sun },
+                { key: "monthly" as const, label: t.monthByMonth, icon: Calendar },
+                { key: "destinations" as const, label: t.byDestinations, icon: MapPin },
               ].map((tab) => {
                 const IconComponent = tab.icon
                 return (
@@ -452,7 +796,7 @@ export default function WhenToGoPage() {
                   return (
                     <button
                       key={season}
-                      onClick={() => setSelectedSeason(seasonKey)}
+                      onClick={() => setSelectedSeason(String(seasonKey))}
                       className={`px-8 py-4 rounded-lg flex items-center space-x-3 transition-all duration-300 ${
                         selectedSeason === season
                           ? "bg-white shadow-lg text-black transform scale-105"
@@ -471,107 +815,123 @@ export default function WhenToGoPage() {
             </div>
 
             {/* Season Content */}
-            <div className="mb-16">
-              <div className="text-center mb-12">
-                <h2 className="text-4xl md:text-5xl font-light text-black brand-text mb-6">{selectedSeason}</h2>
-                <p className="text-xl body-text text-gray-600 max-w-3xl mx-auto">
-                  {seasonalData[selectedSeason].description}
-                </p>
+            {selectedSeason && seasonalData[selectedSeason] && (
+              <div className="mb-16">
+                <div className="text-center mb-12">
+                  <h2 className="text-4xl md:text-5xl font-light text-black brand-text mb-6">{selectedSeason}</h2>
+                  <p className="text-xl body-text text-gray-600 max-w-3xl mx-auto">
+                    {seasonalData[selectedSeason].description}
+                  </p>
+                </div>
+
+                {/* Regions Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {seasonalData[selectedSeason].regions.map(
+                    (
+                      region: {
+                        name: string
+                        weather: string
+                        temperature: string
+                        description: string
+                        activities: string[]
+                        clothing: string[]
+                        image: string
+                        rating: number
+                      },
+                      index: number,
+                    ) => (
+                      <motion.div
+                        key={region.name}
+                        className="bg-white shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden group"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: index * 0.1 }}
+                        whileHover={{ y: -10 }}
+                      >
+                        {/* Region Image */}
+                        <div className="relative h-64 overflow-hidden">
+                          <Image
+                            src={region.image || "/placeholder.svg"}
+                            alt={region.name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                          <div className="absolute bottom-4 left-4 right-4">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-2xl font-bold text-white brand-text">{region.name}</h3>
+                              <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded">
+                                <Star size={14} className="text-yellow-400 fill-current" />
+                                <span className="text-white text-sm font-medium">{region.rating}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Region Content */}
+                        <div className="p-6">
+                          {/* Weather Info */}
+                          <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="bg-gray-50 p-3 rounded-lg">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <Cloud size={16} className="text-gray-500" />
+                                <span className="text-sm font-medium text-gray-700 brand-text">{t.weather}</span>
+                              </div>
+                              <p className="text-sm text-gray-600 body-text">{region.weather}</p>
+                            </div>
+                            <div className="bg-gray-50 p-3 rounded-lg">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <Thermometer size={16} className="text-gray-500" />
+                                <span className="text-sm font-medium text-gray-700 brand-text">{t.temperature}</span>
+                              </div>
+                              <p className="text-sm text-gray-600 body-text">{region.temperature}</p>
+                            </div>
+                          </div>
+
+                          <p className="text-gray-600 body-text mb-6">{region.description}</p>
+
+                          {/* Activities */}
+                          <div className="mb-6">
+                            <h4 className="text-sm font-medium text-gray-700 brand-text mb-3 flex items-center">
+                              <Camera size={14} className="mr-2 text-peru-orange" />
+                              {t.recommendedActivities}
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {region.activities.map((activity: string, idx: number) => (
+                                <span
+                                  key={idx}
+                                  className="px-3 py-1 bg-peru-orange/10 text-peru-orange text-sm body-text rounded-full border border-peru-orange/20"
+                                >
+                                  {activity}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Clothing */}
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 brand-text mb-3 flex items-center">
+                              <Users size={14} className="mr-2 text-peru-green" />
+                              {t.whatToBring}
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {region.clothing.map((item: string, idx: number) => (
+                                <span
+                                  key={idx}
+                                  className="px-3 py-1 bg-peru-green/10 text-peru-green text-sm body-text rounded-full border border-peru-green/20"
+                                >
+                                  {item}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ),
+                  )}
+                </div>
               </div>
-
-              {/* Regions Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {seasonalData[selectedSeason].regions.map((region, index) => (
-                  <motion.div
-                    key={region.name}
-                    className="bg-white shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden group"
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 }}
-                    whileHover={{ y: -10 }}
-                  >
-                    {/* Region Image */}
-                    <div className="relative h-64 overflow-hidden">
-                      <Image
-                        src={region.image || "/placeholder.svg"}
-                        alt={region.name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-2xl font-bold text-white brand-text">{region.name}</h3>
-                          <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded">
-                            <Star size={14} className="text-yellow-400 fill-current" />
-                            <span className="text-white text-sm font-medium">{region.rating}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Region Content */}
-                    <div className="p-6">
-                      {/* Weather Info */}
-                      <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <Cloud size={16} className="text-gray-500" />
-                            <span className="text-sm font-medium text-gray-700 brand-text">Clima</span>
-                          </div>
-                          <p className="text-sm text-gray-600 body-text">{region.weather}</p>
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <Thermometer size={16} className="text-gray-500" />
-                            <span className="text-sm font-medium text-gray-700 brand-text">Temperatura</span>
-                          </div>
-                          <p className="text-sm text-gray-600 body-text">{region.temperature}</p>
-                        </div>
-                      </div>
-
-                      <p className="text-gray-600 body-text mb-6">{region.description}</p>
-
-                      {/* Activities */}
-                      <div className="mb-6">
-                        <h4 className="text-sm font-medium text-gray-700 brand-text mb-3 flex items-center">
-                          <Camera size={14} className="mr-2 text-peru-orange" />
-                          Actividades recomendadas
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {region.activities.map((activity, idx) => (
-                            <span
-                              key={idx}
-                              className="px-3 py-1 bg-peru-orange/10 text-peru-orange text-sm body-text rounded-full border border-peru-orange/20"
-                            >
-                              {activity}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Clothing */}
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 brand-text mb-3 flex items-center">
-                          <Users size={14} className="mr-2 text-peru-green" />
-                          Qué llevar
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {region.clothing.map((item, idx) => (
-                            <span
-                              key={idx}
-                              className="px-3 py-1 bg-peru-green/10 text-peru-green text-sm body-text rounded-full border border-peru-green/20"
-                            >
-                              {item}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
+            )}
           </motion.div>
         )}
 
@@ -579,11 +939,8 @@ export default function WhenToGoPage() {
         {activeTab === "monthly" && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-light text-black brand-text mb-6">Clima Mes a Mes</h2>
-              <p className="text-xl body-text text-gray-600 max-w-4xl mx-auto">
-                Información detallada del clima en cada región del Perú durante todo el año para planificar tu viaje
-                perfecto.
-              </p>
+              <h2 className="text-4xl md:text-5xl font-light text-black brand-text mb-6">{t.monthlyClimateTitle}</h2>
+              <p className="text-xl body-text text-gray-600 max-w-4xl mx-auto">{t.monthlyDescription}</p>
             </div>
 
             {/* Monthly Grid */}
@@ -601,9 +958,9 @@ export default function WhenToGoPage() {
                     <h3 className="text-2xl font-bold text-black brand-text mb-2">{month.month}</h3>
                     <span
                       className={`px-4 py-2 text-sm brand-text rounded-full ${
-                        month.season === "Seca"
+                        month.season === t.dry
                           ? "bg-yellow-100 text-yellow-700"
-                          : month.season === "Lluvias"
+                          : month.season === t.rainy
                             ? "bg-blue-100 text-blue-700"
                             : "bg-gray-100 text-gray-700"
                       }`}
@@ -615,7 +972,7 @@ export default function WhenToGoPage() {
                   {/* Popularity Bar */}
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700 brand-text">Popularidad</span>
+                      <span className="text-sm font-medium text-gray-700 brand-text">{t.popularity}</span>
                       <span className="text-sm text-gray-600">{month.popularity}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
@@ -632,37 +989,47 @@ export default function WhenToGoPage() {
                   {/* Regions Weather */}
                   <div className="space-y-4 mb-6">
                     {[
-                      { name: "Costa", data: month.coast },
-                      { name: "Sierra", data: month.sierra },
-                      { name: "Selva", data: month.jungle },
-                    ].map((region) => {
-                      const IconComponent = region.data.icon
-                      return (
-                        <div key={region.name} className="bg-gray-50 p-3 rounded-lg">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center space-x-2">
-                              <IconComponent size={16} className="text-gray-500" />
-                              <span className="text-sm font-medium text-gray-700 brand-text">{region.name}</span>
+                      { name: t.coast, data: month.coast },
+                      { name: t.sierra, data: month.sierra },
+                      { name: t.jungle, data: month.jungle },
+                    ].map(
+                      (region: {
+                        name: string
+                        data: {
+                          temp: string
+                          weather: string
+                          rain: string
+                          icon: React.ComponentType<{ size: number; className: string }>
+                        }
+                      }) => {
+                        const IconComponent = region.data.icon
+                        return (
+                          <div key={region.name} className="bg-gray-50 p-3 rounded-lg">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center space-x-2">
+                                <IconComponent size={16} className="text-gray-500" />
+                                <span className="text-sm font-medium text-gray-700 brand-text">{region.name}</span>
+                              </div>
+                              <span className="text-xs text-gray-600 body-text">{region.data.temp}</span>
                             </div>
-                            <span className="text-xs text-gray-600 body-text">{region.data.temp}</span>
+                            <p className="text-xs text-gray-500 body-text">{region.data.weather}</p>
                           </div>
-                          <p className="text-xs text-gray-500 body-text">{region.data.weather}</p>
-                        </div>
-                      )
-                    })}
+                        )
+                      },
+                    )}
                   </div>
 
                   {/* Tourism Level */}
                   <div className="mb-6">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700 brand-text">Nivel Turístico</span>
+                      <span className="text-sm font-medium text-gray-700 brand-text">{t.tourismLevel}</span>
                       <span
                         className={`px-3 py-1 text-xs brand-text rounded-full ${
-                          month.tourism === "Muy alta"
+                          month.tourism === t.veryHigh
                             ? "bg-red-100 text-red-700"
-                            : month.tourism === "Alta"
+                            : month.tourism === t.high
                               ? "bg-orange-100 text-orange-700"
-                              : month.tourism === "Media"
+                              : month.tourism === t.medium
                                 ? "bg-yellow-100 text-yellow-700"
                                 : "bg-green-100 text-green-700"
                         }`}
@@ -676,10 +1043,10 @@ export default function WhenToGoPage() {
                   <div className="mb-4">
                     <h4 className="text-sm font-medium text-gray-700 brand-text mb-3 flex items-center">
                       <TrendingUp size={14} className="mr-2 text-green-500" />
-                      Ventajas
+                      {t.advantages}
                     </h4>
                     <ul className="space-y-2">
-                      {month.highlights.map((highlight, idx) => (
+                      {month.highlights.map((highlight: string, idx: number) => (
                         <li key={idx} className="flex items-start text-sm text-gray-600">
                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0" />
                           <span className="body-text">{highlight}</span>
@@ -693,10 +1060,10 @@ export default function WhenToGoPage() {
                     <div>
                       <h4 className="text-sm font-medium text-gray-700 brand-text mb-3 flex items-center">
                         <Info size={14} className="mr-2 text-orange-500" />
-                        Considerar
+                        {t.consider}
                       </h4>
                       <ul className="space-y-2">
-                        {month.avoid.map((item, idx) => (
+                        {month.avoid.map((item: string, idx: number) => (
                           <li key={idx} className="flex items-start text-sm text-gray-600">
                             <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 mr-3 flex-shrink-0" />
                             <span className="body-text">{item}</span>
@@ -715,112 +1082,123 @@ export default function WhenToGoPage() {
         {activeTab === "destinations" && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-light text-black brand-text mb-6">Mejor Época por Destino</h2>
-              <p className="text-xl body-text text-gray-600 max-w-4xl mx-auto">
-                Cada destino del Perú tiene su época ideal. Descubre cuándo visitar cada lugar para vivir la mejor
-                experiencia.
-              </p>
+              <h2 className="text-4xl md:text-5xl font-light text-black brand-text mb-6">{t.bestTimeByDestination}</h2>
+              <p className="text-xl body-text text-gray-600 max-w-4xl mx-auto">{t.destinationDescription}</p>
             </div>
 
             {/* Destinations Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {destinationData.map((destination, index) => (
-                <motion.div
-                  key={destination.name}
-                  className="bg-white shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden group"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  whileHover={{ y: -5 }}
-                >
-                  {/* Destination Image */}
-                  <div className="relative h-80">
-                    <Image
-                      src={destination.image || "/placeholder.svg"}
-                      alt={destination.name}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    <div className="absolute bottom-6 left-6 right-6">
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <h3 className="text-3xl font-bold text-white brand-text mb-2">{destination.name}</h3>
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                              <Star size={16} className="text-yellow-400 fill-current" />
-                              <span className="text-white font-medium">{destination.rating}</span>
-                            </div>
-                            <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                              <Users size={16} className="text-white" />
-                              <span className="text-white font-medium">{destination.visitors}</span>
+              {destinationData.map(
+                (
+                  destination: {
+                    name: string
+                    bestMonths: string[]
+                    avoidMonths: string[]
+                    description: string
+                    image: string
+                    tips: string[]
+                    rating: number
+                    visitors: string
+                  },
+                  index: number,
+                ) => (
+                  <motion.div
+                    key={destination.name}
+                    className="bg-white shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden group"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    whileHover={{ y: -5 }}
+                  >
+                    {/* Destination Image */}
+                    <div className="relative h-80">
+                      <Image
+                        src={destination.image || "/placeholder.svg"}
+                        alt={destination.name}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      <div className="absolute bottom-6 left-6 right-6">
+                        <div className="flex items-end justify-between">
+                          <div>
+                            <h3 className="text-3xl font-bold text-white brand-text mb-2">{destination.name}</h3>
+                            <div className="flex items-center space-x-4">
+                              <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                                <Star size={16} className="text-yellow-400 fill-current" />
+                                <span className="text-white font-medium">{destination.rating}</span>
+                              </div>
+                              <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                                <Users size={16} className="text-white" />
+                                <span className="text-white font-medium">{destination.visitors}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Destination Content */}
-                  <div className="p-8">
-                    <p className="text-gray-600 body-text mb-8 text-lg">{destination.description}</p>
+                    {/* Destination Content */}
+                    <div className="p-8">
+                      <p className="text-gray-600 body-text mb-8 text-lg">{destination.description}</p>
 
-                    {/* Best Months */}
-                    <div className="mb-8">
-                      <h4 className="text-lg font-medium text-gray-700 brand-text mb-4 flex items-center">
-                        <Sun size={20} className="mr-3 text-green-500" />
-                        Mejores meses para visitar
-                      </h4>
-                      <div className="flex flex-wrap gap-3">
-                        {destination.bestMonths.map((month, idx) => (
-                          <span
-                            key={idx}
-                            className="px-4 py-2 bg-green-100 text-green-700 font-medium body-text rounded-full border border-green-200 hover:bg-green-200 transition-colors"
-                          >
-                            {month}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Avoid Months */}
-                    {destination.avoidMonths.length > 0 && (
+                      {/* Best Months */}
                       <div className="mb-8">
                         <h4 className="text-lg font-medium text-gray-700 brand-text mb-4 flex items-center">
-                          <Umbrella size={20} className="mr-3 text-red-500" />
-                          Meses a evitar
+                          <Sun size={20} className="mr-3 text-green-500" />
+                          {t.bestMonthsToVisit}
                         </h4>
                         <div className="flex flex-wrap gap-3">
-                          {destination.avoidMonths.map((month, idx) => (
+                          {destination.bestMonths.map((month: string, idx: number) => (
                             <span
                               key={idx}
-                              className="px-4 py-2 bg-red-100 text-red-700 font-medium body-text rounded-full border border-red-200"
+                              className="px-4 py-2 bg-green-100 text-green-700 font-medium body-text rounded-full border border-green-200 hover:bg-green-200 transition-colors"
                             >
                               {month}
                             </span>
                           ))}
                         </div>
                       </div>
-                    )}
 
-                    {/* Tips */}
-                    <div>
-                      <h4 className="text-lg font-medium text-gray-700 brand-text mb-4 flex items-center">
-                        <Info size={20} className="mr-3 text-blue-500" />
-                        Consejos de expertos
-                      </h4>
-                      <ul className="space-y-3">
-                        {destination.tips.map((tip, idx) => (
-                          <li key={idx} className="flex items-start text-gray-600">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2.5 mr-4 flex-shrink-0" />
-                            <span className="body-text text-lg">{tip}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {/* Avoid Months */}
+                      {destination.avoidMonths.length > 0 && (
+                        <div className="mb-8">
+                          <h4 className="text-lg font-medium text-gray-700 brand-text mb-4 flex items-center">
+                            <Umbrella size={20} className="mr-3 text-red-500" />
+                            {t.monthsToAvoid}
+                          </h4>
+                          <div className="flex flex-wrap gap-3">
+                            {destination.avoidMonths.map((month: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="px-4 py-2 bg-red-100 text-red-700 font-medium body-text rounded-full border border-red-200"
+                              >
+                                {month}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tips */}
+                      <div>
+                        <h4 className="text-lg font-medium text-gray-700 brand-text mb-4 flex items-center">
+                          <Info size={20} className="mr-3 text-blue-500" />
+                          {t.expertTips}
+                        </h4>
+                        <ul className="space-y-3">
+                          {destination.tips.map((tip: string, idx: number) => (
+                            <li key={idx} className="flex items-start text-gray-600">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2.5 mr-4 flex-shrink-0" />
+                              <span className="body-text text-lg">{tip}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ),
+              )}
             </div>
           </motion.div>
         )}
@@ -836,67 +1214,72 @@ export default function WhenToGoPage() {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl md:text-5xl font-light text-black brand-text mb-6">
-              ¿Por qué planificar con nosotros?
-            </h2>
-            <p className="text-xl body-text text-gray-600 max-w-3xl mx-auto">
-              Nuestra experiencia y conocimiento local te garantizan el viaje perfecto en cualquier época del año
-            </p>
+            <h2 className="text-4xl md:text-5xl font-light text-black brand-text mb-6">{t.whyChooseUs}</h2>
+            <p className="text-xl body-text text-gray-600 max-w-3xl mx-auto">{t.whyDescription}</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
                 icon: Award,
-                title: "Expertos Locales",
-                description: "Guías certificados con más de 10 años de experiencia en cada región del Perú",
+                title: t.localExperts,
+                description: t.localExpertsDesc,
               },
               {
                 icon: Calendar,
-                title: "Planificación Perfecta",
-                description: "Te ayudamos a elegir las mejores fechas según tus intereses y preferencias",
+                title: t.perfectPlanning,
+                description: t.perfectPlanningDesc,
               },
               {
                 icon: Sun,
-                title: "Clima Garantizado",
-                description: "Monitoreamos las condiciones climáticas para asegurar tu mejor experiencia",
+                title: t.guaranteedWeather,
+                description: t.guaranteedWeatherDesc,
               },
               {
                 icon: MapPin,
-                title: "Rutas Optimizadas",
-                description: "Itinerarios diseñados para aprovechar al máximo cada destino en su mejor época",
+                title: t.optimizedRoutes,
+                description: t.optimizedRoutesDesc,
               },
               {
                 icon: Users,
-                title: "Grupos Pequeños",
-                description: "Experiencias más personales con grupos reducidos para mayor comodidad",
+                title: t.smallGroups,
+                description: t.smallGroupsDesc,
               },
               {
                 icon: Camera,
-                title: "Momentos Únicos",
-                description: "Captura los mejores momentos con condiciones climáticas y de luz ideales",
+                title: t.uniqueMoments,
+                description: t.uniqueMomentsDesc,
               },
-            ].map((feature, index) => {
-              const IconComponent = feature.icon
-              return (
-                <motion.div
-                  key={feature.title}
-                  className="bg-white p-8 shadow-lg hover:shadow-xl transition-all duration-300 text-center group hover:-translate-y-2"
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                >
-                  <div className="flex justify-center mb-6">
-                    <div className="w-16 h-16 bg-peru-orange/10 rounded-full flex items-center justify-center group-hover:bg-peru-orange/20 transition-colors">
-                      <IconComponent size={32} className="text-peru-orange" />
+            ].map(
+              (
+                feature: {
+                  icon: React.ComponentType<{ size: number; className: string }>
+                  title: string
+                  description: string
+                },
+                index: number,
+              ) => {
+                const IconComponent = feature.icon
+                return (
+                  <motion.div
+                    key={feature.title}
+                    className="bg-white p-8 shadow-lg hover:shadow-xl transition-all duration-300 text-center group hover:-translate-y-2"
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                  >
+                    <div className="flex justify-center mb-6">
+                      <div className="w-16 h-16 bg-peru-orange/10 rounded-full flex items-center justify-center group-hover:bg-peru-orange/20 transition-colors">
+                        <IconComponent size={32} className="text-peru-orange" />
+                      </div>
                     </div>
-                  </div>
-                  <h3 className="text-xl font-bold text-black brand-text mb-4">{feature.title}</h3>
-                  <p className="text-gray-600 body-text">{feature.description}</p>
-                </motion.div>
-              )
-            })}
+                    <h3 className="text-xl font-bold text-black brand-text mb-4">{feature.title}</h3>
+                    <p className="text-gray-600 body-text">{feature.description}</p>
+                  </motion.div>
+                )
+              },
+            )}
           </div>
         </div>
       </div>
@@ -911,28 +1294,25 @@ export default function WhenToGoPage() {
             viewport={{ once: true }}
           >
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-tight mb-8 brand-text">
-              Tu aventura perfecta
+              {t.ctaTitle}
               <br />
-              <span className="text-peru-orange">te está esperando</span>
+              <span className="text-peru-orange">{t.ctaSubtitle}</span>
             </h2>
-            <p className="text-xl md:text-2xl text-white/90 body-text mb-12 max-w-3xl mx-auto">
-              Ahora que conoces cuándo viajar, es momento de convertir tus sueños en realidad. Nuestros expertos están
-              listos para diseñar tu experiencia única.
-            </p>
+            <p className="text-xl md:text-2xl text-white/90 body-text mb-12 max-w-3xl mx-auto">{t.ctaDescription}</p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <motion.button
                 className="px-12 py-4 bg-peru-orange text-white brand-text text-xl hover:bg-peru-orange/90 transition-all duration-300 shadow-2xl"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
               >
-                RESERVAR AHORA
+                {t.bookNow}
               </motion.button>
               <motion.button
                 className="px-12 py-4 border-2 border-white text-white brand-text text-xl hover:bg-white hover:text-peru-dark transition-all duration-300"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
               >
-                CONSULTA GRATUITA
+                {t.freeConsultation}
               </motion.button>
             </div>
           </motion.div>
