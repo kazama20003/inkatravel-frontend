@@ -35,7 +35,6 @@ import type { Cart, CartItem, CartResponse } from "@/types/cart"
 import { CartItemType } from "@/types/cart"
 
 
-
 interface CustomerInfoDto {
   fullName: string
   email: string
@@ -335,7 +334,7 @@ export default function CheckoutPage() {
     setError(null)
 
     try {
-      const totalAmountPEN = Math.round(cart.totalPrice * 100)
+      const totalAmountPEN = Math.round(cart.totalPrice)
 
       const payload: CreatePaymentDto = {
         amount: totalAmountPEN,
@@ -351,7 +350,7 @@ export default function CheckoutPage() {
         },
       }
 
-      console.log("Payment payload:", JSON.stringify(payload, null, 2))
+      console.log("[v0] Payment payload:", JSON.stringify(payload, null, 2))
 
       const response = await api.post<FormTokenResponse>("/payments/formtoken", payload, {
         headers: {
@@ -359,21 +358,33 @@ export default function CheckoutPage() {
         },
       })
 
+      console.log("[v0] Payment response:", response.data)
+
+      if (!response.data.formToken) {
+        throw new Error("No se recibió el token de pago del servidor")
+      }
+
       setFormToken(response.data.formToken)
       setShowPaymentModal(true)
+      console.log("[v0] Payment modal opened with token")
     } catch (err: unknown) {
-      console.error("Error generating payment form token:", err)
+      console.error("[v0] Error generating payment form token:", err)
       let errorMessage = t("errorProcessingPayment") || "Error processing payment. Please try again."
 
       if (isAxiosError(err)) {
         if (err.response?.data && typeof err.response.data === "object" && "message" in err.response.data) {
-          errorMessage = (err.response.data as { message: string }).message
+          const responseMessage = err.response.data.message
+          if (Array.isArray(responseMessage)) {
+            errorMessage = responseMessage.join(", ")
+          } else {
+            errorMessage = responseMessage as string
+          }
         } else if (err.message) {
           errorMessage = err.message
         }
 
         // Log the full error for debugging
-        console.error("Full error details:", {
+        console.error("[v0] Full error details:", {
           status: err.response?.status,
           data: err.response?.data,
           message: err.message,
