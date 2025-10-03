@@ -34,10 +34,12 @@ import "../../styles/izipay.css"
 import type { Cart, CartItem, CartResponse } from "@/types/cart"
 import { CartItemType } from "@/types/cart"
 
+
+
 interface CustomerInfoDto {
   fullName: string
   email: string
-  phone?: string
+  phoneNumber?: string // Changed from phone to phoneNumber
   nationality?: string
 }
 
@@ -344,7 +346,7 @@ export default function CheckoutPage() {
         customer: {
           fullName: `${customerInfo.firstName} ${customerInfo.lastName}`.trim(),
           email: customerInfo.email,
-          phone: customerInfo.phone || undefined,
+          phoneNumber: customerInfo.phone || undefined,
           nationality: customerInfo.country || undefined,
         },
       }
