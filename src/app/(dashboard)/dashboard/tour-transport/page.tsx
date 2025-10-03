@@ -187,9 +187,13 @@ export default function ToursTransportPage() {
                     <div className="flex items-start gap-3 text-sm">
                       <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                       <div className="flex flex-col gap-1 min-w-0">
-                        <span className="font-medium text-foreground">{transport.origin.name}</span>
+                        <span className="font-medium text-foreground">
+                          {transport.origin?.name || "Origen no especificado"}
+                        </span>
                         <div className="h-px bg-border w-8" />
-                        <span className="font-medium text-foreground">{transport.destination.name}</span>
+                        <span className="font-medium text-foreground">
+                          {transport.destination?.name || "Destino no especificado"}
+                        </span>
                       </div>
                     </div>
 
