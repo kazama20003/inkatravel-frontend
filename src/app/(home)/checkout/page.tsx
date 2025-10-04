@@ -346,7 +346,7 @@ export default function CheckoutPage() {
     setError(null)
 
     try {
-      const totalAmountPEN = Math.round(cart.totalPrice * 100)
+      const totalAmountPEN = cart.totalPrice
 
       const customerData: CustomerInfoDto = {
         email: customerInfo.email,

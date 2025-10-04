@@ -1,290 +1,242 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Button } from "@/components/ui/button"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { useLanguage } from "@/contexts/LanguageContext"
+import type { TourTransport } from "@/types/tour"
+import TransportCard from "@/components/transport-card"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useRef, useState, useEffect } from "react"
+import { motion } from "framer-motion"
 import { api } from "@/lib/axiosInstance"
-import type { TourTransport, TourTransportApiResponse } from "@/types/tour-transport"
-import { getTranslatedText } from "@/types/tour-transport"
-import { MapPin, Clock, Calendar, Star, Pencil, Trash2 } from "lucide-react"
-import { toast } from "sonner"
 
-export default function ToursTransportPage() {
-  const [transports, setTransports] = useState<TourTransport[]>([])
+export function TransportToursSection() {
+  const { language } = useLanguage()
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
+  const [tours, setTours] = useState<TourTransport[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [deleting, setDeleting] = useState(false)
-  const router = useRouter()
+
+  const sectionTitles = {
+    es: "Transportes Turísticos",
+    en: "Tourist Transport",
+    fr: "Transport Touristique",
+    de: "Touristentransport",
+    nl: "Toeristisch Vervoer",
+    it: "Trasporto Turistico",
+  }
+
+  const sectionSubtitles = {
+    es: "Descubre los mejores destinos del Perú",
+    en: "Discover the best destinations in Peru",
+    fr: "Découvrez les meilleures destinations du Pérou",
+    de: "Entdecken Sie die besten Reiseziele in Peru",
+    nl: "Ontdek de beste bestemmingen in Peru",
+    it: "Scopri le migliori destinazioni del Perù",
+  }
 
   useEffect(() => {
-    const fetchTransports = async () => {
+    const fetchFeaturedTours = async () => {
       try {
         setLoading(true)
-        const response = await api.get<TourTransportApiResponse>("/tour-transport")
-        const transportData = response.data.data || []
-        setTransports(transportData)
         setError(null)
+
+        const langCode =
+          language === "es"
+            ? "es"
+            : language === "en"
+              ? "en"
+              : language === "fr"
+                ? "fr"
+                : language === "de"
+                  ? "de"
+                  : language === "it"
+                    ? "it"
+                    : "es"
+
+        console.log(`[v0] Fetching featured tours for language: ${langCode}`)
+
+        const response = await api.get(`/tour-transport/featured?lang=${langCode}`)
+
+        console.log(`[v0] API Response:`, response.data)
+
+        if (response.data && Array.isArray(response.data)) {
+          setTours(response.data)
+        } else {
+          console.warn("[v0] API response is not an array, using empty array")
+          setTours([])
+        }
       } catch (err) {
-        console.error("Error fetching tour transports:", err)
-        setError("Error al cargar los transportes. Por favor, intenta nuevamente.")
+        console.error("[v0] Error fetching featured tours:", err)
+        setError("Failed to load transport tours")
+        setTours([])
       } finally {
         setLoading(false)
       }
     }
 
-    fetchTransports()
-  }, [])
+    fetchFeaturedTours()
+  }, [language])
 
-  const handleDelete = async () => {
-    if (!deleteId) return
+  const scroll = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 420
+      const newScrollLeft =
+        scrollContainerRef.current.scrollLeft + (direction === "right" ? scrollAmount : -scrollAmount)
 
-    try {
-      setDeleting(true)
-      await api.delete(`/tour-transport/${deleteId}`)
-      setTransports((prev) => prev.filter((t) => t._id !== deleteId))
-      toast.success("Eliminado exitosamente", {
-        description: "El tour de transporte ha sido eliminado.",
+      scrollContainerRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: "smooth",
       })
-      setDeleteId(null)
-    } catch (err) {
-      console.error("Error deleting transport:", err)
-      toast.error("Error al eliminar", {
-        description: "No se pudo eliminar el tour de transporte. Intenta nuevamente.",
-      })
-    } finally {
-      setDeleting(false)
     }
   }
 
-  const handleEdit = (id: string) => {
-    router.push(`/dashboard/tour-transport/edit/${id}`)
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current
+      setCanScrollLeft(scrollLeft > 0)
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10)
+    }
+  }
+
+  if (loading) {
+    return (
+      <section
+        id="transportes-turistico"
+        className="py-16 bg-gradient-to-br from-slate-50 via-white to-amber-50/30 relative overflow-hidden"
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">
+            {language === "es"
+              ? "Cargando transportes..."
+              : language === "en"
+                ? "Loading transports..."
+                : language === "fr"
+                  ? "Chargement des transports..."
+                  : language === "de"
+                    ? "Transporte werden geladen..."
+                    : language === "it"
+                      ? "Caricamento trasporti..."
+                      : "Cargando transportes..."}
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section
+        id="transportes-turistico"
+        className="py-16 bg-gradient-to-br from-slate-50 via-white to-amber-50/30 relative overflow-hidden"
+      >
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+          >
+            {language === "es"
+              ? "Reintentar"
+              : language === "en"
+                ? "Retry"
+                : language === "fr"
+                  ? "Réessayer"
+                  : language === "de"
+                    ? "Wiederholen"
+                    : language === "it"
+                      ? "Riprova"
+                      : "Reintentar"}
+          </button>
+        </div>
+      </section>
+    )
   }
 
   return (
-    <SidebarInset>
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b">
-        <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="/dashboard">Panel Administrativo</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Tours Transport</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </header>
-
-      <div className="flex flex-1 flex-col gap-6 p-6 md:gap-8 md:p-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Tours de Transporte</h1>
-            <p className="text-muted-foreground mt-2">Gestiona los tours de transporte disponibles</p>
-          </div>
-          <Button onClick={() => router.push("/dashboard/tour-transport/new")} size="lg" className="gap-2">
-            <MapPin className="h-5 w-5" />
-            Crear Transporte
-          </Button>
-        </div>
-
-        {error && (
-          <div className="bg-destructive/10 text-destructive rounded-lg p-4 border border-destructive/20">{error}</div>
-        )}
-
-        {loading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-1/2 mt-2" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-32 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : transports.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium">No hay tours de transporte disponibles</p>
-              <p className="text-sm text-muted-foreground mt-2">Los tours aparecerán aquí cuando se agreguen</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {transports.map((transport) => (
-              <Card
-                key={transport._id}
-                className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/20"
-              >
-                {transport.imageUrl && (
-                  <div className="aspect-video relative overflow-hidden bg-gradient-to-br from-muted to-muted/50">
-                    <Image
-                      src={transport.imageUrl || "/placeholder.svg"}
-                      alt={getTranslatedText(transport.title)}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    {transport.isFeatured && (
-                      <Badge className="absolute top-3 right-3 shadow-lg" variant="default">
-                        ⭐ Destacado
-                      </Badge>
-                    )}
-                    {!transport.isActive && (
-                      <Badge className="absolute top-3 left-3 shadow-lg" variant="secondary">
-                        Inactivo
-                      </Badge>
-                    )}
-                  </div>
-                )}
-
-                <CardHeader className="space-y-3">
-                  <CardTitle className="line-clamp-2 text-xl group-hover:text-primary transition-colors">
-                    {getTranslatedText(transport.title) || "Sin título"}
-                  </CardTitle>
-                  <CardDescription className="line-clamp-3 text-sm leading-relaxed">
-                    {getTranslatedText(transport.description) || "Sin descripción"}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3 text-sm">
-                      <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                      <div className="flex flex-col gap-1 min-w-0">
-                        <span className="font-medium text-foreground">
-                          {transport.origin?.name || "Origen no especificado"}
-                        </span>
-                        <div className="h-px bg-border w-8" />
-                        <span className="font-medium text-foreground">
-                          {transport.destination?.name || "Destino no especificado"}
-                        </span>
-                      </div>
-                    </div>
-
-                    {transport.duration && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <Clock className="h-5 w-5 text-primary shrink-0" />
-                        <span className="text-muted-foreground">
-                          <span className="font-medium text-foreground">{transport.duration}</span> de viaje
-                        </span>
-                      </div>
-                    )}
-
-                    {transport.availableDays && transport.availableDays.length > 0 && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <Calendar className="h-5 w-5 text-primary shrink-0" />
-                        <span className="text-muted-foreground">
-                          <span className="font-medium text-foreground">{transport.availableDays.length}</span> días
-                          disponibles
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-lg font-semibold text-primary">S/</span>
-                      <span className="text-2xl font-bold text-primary">{transport.price}</span>
-                      <span className="text-sm text-muted-foreground">Soles</span>
-                    </div>
-
-                    {transport.rating && (
-                      <div className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-950/20 px-2.5 py-1 rounded-full">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-semibold text-yellow-700 dark:text-yellow-400">
-                          {transport.rating}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 gap-2 bg-transparent"
-                      onClick={() => handleEdit(transport._id)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Editar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 bg-transparent"
-                      onClick={() => setDeleteId(transport._id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Eliminar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+    <section
+      id="transportes-turistico"
+      className="py-16 bg-gradient-to-br from-slate-50 via-white to-amber-50/30 relative overflow-hidden"
+    >
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-amber-200/20 to-orange-200/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-blue-200/20 to-cyan-200/20 rounded-full blur-3xl" />
       </div>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. El tour de transporte será eliminado permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleting}
-              className="bg-destructive hover:bg-destructive/90"
+      <div className="text-center mb-12 px-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-amber-600 via-orange-500 to-amber-700 bg-clip-text text-transparent mb-4 tracking-tight">
+            {sectionTitles[language]}
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">{sectionSubtitles[language]}</p>
+        </motion.div>
+      </div>
+
+      {tours.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-600 text-lg">
+            {language === "es"
+              ? "No hay transportes disponibles en este momento."
+              : language === "en"
+                ? "No transports available at the moment."
+                : language === "fr"
+                  ? "Aucun transport disponible pour le moment."
+                  : language === "de"
+                    ? "Derzeit sind keine Transporte verfügbar."
+                    : language === "it"
+                      ? "Nessun trasporto disponibile al momento."
+                      : "No hay transportes disponibles en este momento."}
+          </p>
+        </div>
+      ) : (
+        <div className="relative w-full">
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex gap-6 overflow-x-auto scrollbar-hide pb-6 pl-6 pr-6 scroll-smooth"
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            {tours.map((tour, index) => (
+              <div key={tour._id} className="flex-none w-[380px]">
+                <TransportCard tour={tour} index={index} />
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-center items-center gap-4 mt-6">
+            <motion.button
+              onClick={() => scroll("left")}
+              className={`w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-gray-200/50 flex items-center justify-center transition-all duration-300 group hover:bg-white hover:shadow-xl ${
+                !canScrollLeft ? "opacity-40 cursor-not-allowed" : "hover:border-amber-300"
+              }`}
+              disabled={!canScrollLeft}
+              whileHover={{ scale: canScrollLeft ? 1.1 : 1 }}
+              whileTap={{ scale: canScrollLeft ? 0.95 : 1 }}
             >
-              {deleting ? "Eliminando..." : "Eliminar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </SidebarInset>
+              <ChevronLeft className="w-4 h-4 text-gray-600 group-hover:text-amber-600 transition-colors duration-300" />
+            </motion.button>
+
+            <motion.button
+              onClick={() => scroll("right")}
+              className={`w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-gray-200/50 flex items-center justify-center transition-all duration-300 group hover:bg-white hover:shadow-xl ${
+                !canScrollRight ? "opacity-40 cursor-not-allowed" : "hover:border-amber-300"
+              }`}
+              disabled={!canScrollRight}
+              whileHover={{ scale: canScrollRight ? 1.1 : 1 }}
+              whileTap={{ scale: canScrollRight ? 0.95 : 1 }}
+            >
+              <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-amber-600 transition-colors duration-300" />
+            </motion.button>
+          </div>
+        </div>
+      )}
+    </section>
   )
 }
+
+export default TransportToursSection

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Star, Clock, MapPin, Users, Calendar } from "lucide-react"
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { useRouter } from "next/navigation" // Added router for navigation
+import { useRouter } from "next/navigation"
 
 interface TransportCardProps {
   tour: TourTransport
@@ -18,7 +18,7 @@ interface TransportCardProps {
 
 export function TransportCard({ tour, index }: TransportCardProps) {
   const { language } = useLanguage()
-  const router = useRouter() // Added router hook
+  const router = useRouter()
 
   type LanguageKey = "es" | "en" | "fr" | "de" | "it"
 
@@ -62,6 +62,59 @@ export function TransportCard({ tour, index }: TransportCardProps) {
     it: "• TOUR PERÙ • AVVENTURA • CULTURA • NATURA • STORIA • GASTRONOMIA ",
   }
 
+  const dayTranslations: Record<LanguageKey, Record<string, string>> = {
+    es: {
+      monday: "Lun",
+      tuesday: "Mar",
+      wednesday: "Mié",
+      thursday: "Jue",
+      friday: "Vie",
+      saturday: "Sáb",
+      sunday: "Dom",
+      daily: "Diario",
+    },
+    en: {
+      monday: "Mon",
+      tuesday: "Tue",
+      wednesday: "Wed",
+      thursday: "Thu",
+      friday: "Fri",
+      saturday: "Sat",
+      sunday: "Sun",
+      daily: "Daily",
+    },
+    fr: {
+      monday: "Lun",
+      tuesday: "Mar",
+      wednesday: "Mer",
+      thursday: "Jeu",
+      friday: "Ven",
+      saturday: "Sam",
+      sunday: "Dim",
+      daily: "Quotidien",
+    },
+    de: {
+      monday: "Mo",
+      tuesday: "Di",
+      wednesday: "Mi",
+      thursday: "Do",
+      friday: "Fr",
+      saturday: "Sa",
+      sunday: "So",
+      daily: "Täglich",
+    },
+    it: {
+      monday: "Lun",
+      tuesday: "Mar",
+      wednesday: "Mer",
+      thursday: "Gio",
+      friday: "Ven",
+      saturday: "Sab",
+      sunday: "Dom",
+      daily: "Giornaliero",
+    },
+  }
+
   const getTitle = () => {
     if (typeof tour.title === "string") return tour.title
     if (tour.title && typeof tour.title === "object") {
@@ -83,7 +136,6 @@ export function TransportCard({ tour, index }: TransportCardProps) {
   const getOriginName = () => {
     if (typeof tour.origin === "string") return tour.origin
     if (tour.origin && typeof tour.origin === "object") {
-      // Handle both name and translatedName properties
       if ("name" in tour.origin) return tour.origin.name
       return "Origin"
     }
@@ -93,11 +145,34 @@ export function TransportCard({ tour, index }: TransportCardProps) {
   const getDestinationName = () => {
     if (typeof tour.destination === "string") return tour.destination
     if (tour.destination && typeof tour.destination === "object") {
-      // Handle both name and translatedName properties
       if ("name" in tour.destination) return tour.destination.name
       return "Destination"
     }
     return "Destination"
+  }
+
+  const getAvailableDays = () => {
+    const currentLanguage = language as LanguageKey
+    const translations = dayTranslations[currentLanguage]
+
+    if (!tour.availableDays || tour.availableDays.length === 0) {
+      return translations.daily
+    }
+
+    // If all 7 days are available, show "Daily"
+    if (tour.availableDays.length === 7) {
+      return translations.daily
+    }
+
+    // Map day names to translated abbreviations
+    const translatedDays = tour.availableDays
+      .map((day) => {
+        const dayLower = day.toLowerCase()
+        return translations[dayLower] || day
+      })
+      .join(", ")
+
+    return translatedDays
   }
 
   const handleCardClick = () => {
@@ -107,7 +182,7 @@ export function TransportCard({ tour, index }: TransportCardProps) {
   }
 
   const handleReserveClick = (e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent card click when clicking reserve button
+    e.stopPropagation()
     if (tour.slug) {
       router.push(`/transport/${tour.slug}`)
     }
@@ -124,16 +199,13 @@ export function TransportCard({ tour, index }: TransportCardProps) {
     >
       <Card
         className="relative overflow-hidden border-0 hover:border-amber-200/20 transition-all duration-500 hover:scale-[1.02] h-[650px] cursor-pointer bg-white rounded-3xl"
-        onClick={handleCardClick} // Added card click handler
+        onClick={handleCardClick}
       >
         <div className="absolute inset-0">
           <Image
             src={
               tour.imageUrl ||
               "/placeholder.svg?height=700&width=400&query=Peru transport tourism luxury scenic mountain landscape" ||
-              "/placeholder.svg" ||
-              "/placeholder.svg" ||
-              "/placeholder.svg" ||
               "/placeholder.svg"
             }
             alt={getTitle()}
@@ -168,7 +240,6 @@ export function TransportCard({ tour, index }: TransportCardProps) {
         </div>
 
         <div className="relative z-10 h-full flex flex-col justify-between p-6 text-white">
-          {/* Top section with badges */}
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-2">
               <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs px-3 py-1 rounded-full shadow-lg w-fit">
@@ -193,7 +264,7 @@ export function TransportCard({ tour, index }: TransportCardProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-amber-400" />
-                  <span className="font-medium">Diario</span>
+                  <span className="font-medium">{getAvailableDays()}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
@@ -208,31 +279,8 @@ export function TransportCard({ tour, index }: TransportCardProps) {
                 </span>
               </div>
             </div>
-
-            <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-sm rounded-2xl p-4 border border-amber-400/30">
-              <h4 className="text-amber-300 font-semibold text-sm mb-2">Incluye:</h4>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
-                  <span>Transporte privado</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
-                  <span>Guía profesional</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
-                  <span>Seguro de viaje</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
-                  <span>Agua mineral</span>
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* Bottom section with title and pricing */}
           <div className="space-y-3">
             <h3 className="text-white font-bold text-2xl leading-tight">{getTitle()}</h3>
 
@@ -253,7 +301,7 @@ export function TransportCard({ tour, index }: TransportCardProps) {
                 className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 text-white font-semibold text-xs px-4 py-2.5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 min-h-[44px] min-w-[88px]"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={handleReserveClick} // Added reserve button click handler
+                onClick={handleReserveClick}
               >
                 {reserveTexts[currentLanguage]}
               </motion.button>

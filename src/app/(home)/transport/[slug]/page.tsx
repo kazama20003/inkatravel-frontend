@@ -25,7 +25,6 @@ import { type CreateCartDto, CartItemType } from "@/types/cart"
 import { toast } from "sonner"
 import Link from "next/link"
 
-
 declare global {
   interface Window {
     google: typeof google
@@ -543,7 +542,6 @@ const GoogleMapComponent = ({
   }
 
   const createMarkers = () => {
-    // The `google` object is now available globally after LoadScript has loaded
     if (!mapRef.current || !window.google?.maps?.marker?.AdvancedMarkerElement) {
       console.log("[v0] Map or AdvancedMarkerElement not available yet")
       return
@@ -897,7 +895,7 @@ export default function TransportPage({ params }: Props) {
 
   console.log("[v0] Transport data:", transport)
 
-  const priceInSoles = Math.round(transport.price * 3.7)
+  const displayPrice = transport.price
   const originCoords = `${transport.origin.lat.toString()}, ${transport.origin.lng.toString()}`
   const destinationCoords = `${transport.destination.lat.toString()}, ${transport.destination.lng.toString()}`
 
@@ -967,8 +965,8 @@ export default function TransportPage({ params }: Props) {
       toast.success(language === "es" ? "¡Agregado al carrito exitosamente!" : "Successfully added to cart!", {
         description:
           language === "es"
-            ? `${selectedTravelers} ${selectedTravelers === 1 ? "persona" : "personas"} - S/ ${(priceInSoles * selectedTravelers).toLocaleString()}`
-            : `${selectedTravelers} ${selectedTravelers === 1 ? "person" : "people"} - S/ ${(priceInSoles * selectedTravelers).toLocaleString()}`,
+            ? `${selectedTravelers} ${selectedTravelers === 1 ? "persona" : "personas"} - S/ ${(displayPrice * selectedTravelers).toLocaleString()}`
+            : `${selectedTravelers} ${selectedTravelers === 1 ? "person" : "people"} - S/ ${(displayPrice * selectedTravelers).toLocaleString()}`,
         duration: 5000,
         action: {
           label: language === "es" ? "Ver Carrito" : "View Cart",
@@ -1029,7 +1027,7 @@ export default function TransportPage({ params }: Props) {
                 </div>
               </div>
               <div className="text-4xl font-bold py-4 px-8 rounded-full inline-block bg-orange-500 text-white shadow-lg">
-                S/ {priceInSoles.toLocaleString()} PEN
+                S/ {displayPrice.toLocaleString()} PEN
               </div>
             </div>
           </div>
@@ -1217,7 +1215,7 @@ export default function TransportPage({ params }: Props) {
               <div className="lg:col-span-1">
                 <div className="bg-white border border-gray-200 rounded-xl p-6 sticky top-8 shadow-sm">
                   <div className="text-center mb-6">
-                    <div className="text-4xl font-bold text-gray-900 mb-2">S/ {priceInSoles.toLocaleString()}</div>
+                    <div className="text-4xl font-bold text-gray-900 mb-2">S/ {displayPrice.toLocaleString()}</div>
                     <div className="text-gray-600 mb-1">{t.perPerson}</div>
                     <div className="text-sm text-green-600 font-semibold">{t.specialPriceForForeigners}</div>
                     <div className="flex justify-center items-center gap-1 mt-3">
