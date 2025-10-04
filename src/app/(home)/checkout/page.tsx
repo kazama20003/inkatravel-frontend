@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CountrySelect } from "@/components/login/country-select"
 import { toast } from "sonner"
 import { api } from "@/lib/axiosInstance"
@@ -33,7 +34,6 @@ import Image from "next/image"
 import "../../styles/izipay.css"
 import type { Cart, CartItem, CartResponse } from "@/types/cart"
 import { CartItemType } from "@/types/cart"
-
 
 interface CustomerInfoDto {
   email: string
@@ -886,12 +886,21 @@ export default function CheckoutPage() {
                         <Label className="text-sm font-semibold text-gray-700 flex items-center">
                           <span className="mr-2">🆔</span> Tipo de Documento
                         </Label>
-                        <Input
+                        <Select
                           value={customerInfo.identityType}
-                          onChange={(e) => setCustomerInfo({ ...customerInfo, identityType: e.target.value })}
-                          placeholder="DNI, Pasaporte, etc."
-                          className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg"
-                        />
+                          onValueChange={(value) => setCustomerInfo({ ...customerInfo, identityType: value })}
+                        >
+                          <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg">
+                            <SelectValue placeholder="Seleccionar tipo..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="DNI">DNI</SelectItem>
+                            <SelectItem value="PASSPORT">Pasaporte</SelectItem>
+                            <SelectItem value="CE">Carné de Extranjería</SelectItem>
+                            <SelectItem value="RUC">RUC</SelectItem>
+                            <SelectItem value="OTHER">Otro</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-gray-700 flex items-center">
