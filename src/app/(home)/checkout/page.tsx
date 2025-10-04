@@ -34,15 +34,24 @@ import "../../styles/izipay.css"
 import type { Cart, CartItem, CartResponse } from "@/types/cart"
 import { CartItemType } from "@/types/cart"
 
+
 interface CustomerInfoDto {
-  fullName: string
   email: string
-  phoneNumber?: string // Changed from phone to phoneNumber
+  firstName: string
+  lastName: string
+  phoneNumber?: string
+  identityType?: string
+  identityCode?: string
+  address?: string
+  country?: string
+  city?: string
+  state?: string
+  zipCode?: string
   nationality?: string
+  fullName?: string
 }
 
 interface CreatePaymentDto {
-  // Payment specific fields only
   amount: number
   currency: string
   orderId: string
@@ -52,7 +61,8 @@ interface CreatePaymentDto {
 }
 
 interface FormTokenResponse {
-  formToken: string // Changed back to formToken for PRODUCTION mode
+  formToken: string
+  publicKey: string
 }
 
 interface UserData {
@@ -63,9 +73,13 @@ interface UserData {
   address?: string
   city?: string
   country?: string
+  identityType?: string
+  identityCode?: string
+  state?: string
+  zipCode?: string
 }
 
-// DTO para el PATCH del carrito (debe coincidir con el backend)
+// DTO para el PATCH delcarrito (debe coincidir con el backend)
 interface UpdateCartDto {
   items: {
     productType: CartItemType
@@ -332,23 +346,36 @@ export default function CheckoutPage() {
     setError(null)
 
     try {
-      const totalAmountPEN = Math.round(cart.totalPrice)
+      const totalAmountPEN = Math.round(cart.totalPrice * 100)
+
+      const customerData: CustomerInfoDto = {
+        email: customerInfo.email,
+        firstName: customerInfo.firstName,
+        lastName: customerInfo.lastName,
+      }
+
+      // Solo agregar campos opcionales si tienen valores
+      if (customerInfo.phone) customerData.phoneNumber = customerInfo.phone
+      if (customerInfo.identityType) customerData.identityType = customerInfo.identityType
+      if (customerInfo.identityCode) customerData.identityCode = customerInfo.identityCode
+      if (customerInfo.address) customerData.address = customerInfo.address
+      if (customerInfo.country) customerData.country = customerInfo.country
+      if (customerInfo.city) customerData.city = customerInfo.city
+      if (customerInfo.state) customerData.state = customerInfo.state
+      if (customerInfo.zipCode) customerData.zipCode = customerInfo.zipCode
 
       const payload: CreatePaymentDto = {
         amount: totalAmountPEN,
         currency: "PEN",
         orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         formAction: "PAID",
-        contextMode: "PRODUCTION", // Changed from TEST to PRODUCTION to generate real formToken
-        customer: {
-          fullName: `${customerInfo.firstName} ${customerInfo.lastName}`.trim(),
-          email: customerInfo.email,
-          phoneNumber: customerInfo.phone || undefined,
-          nationality: customerInfo.country || undefined,
-        },
+        contextMode: "TEST",
+        customer: customerData,
       }
 
       console.log("[v0] Payment payload:", JSON.stringify(payload, null, 2))
+      console.log("[v0] Amount type:", typeof payload.amount, "Value:", payload.amount)
+      console.log("[v0] Customer type:", typeof payload.customer, "Value:", payload.customer)
 
       const response = await api.post<FormTokenResponse>("/payments/formtoken", payload, {
         headers: {
@@ -359,11 +386,10 @@ export default function CheckoutPage() {
       console.log("[v0] Payment response:", response.data)
 
       if (!response.data.formToken) {
-        // Changed back to formToken validation
         throw new Error("No se recibió el token de pago del servidor")
       }
 
-      setFormToken(response.data.formToken) // Using formToken from PRODUCTION response
+      setFormToken(response.data.formToken)
       setShowPaymentModal(true)
       console.log("[v0] Payment modal opened with form token")
     } catch (err: unknown) {
@@ -371,18 +397,24 @@ export default function CheckoutPage() {
       let errorMessage = t("errorProcessingPayment") || "Error processing payment. Please try again."
 
       if (isAxiosError(err)) {
-        if (err.response?.data && typeof err.response.data === "object" && "message" in err.response.data) {
-          const responseMessage = err.response.data.message
-          if (Array.isArray(responseMessage)) {
-            errorMessage = responseMessage.join(", ")
-          } else {
-            errorMessage = responseMessage as string
+        if (err.response?.data) {
+          const responseData = err.response.data
+          console.error("[v0] Error response data:", responseData)
+
+          if (typeof responseData === "object" && "message" in responseData) {
+            const responseMessage = responseData.message
+            if (Array.isArray(responseMessage)) {
+              errorMessage = responseMessage.join(", ")
+            } else if (typeof responseMessage === "string") {
+              errorMessage = responseMessage
+            }
+          } else if (typeof responseData === "string") {
+            errorMessage = responseData
           }
         } else if (err.message) {
           errorMessage = err.message
         }
 
-        // Log the full error for debugging
         console.error("[v0] Full error details:", {
           status: err.response?.status,
           data: err.response?.data,
@@ -852,6 +884,39 @@ export default function CheckoutPage() {
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-gray-700 flex items-center">
+                          <span className="mr-2">🆔</span> Tipo de Documento
+                        </Label>
+                        <Input
+                          value={customerInfo.identityType}
+                          onChange={(e) => setCustomerInfo({ ...customerInfo, identityType: e.target.value })}
+                          placeholder="DNI, Pasaporte, etc."
+                          className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-gray-700 flex items-center">
+                          <span className="mr-2">🔢</span> Número de Documento
+                        </Label>
+                        <Input
+                          value={customerInfo.identityCode}
+                          onChange={(e) => setCustomerInfo({ ...customerInfo, identityCode: e.target.value })}
+                          placeholder="12345678"
+                          className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg"
+                        />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label className="text-sm font-semibold text-gray-700 flex items-center">
+                          <span className="mr-2">🏠</span> Dirección
+                        </Label>
+                        <Input
+                          value={customerInfo.address}
+                          onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
+                          placeholder="Av. Siempre Viva 123"
+                          className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-gray-700 flex items-center">
                           <span className="mr-2">🌍</span> País
                         </Label>
                         <CountrySelect
@@ -868,7 +933,29 @@ export default function CheckoutPage() {
                         <Input
                           value={customerInfo.city}
                           onChange={(e) => setCustomerInfo({ ...customerInfo, city: e.target.value })}
-                          placeholder="Tu ciudad"
+                          placeholder="Lima"
+                          className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-gray-700 flex items-center">
+                          <span className="mr-2">📍</span> Estado/Región
+                        </Label>
+                        <Input
+                          value={customerInfo.state}
+                          onChange={(e) => setCustomerInfo({ ...customerInfo, state: e.target.value })}
+                          placeholder="Lima"
+                          className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-gray-700 flex items-center">
+                          <span className="mr-2">📮</span> Código Postal
+                        </Label>
+                        <Input
+                          value={customerInfo.zipCode}
+                          onChange={(e) => setCustomerInfo({ ...customerInfo, zipCode: e.target.value })}
+                          placeholder="15001"
                           className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-lg"
                         />
                       </div>
