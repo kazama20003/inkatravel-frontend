@@ -3,13 +3,17 @@
 import type React from "react"
 
 import { useLanguage } from "@/contexts/LanguageContext"
-import type { TourTransport } from "@/types/tour"
+import type { TourTransport } from "@/types/tour-transport"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, Clock, MapPin, Users, Calendar } from "lucide-react"
+import { Star, Clock, MapPin, Users, Calendar, Eye, ShoppingCart } from "lucide-react"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
+import { api } from "@/lib/axiosInstance"
+import { CartItemType } from "@/types/cart"
+import { useState } from "react"
+import { toast } from "sonner"
 
 interface TransportCardProps {
   tour: TourTransport
@@ -19,6 +23,7 @@ interface TransportCardProps {
 export function TransportCard({ tour, index }: TransportCardProps) {
   const { language } = useLanguage()
   const router = useRouter()
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
 
   type LanguageKey = "es" | "en" | "fr" | "de" | "it"
 
@@ -28,6 +33,14 @@ export function TransportCard({ tour, index }: TransportCardProps) {
     fr: "VEDETTE",
     de: "EMPFOHLEN",
     it: "IN EVIDENZA",
+  }
+
+  const detailsTexts: Record<LanguageKey, string> = {
+    es: "VER DETALLES",
+    en: "VIEW DETAILS",
+    fr: "VOIR DÉTAILS",
+    de: "DETAILS ANSEHEN",
+    it: "VEDI DETTAGLI",
   }
 
   const reserveTexts: Record<LanguageKey, string> = {
@@ -60,6 +73,69 @@ export function TransportCard({ tour, index }: TransportCardProps) {
     fr: "• TOURS PÉROU • AVENTURE • CULTURE • NATURE • HISTOIRE • GASTRONOMIE ",
     de: "• PERU TOUREN • ABENTEUER • KULTUR • NATUR • GESCHICHTE • GASTRONOMIE ",
     it: "• TOUR PERÙ • AVVENTURA • CULTURA • NATURA • STORIA • GASTRONOMIA ",
+  }
+
+  const addedToCartTexts: Record<LanguageKey, string> = {
+    es: "Agregado al carrito",
+    en: "Added to cart",
+    fr: "Ajouté au panier",
+    de: "Zum Warenkorb hinzugefügt",
+    it: "Aggiunto al carrello",
+  }
+
+  const loginRequiredTexts: Record<LanguageKey, string> = {
+    es: "Debes iniciar sesión para agregar al carrito",
+    en: "You must log in to add to cart",
+    fr: "Vous devez vous connecter pour ajouter au panier",
+    de: "Sie müssen sich anmelden, um zum Warenkorb hinzuzufügen",
+    it: "Devi accedere per aggiungere al carrello",
+  }
+
+  const serviceTypeTexts: Record<LanguageKey, Record<string, string>> = {
+    es: {
+      basic: "Servicio Básico",
+      privatePremium: "Servicio Premium Privado",
+    },
+    en: {
+      basic: "Basic Service",
+      privatePremium: "Private Premium Service",
+    },
+    fr: {
+      basic: "Service de Base",
+      privatePremium: "Service Premium Privé",
+    },
+    de: {
+      basic: "Basis-Service",
+      privatePremium: "Privater Premium-Service",
+    },
+    it: {
+      basic: "Servizio Base",
+      privatePremium: "Servizio Premium Privato",
+    },
+  }
+
+  const savingsTexts: Record<LanguageKey, string> = {
+    es: "Ahorra",
+    en: "Save",
+    fr: "Économisez",
+    de: "Sparen Sie",
+    it: "Risparmia",
+  }
+
+  const perPersonTexts: Record<LanguageKey, string> = {
+    es: "por persona",
+    en: "per person",
+    fr: "par personne",
+    de: "pro Person",
+    it: "a persona",
+  }
+
+  const dollarPriceTexts: Record<LanguageKey, string> = {
+    es: "USD",
+    en: "USD",
+    fr: "USD",
+    de: "USD",
+    it: "USD",
   }
 
   const dayTranslations: Record<LanguageKey, Record<string, string>> = {
@@ -159,12 +235,10 @@ export function TransportCard({ tour, index }: TransportCardProps) {
       return translations.daily
     }
 
-    // If all 7 days are available, show "Daily"
     if (tour.availableDays.length === 7) {
       return translations.daily
     }
 
-    // Map day names to translated abbreviations
     const translatedDays = tour.availableDays
       .map((day) => {
         const dayLower = day.toLowerCase()
@@ -175,20 +249,110 @@ export function TransportCard({ tour, index }: TransportCardProps) {
     return translatedDays
   }
 
-  const handleCardClick = () => {
-    if (tour.slug) {
-      router.push(`/transport/${tour.slug}`)
-    }
+  const getServiceTypeText = () => {
+    const currentLang = language as LanguageKey
+    const serviceType = tour.serviceType || "basic"
+    return serviceTypeTexts[currentLang][serviceType] || serviceTypeTexts.es[serviceType]
   }
 
-  const handleReserveClick = (e: React.MouseEvent) => {
+  const getFinalPrice = () => {
+    // For premium service, add service price to base price
+    if (tour.serviceType === "privatePremium" && tour.servicePrice) {
+      return tour.price + tour.servicePrice
+    }
+    // For basic service, just return the base price
+    return tour.price
+  }
+
+  const getDollarPrice = () => {
+    const finalPrice = getFinalPrice()
+    return finalPrice.toFixed(2)
+  }
+
+  const getOldDollarPrice = () => {
+    if (tour.oldPrice) {
+      return tour.oldPrice.toFixed(2)
+    }
+    return null
+  }
+
+  const getDiscountPercentage = () => {
+    const finalPrice = getFinalPrice()
+    if (tour.oldPrice && tour.oldPrice > finalPrice) {
+      const discount = ((tour.oldPrice - finalPrice) / tour.oldPrice) * 100
+      return Math.round(discount)
+    }
+    return 0
+  }
+
+  const getSavingsAmount = () => {
+    const finalPrice = getFinalPrice()
+    if (tour.oldPrice && tour.oldPrice > finalPrice) {
+      return tour.oldPrice - finalPrice
+    }
+    return 0
+  }
+
+  const handleViewDetails = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (tour.slug) {
       router.push(`/transport/${tour.slug}`)
     }
   }
 
+  const handleReserveClick = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    setIsAddingToCart(true)
+
+    try {
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      const startDate = tomorrow.toISOString()
+
+      const people = 1
+      const pricePerPerson = getFinalPrice()
+      const total = pricePerPerson * people
+
+      const cartData = {
+        items: [
+          {
+            productType: CartItemType.Transport,
+            productId: tour._id,
+            startDate,
+            people,
+            pricePerPerson,
+            total,
+            productTitle: getTitle(),
+            productImageUrl: tour.imageUrl,
+            productSlug: tour.slug,
+          },
+        ],
+        totalPrice: total,
+      }
+
+      console.log("[v0] Adding to cart:", cartData)
+
+      await api.post("/cart", cartData)
+
+      toast.success(addedToCartTexts[language as LanguageKey], {
+        description: getTitle(),
+      })
+
+      router.push("/booking")
+    } catch (error) {
+      console.error("[v0] Error adding to cart:", error)
+
+      toast.error(loginRequiredTexts[language as LanguageKey])
+    } finally {
+      setIsAddingToCart(false)
+    }
+  }
+
   const currentLanguage = language as LanguageKey
+  const finalPrice = getFinalPrice()
+  const discountPercentage = getDiscountPercentage()
+  const savingsAmount = getSavingsAmount()
 
   return (
     <motion.div
@@ -198,14 +362,16 @@ export function TransportCard({ tour, index }: TransportCardProps) {
       className="group"
     >
       <Card
-        className="relative overflow-hidden border-0 hover:border-amber-200/20 transition-all duration-500 hover:scale-[1.02] h-[650px] cursor-pointer bg-white rounded-3xl"
-        onClick={handleCardClick}
+        className="relative overflow-hidden border-0 hover:border-amber-200/20 transition-all duration-500 hover:scale-[1.02] h-[700px] cursor-pointer bg-white rounded-3xl"
+        onClick={handleViewDetails}
       >
         <div className="absolute inset-0">
           <Image
             src={
               tour.imageUrl ||
               "/placeholder.svg?height=700&width=400&query=Peru transport tourism luxury scenic mountain landscape" ||
+              "/placeholder.svg" ||
+              "/placeholder.svg" ||
               "/placeholder.svg"
             }
             alt={getTitle()}
@@ -248,6 +414,13 @@ export function TransportCard({ tour, index }: TransportCardProps) {
               <Badge className="bg-green-500/90 text-white font-medium text-xs px-3 py-1 rounded-full shadow-lg w-fit">
                 {availableTexts[currentLanguage]}
               </Badge>
+              <Badge
+                className={`${
+                  tour.serviceType === "privatePremium" ? "bg-purple-500/90" : "bg-blue-500/90"
+                } text-white font-medium text-xs px-3 py-1 rounded-full shadow-lg w-fit`}
+              >
+                {getServiceTypeText()}
+              </Badge>
             </div>
           </div>
 
@@ -286,25 +459,71 @@ export function TransportCard({ tour, index }: TransportCardProps) {
 
             <p className="text-white/80 text-sm leading-relaxed line-clamp-2">{getDescription()}</p>
 
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-amber-400 text-sm">{fromTexts[currentLanguage]}</span>
-                    <span className="text-white font-bold text-3xl">S/{tour.price || 0}</span>
+            <div className="flex flex-col gap-3 pt-2">
+              <div className="bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-md rounded-2xl p-4 border border-amber-500/30 shadow-xl">
+                <div className="flex flex-col gap-2">
+                  {tour.oldPrice && tour.oldPrice > finalPrice && (
+                    <div className="flex items-center gap-2 justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-white/40 text-base line-through font-medium">
+                          ${getOldDollarPrice()} {dollarPriceTexts[currentLanguage]}
+                        </span>
+                        <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs px-2 py-0.5 rounded-full shadow-lg">
+                          -{discountPercentage}%
+                        </Badge>
+                      </div>
+                      <div className="text-green-400 text-xs font-bold bg-green-500/20 px-2 py-1 rounded-full">
+                        {savingsTexts[currentLanguage]} ${savingsAmount.toFixed(2)}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-1">
+                    <span className="text-amber-400 text-sm font-semibold uppercase tracking-wide">
+                      {fromTexts[currentLanguage]}
+                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-white font-black text-4xl tracking-tight">${getDollarPrice()}</span>
+                      <span className="text-amber-400/80 font-bold text-lg">{dollarPriceTexts[currentLanguage]}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/60 text-xs font-medium">{perPersonTexts[currentLanguage]}</span>
+                      <Badge
+                        className={`${
+                          tour.serviceType === "privatePremium"
+                            ? "bg-gradient-to-r from-purple-500 to-purple-600"
+                            : "bg-gradient-to-r from-blue-500 to-blue-600"
+                        } text-white text-xs px-2 py-1 rounded-full shadow-md`}
+                      >
+                        {getServiceTypeText()}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="text-white/60 text-xs">por persona</div>
                 </div>
               </div>
 
-              <motion.button
-                className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 text-white font-semibold text-xs px-4 py-2.5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 min-h-[44px] min-w-[88px]"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleReserveClick}
-              >
-                {reserveTexts[currentLanguage]}
-              </motion.button>
+              <div className="flex gap-2">
+                <motion.button
+                  className="flex-1 bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold text-xs px-4 py-3 rounded-full shadow-md hover:bg-white/20 transition-all duration-300 flex items-center justify-center gap-2 min-h-[44px]"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleViewDetails}
+                >
+                  <Eye className="w-4 h-4" />
+                  {detailsTexts[currentLanguage]}
+                </motion.button>
+
+                <motion.button
+                  className="flex-1 bg-gradient-to-r from-amber-500/90 to-orange-500/90 text-white font-semibold text-xs px-4 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover={{ scale: isAddingToCart ? 1 : 1.02 }}
+                  whileTap={{ scale: isAddingToCart ? 1 : 0.98 }}
+                  onClick={handleReserveClick}
+                  disabled={isAddingToCart}
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  {isAddingToCart ? "..." : reserveTexts[currentLanguage]}
+                </motion.button>
+              </div>
             </div>
           </div>
         </div>

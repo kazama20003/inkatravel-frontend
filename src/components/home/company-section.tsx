@@ -4,10 +4,10 @@ import { useLanguage } from "@/contexts/LanguageContext"
 
 const translations = {
   es: {
-    title: "Inka Travel Peru",
+    title: "Inca Travel Peru",
     subtitle: "Agencia de Transportes y Turismo",
     description:
-      "Inka Travel Peru es una empresa de transportes y turismo galardonada que se especializa en servicios de transporte de calidad, paquetes turísticos personalizados y experiencias únicas por todo el Perú. Ofrecemos los mejores transportes para turistas con calidad garantizada.",
+      "Inca Travel Peru es una empresa de transportes y turismo galardonada que se especializa en servicios de transporte de calidad, paquetes turísticos personalizados y experiencias únicas por todo el Perú. Ofrecemos los mejores transportes para turistas con calidad garantizada.",
     stats: {
       atol: "ATOL",
       atolNumber: "NO 12034",
@@ -18,10 +18,10 @@ const translations = {
     },
   },
   en: {
-    title: "Inka Travel Peru",
+    title: "Inca Travel Peru",
     subtitle: "Transport and Tourism Agency",
     description:
-      "Inka Travel Peru is an award-winning transport and tourism company that specializes in quality transport services, personalized tourist packages and unique experiences throughout Peru. We offer the best transport for tourists with guaranteed quality.",
+      "Inca Travel Peru is an award-winning transport and tourism company that specializes in quality transport services, personalized tourist packages and unique experiences throughout Peru. We offer the best transport for tourists with guaranteed quality.",
     stats: {
       atol: "ATOL",
       atolNumber: "NO 12034",
@@ -32,10 +32,10 @@ const translations = {
     },
   },
   fr: {
-    title: "Inka Travel Peru",
+    title: "Inca Travel Peru",
     subtitle: "Agence de Transport et Tourisme",
     description:
-      "Inka Travel Peru est une entreprise de transport et de tourisme primée qui se spécialise dans les services de transport de qualité, les forfaits touristiques personnalisés et les expériences uniques à travers le Pérou. Nous offrons les meilleurs transports pour les touristes avec une qualité garantie.",
+      "Inca Travel Peru est une entreprise de transport et de tourisme primée qui se spécialise dans les services de transport de qualité, les forfaits touristiques personnalisés et les expériences uniques à travers le Pérou. Nous offrons les meilleurs transports pour les touristes avec une qualité garantie.",
     stats: {
       atol: "ATOL",
       atolNumber: "NO 12034",
@@ -46,10 +46,10 @@ const translations = {
     },
   },
   de: {
-    title: "Inka Travel Peru",
+    title: "Inca Travel Peru",
     subtitle: "Transport- und Tourismusagentur",
     description:
-      "Inka Travel Peru ist ein preisgekröntes Transport- und Tourismusunternehmen, das sich auf hochwertige Transportdienstleistungen, personalisierte Tourismuspakete und einzigartige Erfahrungen in ganz Peru spezialisiert hat. Wir bieten die besten Transporte für Touristen mit garantierter Qualität.",
+      "Inca Travel Peru ist ein preisgekröntes Transport- und Tourismusunternehmen, das sich auf hochwertige Transportdienstleistungen, personalisierte Tourismuspakete und einzigartige Erfahrungen in ganz Peru spezialisiert hat. Wir bieten die besten Transporte für Touristen mit garantierter Qualität.",
     stats: {
       atol: "ATOL",
       atolNumber: "NO 12034",
@@ -60,10 +60,10 @@ const translations = {
     },
   },
   nl: {
-    title: "Inka Travel Peru",
+    title: "Inca Travel Peru",
     subtitle: "Transport en Toerisme Bureau",
     description:
-      "Inka Travel Peru is een bekroond transport- en toerismebedrijf dat gespecialiseerd is in kwaliteitsvervoersdiensten, gepersonaliseerde toerismepakketten en unieke ervaringen door heel Peru. Wij bieden het beste vervoer voor toeristen met gegarandeerde kwaliteit.",
+      "Inca Travel Peru is een bekroond transport- en toerismebedrijf dat gespecialiseerd is in kwaliteitsvervoersdiensten, gepersonaliseerde toerismepakketten en unieke ervaringen door heel Peru. Wij bieden het beste vervoer voor toeristen met gegarandeerde kwaliteit.",
     stats: {
       atol: "ATOL",
       atolNumber: "NO 12034",
@@ -74,10 +74,10 @@ const translations = {
     },
   },
   it: {
-    title: "Inka Travel Peru",
+    title: "Inca Travel Peru",
     subtitle: "Agenzia di Trasporti e Turismo",
     description:
-      "Inka Travel Peru è un'azienda di trasporti e turismo pluripremiata specializzata in servizi di trasporto di qualità, pacchetti turistici personalizzati ed esperienze uniche in tutto il Perù. Offriamo i migliori trasporti per turisti con qualità garantita.",
+      "Inca Travel Peru è un'azienda di trasporti e turismo pluripremiata specializzata in servizi di trasporto di qualità, pacchetti turistici personalizzati ed esperienze uniche in tutto il Perù. Offriamo i migliori trasporti per turisti con qualità garantita.",
     stats: {
       atol: "ATOL",
       atolNumber: "NO 12034",

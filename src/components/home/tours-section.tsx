@@ -41,9 +41,9 @@ const mockTours: Tour[] = [
     reviews: 5000,
     location: "Arequipa",
     region: "Chivay",
-    category: TourCategory.ADVENTURE,
+    category: TourCategory.AVENTURA,
     difficulty: Difficulty.EASY,
-    packageType: PackageType.GROUP,
+    packageType: PackageType.Basico,
     highlights: [
       {
         es: "Mirador Cruz del Cóndor",
@@ -106,7 +106,7 @@ const mockTours: Tour[] = [
     region: "Aguas Calientes",
     category: TourCategory.CULTURAL,
     difficulty: Difficulty.MODERATE,
-    packageType: PackageType.PRIVATE,
+    packageType: PackageType.Premium,
     highlights: [
       {
         es: "Tren a Aguas Calientes",

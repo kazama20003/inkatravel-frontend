@@ -213,11 +213,13 @@ export function ToursSearch({ onSearch, isLoading }: ToursSearchProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{texts.all}</SelectItem>
-                  <SelectItem value={TourCategory.ADVENTURE}>Adventure</SelectItem>
+                  <SelectItem value={TourCategory.AVENTURA}>Aventura</SelectItem>
                   <SelectItem value={TourCategory.CULTURAL}>Cultural</SelectItem>
-                  <SelectItem value={TourCategory.NATURE}>Nature</SelectItem>
-                  <SelectItem value={TourCategory.HISTORICAL}>Historical</SelectItem>
-                  <SelectItem value={TourCategory.GASTRONOMIC}>Gastronomic</SelectItem>
+                  <SelectItem value={TourCategory.NATURALEZA}>Naturaleza</SelectItem>
+                  <SelectItem value={TourCategory.RELAJACION}>Relajación</SelectItem>
+                  <SelectItem value={TourCategory.TREKKING}>Trekking</SelectItem>
+                  <SelectItem value={TourCategory.PANORAMICO}>Panorámico</SelectItem>
+                  <SelectItem value={TourCategory.TRANSPORTE_TURISTICO}>Transporte Turístico</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -253,11 +255,8 @@ export function ToursSearch({ onSearch, isLoading }: ToursSearchProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{texts.all}</SelectItem>
-                  <SelectItem value={PackageType.PRIVATE}>Private</SelectItem>
-                  <SelectItem value={PackageType.GROUP}>Group</SelectItem>
-                  <SelectItem value={PackageType.SHARED}>Shared</SelectItem>
-                  <SelectItem value={PackageType.BASIC}>Básico</SelectItem>
-                  <SelectItem value={PackageType.PREMIUM}>Premium</SelectItem>
+                  <SelectItem value={PackageType.Basico}>Básico</SelectItem>
+                  <SelectItem value={PackageType.Premium}>Premium</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -298,8 +297,8 @@ export function ToursSearch({ onSearch, isLoading }: ToursSearchProps) {
                 <Input
                   type="number"
                   placeholder="Enter group size"
-                  value={filters.groupSize}
-                  onChange={(e) => updateFilter("groupSize", Number.parseInt(e.target.value))}
+                  value={filters.groupSize || ""}
+                  onChange={(e) => updateFilter("groupSize", Number.parseInt(e.target.value) || 0)}
                   className="pl-10"
                 />
               </div>

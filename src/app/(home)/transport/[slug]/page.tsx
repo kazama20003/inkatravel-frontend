@@ -1,9 +1,10 @@
 "use client"
 import { api } from "@/lib/axiosInstance"
+import type React from "react"
+
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import {
-  Calendar,
   Clock,
   MapPin,
   Star,
@@ -14,16 +15,19 @@ import {
   Shield,
   Award,
   Globe,
+  ShoppingCart,
   ChevronLeft,
   ChevronRight,
-  ShoppingCart,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/LanguageContext"
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { GoogleMap, LoadScript, DirectionsService, DirectionsRenderer } from "@react-google-maps/api"
 import { type CreateCartDto, CartItemType } from "@/types/cart"
 import { toast } from "sonner"
-import Link from "next/link"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 
 declare global {
   interface Window {
@@ -132,11 +136,8 @@ const translations = {
     officialCertification: "Certificación oficial",
     historicalKnowledge: "Conocimiento histórico",
     multilingual: "Multilingüe",
-    allInclusive: "Todo Incluido",
-    allInclusiveDesc: "Transporte, comidas, entradas y alojamiento incluidos",
-    premiumTransport: "Transporte premium",
-    typicalMeals: "Comidas típicas",
-    siteEntries: "Entradas a sitios",
+    tenMinuteStops: "10-Minuten-Stopps",
+    tenMinuteStopsDesc: "Paradas de 10 minutos dependiendo de los turistas",
     travelInsurance: "Seguro de Viaje",
     travelInsuranceDesc: "Cobertura completa durante todo el recorrido",
     medicalInsurance: "Seguro médico",
@@ -207,11 +208,8 @@ const translations = {
     officialCertification: "Official certification",
     historicalKnowledge: "Historical knowledge",
     multilingual: "Multilingual",
-    allInclusive: "All Inclusive",
-    allInclusiveDesc: "Transport, meals, tickets and accommodation included",
-    premiumTransport: "Premium transport",
-    typicalMeals: "Typical meals",
-    siteEntries: "Site entries",
+    tenMinuteStops: "10-Minute Stops",
+    tenMinuteStopsDesc: "10-minute stops depending on tourists",
     travelInsurance: "Travel Insurance",
     travelInsuranceDesc: "Complete coverage throughout the journey",
     medicalInsurance: "Medical insurance",
@@ -282,11 +280,8 @@ const translations = {
     officialCertification: "Certification officielle",
     historicalKnowledge: "Connaissances historiques",
     multilingual: "Multilingue",
-    allInclusive: "Tout Inclus",
-    allInclusiveDesc: "Transport, repas, billets et hébergement inclus",
-    premiumTransport: "Transport premium",
-    typicalMeals: "Repas typiques",
-    siteEntries: "Entrées de sites",
+    tenMinuteStops: "Arrêts de 10 minutes",
+    tenMinuteStopsDesc: "Arrêts de 10 minutes selon les touristes",
     travelInsurance: "Assurance Voyage",
     travelInsuranceDesc: "Couverture complète tout au long du voyage",
     medicalInsurance: "Assurance médicale",
@@ -357,11 +352,8 @@ const translations = {
     officialCertification: "Offizielle Zertifizierung",
     historicalKnowledge: "Historisches Wissen",
     multilingual: "Mehrsprachig",
-    allInclusive: "Alles Inklusive",
-    allInclusiveDesc: "Transport, Mahlzeiten, Tickets und Unterkunft inklusive",
-    premiumTransport: "Premium-Transport",
-    typicalMeals: "Typische Mahlzeiten",
-    siteEntries: "Standorteingänge",
+    tenMinuteStops: "10-Minuten-Stopps",
+    tenMinuteStopsDesc: "10-minütige Stopps je nach Touristen",
     travelInsurance: "Reiseversicherung",
     travelInsuranceDesc: "Vollständige Abdeckung während der gesamten Reise",
     medicalInsurance: "Krankenversicherung",
@@ -432,11 +424,8 @@ const translations = {
     officialCertification: "Certificazione ufficiale",
     historicalKnowledge: "Conoscenza storica",
     multilingual: "Multilingue",
-    allInclusive: "Tutto Incluso",
-    allInclusiveDesc: "Trasporto, pasti, biglietti e alloggio inclusi",
-    premiumTransport: "Trasporto premium",
-    typicalMeals: "Pasti tipici",
-    siteEntries: "Ingressi ai siti",
+    tenMinuteStops: "Fermate di 10 minuti",
+    tenMinuteStopsDesc: "Fermate di 10 minuti a seconda dei turisti",
     travelInsurance: "Assicurazione di Viaggio",
     travelInsuranceDesc: "Copertura completa durante tutto il viaggio",
     medicalInsurance: "Assicurazione medica",
@@ -599,7 +588,7 @@ const GoogleMapComponent = ({
         let totalDistance = 0
         let totalDuration = 0
 
-        route.legs.forEach((leg) => {
+        route.legs.forEach((leg: google.maps.DirectionsLeg) => {
           totalDistance += leg.distance?.value || 0
           totalDuration += leg.duration?.value || 0
         })
@@ -667,7 +656,7 @@ const GoogleMapComponent = ({
 
   useEffect(() => {
     return () => {
-      markersRef.current.forEach((marker) => {
+      markersRef.current.forEach((marker: google.maps.marker.AdvancedMarkerElement) => {
         marker.map = null
       })
       markersRef.current = []
@@ -808,13 +797,138 @@ const GoogleMapComponent = ({
   )
 }
 
+const CustomCarousel = ({
+  images,
+  autoplayDelay = 5000,
+}: {
+  images: { url: string; title: string; description: string }[]
+  autoplayDelay?: number
+}) => {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isAutoplayEnabled, setIsAutoplayEnabled] = useState(true)
+  const touchStartX = useRef<number>(0)
+  const touchEndX = useRef<number>(0)
+
+  const goToNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % images.length)
+  }, [images.length])
+
+  const goToPrevious = () => {
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)
+  }
+
+  const goToSlide = (index: number) => {
+    setCurrentIndex(index)
+  }
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = () => {
+    const diff = touchStartX.current - touchEndX.current
+    const threshold = 50
+
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        goToNext()
+      } else {
+        goToPrevious()
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (!isAutoplayEnabled || images.length <= 1) return
+
+    const interval = setInterval(() => {
+      goToNext()
+    }, autoplayDelay)
+
+    return () => clearInterval(interval)
+  }, [currentIndex, isAutoplayEnabled, images.length, autoplayDelay, goToNext])
+
+  if (images.length === 0) return null
+
+  return (
+    <div
+      className="relative w-full h-full overflow-hidden"
+      onMouseEnter={() => setIsAutoplayEnabled(false)}
+      onMouseLeave={() => setIsAutoplayEnabled(true)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div
+        className="flex h-full transition-transform duration-500 ease-out"
+        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+      >
+        {images.map((image, index) => (
+          <div key={index} className="relative w-full h-full flex-shrink-0">
+            <Image
+              src={image.url || "/placeholder.svg"}
+              alt={image.title}
+              fill
+              className="object-cover"
+              priority={index === 0}
+              sizes="100vw"
+              quality={85}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.src = `/placeholder.svg?height=800&width=1600&query=${encodeURIComponent(image.title)}`
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          </div>
+        ))}
+      </div>
+
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={goToPrevious}
+            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 h-14 w-14 md:h-16 md:w-16 bg-white/95 backdrop-blur-sm border-2 border-white shadow-2xl rounded-full flex items-center justify-center text-gray-900 hover:bg-white hover:scale-110 transition-all duration-200"
+            aria-label="Imagen anterior"
+          >
+            <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
+          </button>
+
+          <button
+            onClick={goToNext}
+            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 h-14 w-14 md:h-16 md:w-16 bg-white/95 backdrop-blur-sm border-2 border-white shadow-2xl rounded-full flex items-center justify-center text-gray-900 hover:bg-white hover:scale-110 transition-all duration-200"
+            aria-label="Siguiente imagen"
+          >
+            <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
+          </button>
+
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  currentIndex === index ? "w-10 bg-white shadow-lg" : "w-2.5 bg-white/60 hover:bg-white/80"
+                }`}
+                aria-label={`Ir a imagen ${index + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function TransportPage({ params }: Props) {
   const { language } = useLanguage()
 
   const t = translations[language as keyof typeof translations] || translations.es
   const [transport, setTransport] = useState<TourTransport | null>(null)
   const [loading, setLoading] = useState(true)
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [selectedDate, setSelectedDate] = useState<string>("")
   const [selectedTravelers, setSelectedTravelers] = useState<number>(1)
   const [bookingNotes] = useState<string>("")
@@ -876,6 +990,53 @@ export default function TransportPage({ params }: Props) {
     loadTransport()
   }, [params, language])
 
+  // No longer needed as carouselApi is removed
+  // useEffect(() => {
+  //   if (!carouselApi) return
+
+  //   const onSelect = () => {
+  //     setCurrentSlide(carouselApi.selectedScrollSnap())
+  //   }
+
+  //   carouselApi.on("select", onSelect)
+  //   onSelect()
+
+  //   return () => {
+  //     carouselApi.off("select", onSelect)
+  //   }
+  // }, [carouselApi])
+
+  const galleryImages: { url: string; title: string; description: string }[] = []
+  if (transport) {
+    if (transport.imageUrl) {
+      galleryImages.push({
+        url: transport.imageUrl,
+        title: getTranslatedText(transport.title, language),
+        description: "Main transport image",
+      })
+    }
+    if (transport.itinerary) {
+      transport.itinerary.forEach((day) => {
+        if (day.imageUrl) {
+          galleryImages.push({
+            url: day.imageUrl,
+            title: getTranslatedText(day.title, language),
+            description: getTranslatedText(day.description, language),
+          })
+        }
+      })
+    }
+
+    // Si no hay imágenes, agregar placeholders
+    if (galleryImages.length === 0) {
+      galleryImages.push({
+        url: `/placeholder.svg?height=800&width=1600&query=${encodeURIComponent(getTranslatedText(transport.title, language))}`,
+        title: getTranslatedText(transport.title, language),
+        description: "Transport tour image",
+      })
+    }
+  }
+
   if (loading) {
     return (
       <>
@@ -898,34 +1059,6 @@ export default function TransportPage({ params }: Props) {
   const displayPrice = transport.price
   const originCoords = `${transport.origin.lat.toString()}, ${transport.origin.lng.toString()}`
   const destinationCoords = `${transport.destination.lat.toString()}, ${transport.destination.lng.toString()}`
-
-  const galleryImages = []
-  if (transport.imageUrl) {
-    galleryImages.push({
-      url: transport.imageUrl,
-      title: getTranslatedText(transport.title, language),
-      description: "Imagen principal del transporte",
-    })
-  }
-  if (transport.itinerary) {
-    transport.itinerary.forEach((day) => {
-      if (day.imageUrl) {
-        galleryImages.push({
-          url: day.imageUrl,
-          title: getTranslatedText(day.title, language),
-          description: getTranslatedText(day.description, language),
-        })
-      }
-    })
-  }
-
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length)
-  }
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length)
-  }
 
   const handleReserveNow = async () => {
     if (!transport) return
@@ -962,11 +1095,11 @@ export default function TransportPage({ params }: Props) {
 
       console.log("[v0] Cart created successfully:", response.data)
 
-      toast.success(language === "es" ? "¡Agregado al carrito exitosamente!" : "Successfully added to cart!", {
+      toast.success(language === "es" ? "¡Agregado alcarrito exitosamente!" : "Successfully added to cart!", {
         description:
           language === "es"
-            ? `${selectedTravelers} ${selectedTravelers === 1 ? "persona" : "personas"} - S/ ${(displayPrice * selectedTravelers).toLocaleString()}`
-            : `${selectedTravelers} ${selectedTravelers === 1 ? "person" : "people"} - S/ ${(displayPrice * selectedTravelers).toLocaleString()}`,
+            ? `${selectedTravelers} ${selectedTravelers === 1 ? "persona" : "personas"} - $${(displayPrice * selectedTravelers).toLocaleString()}`
+            : `${selectedTravelers} ${selectedTravelers === 1 ? "person" : "people"} - $${(displayPrice * selectedTravelers).toLocaleString()}`,
         duration: 5000,
         action: {
           label: language === "es" ? "Ver Carrito" : "View Cart",
@@ -995,206 +1128,239 @@ export default function TransportPage({ params }: Props) {
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-white pt-20">
-        <section className="relative bg-white">
-          <div className="relative z-10 container mx-auto px-4 py-16">
-            <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gray-900 text-balance">
-                {getTranslatedText(transport.title, language)}
-              </h1>
-              <p className="text-lg md:text-xl mb-8 text-gray-600 leading-relaxed text-pretty">
-                {getTranslatedText(transport.description, language)}
-              </p>
-              <div className="flex flex-wrap justify-center items-center gap-6 mb-8">
-                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 text-gray-700 shadow-sm">
-                  <MapPin className="w-5 h-5 text-orange-500" />
-                  <span className="font-semibold">
-                    {transport.origin.name} → {transport.destination.name}
-                  </span>
-                </div>
-                {transport.durationInHours && (
-                  <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 text-gray-700 shadow-sm">
-                    <Clock className="w-5 h-5 text-green-600" />
-                    <span className="font-semibold">
-                      {transport.durationInHours.toString()} {t.hours}
-                    </span>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <section className="relative w-full h-[60vh] min-h-[500px] max-h-[700px] overflow-hidden bg-gradient-to-br from-orange-500 via-orange-400 to-yellow-500">
+        <div className="absolute inset-0">
+          <CustomCarousel images={galleryImages} autoplayDelay={5000} />
+
+          <div className="absolute inset-0 z-10 flex flex-col justify-end pb-16 md:pb-20">
+            <div className="container mx-auto px-4 md:px-6">
+              <div className="max-w-5xl">
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 text-white drop-shadow-2xl leading-tight">
+                  {getTranslatedText(transport.title, language)}
+                </h1>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl">
+                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-4 shadow-2xl">
+                    <div className="flex items-center gap-3 mb-1">
+                      <MapPin className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ruta</span>
+                    </div>
+                    <p className="font-bold text-gray-900 text-sm leading-tight">
+                      {transport.origin.name} → {transport.destination.name}
+                    </p>
                   </div>
-                )}
-                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 text-gray-700 shadow-sm">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  <span className="font-semibold">{(transport.rating || 4.8).toString()}/5</span>
+
+                  {transport.durationInHours && (
+                    <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-4 shadow-2xl">
+                      <div className="flex items-center gap-3 mb-1">
+                        <Clock className="w-5 h-5 text-green-600 flex-shrink-0" />
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Duración</span>
+                      </div>
+                      <p className="font-bold text-gray-900 text-sm">
+                        {transport.durationInHours.toString()} {t.hours}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-4 shadow-2xl">
+                    <div className="flex items-center gap-3 mb-1">
+                      <Star className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rating</span>
+                    </div>
+                    <p className="font-bold text-gray-900 text-sm">{(transport.rating || 4.8).toString()}/5 ⭐</p>
+                  </div>
                 </div>
-              </div>
-              <div className="text-4xl font-bold py-4 px-8 rounded-full inline-block bg-orange-500 text-white shadow-lg">
-                S/ {displayPrice.toLocaleString()} PEN
               </div>
             </div>
           </div>
-        </section>
 
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-6xl mx-auto">
-            {galleryImages.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-8 mb-16 shadow-sm">
-                <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">{t.imageGallery}</h2>
-                <div className="relative">
-                  <div className="relative h-96 rounded-xl overflow-hidden mb-4 border border-gray-200">
-                    <Image
-                      src={galleryImages[currentImageIndex].url || "/placeholder.jpg"}
-                      alt={galleryImages[currentImageIndex].title}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                    {galleryImages.length > 1 && (
-                      <>
-                        <button
-                          onClick={prevImage}
-                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 transition-colors shadow-lg"
-                        >
-                          <ChevronLeft className="w-6 h-6 text-gray-700" />
-                        </button>
-                        <button
-                          onClick={nextImage}
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 transition-colors shadow-lg"
-                        >
-                          <ChevronRight className="w-6 h-6 text-gray-700" />
-                        </button>
-                      </>
-                    )}
-                    <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg p-3 text-white">
-                      <h3 className="font-bold text-lg">{galleryImages[currentImageIndex].title}</h3>
-                      <p className="text-sm opacity-90">{galleryImages[currentImageIndex].description}</p>
-                    </div>
-                  </div>
-                  {galleryImages.length > 1 && (
-                    <div className="flex justify-center gap-2">
-                      {galleryImages.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentImageIndex(index)}
-                          className={`w-3 h-3 rounded-full transition-colors ${
-                            index === currentImageIndex ? "bg-orange-500" : "bg-gray-300"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+          <div className="absolute top-6 right-4 md:right-8 z-20 bg-white rounded-2xl py-4 px-6 shadow-2xl border-4 border-orange-500">
+            <div className="text-center">
+              <div className="text-sm font-semibold text-gray-600 mb-1">Desde</div>
+              <div className="text-4xl md:text-5xl font-bold text-orange-500">${displayPrice.toLocaleString()}</div>
+              <div className="text-xs font-medium text-gray-500 mt-1">{t.perPerson}</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
-              <div className="bg-white border border-gray-200 rounded-xl p-6 text-center shadow-sm">
-                <Users className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-                <div className="text-2xl font-bold text-gray-900">12+</div>
-                <p className="text-gray-600">{t.yearsExperience}</p>
+      <div className="container mx-auto px-4 md:px-6 py-12 md:py-16">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12 md:mb-16">
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 text-center hover:shadow-xl transition-shadow">
+              <div className="w-14 h-14 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Users className="w-7 h-7 text-orange-500" />
               </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-6 text-center shadow-sm">
-                <Award className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                <div className="text-2xl font-bold text-gray-900">5000+</div>
-                <p className="text-gray-600">{t.satisfiedTourists}</p>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-6 text-center shadow-sm">
-                <Shield className="w-12 h-12 text-green-600 mx-auto mb-4" />
-                <div className="text-2xl font-bold text-gray-900">100%</div>
-                <p className="text-gray-600">{t.safeReliable}</p>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-6 text-center shadow-sm">
-                <Globe className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-                <div className="text-2xl font-bold text-gray-900">24/7</div>
-                <p className="text-gray-600">{t.supportAvailable}</p>
-              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">12+</div>
+              <p className="text-sm text-gray-600">{t.yearsExperience}</p>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-8 mb-16">
-              <div className="lg:col-span-2">
-                <div className="bg-white border border-gray-200 rounded-xl p-8 mb-8 shadow-sm">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-6">{t.packageDescription}</h2>
-                  <p className="text-lg leading-relaxed text-gray-700 mb-8">
-                    {getTranslatedText(transport.description, language)}
-                  </p>
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 text-center hover:shadow-xl transition-shadow">
+              <div className="w-14 h-14 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Award className="w-7 h-7 text-yellow-500" />
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">5000+</div>
+              <p className="text-sm text-gray-600">{t.satisfiedTourists}</p>
+            </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                      <Users className="w-8 h-8 text-orange-500 mb-4" />
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{t.smallGroup}</h3>
-                      <p className="text-gray-600 mb-3">{t.smallGroupDesc}</p>
-                      <ul className="mt-3 text-sm text-gray-500 space-y-1">
-                        <li>• {t.personalizedAttention}</li>
-                        <li>• {t.flexibilityStops}</li>
-                        <li>• {t.familyEnvironment}</li>
-                      </ul>
-                    </div>
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 text-center hover:shadow-xl transition-shadow">
+              <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Shield className="w-7 h-7 text-green-600" />
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">100%</div>
+              <p className="text-sm text-gray-600">{t.safeReliable}</p>
+            </div>
 
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                      <Navigation className="w-8 h-8 text-green-600 mb-4" />
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{t.expertGuide}</h3>
-                      <p className="text-gray-600 mb-3">{t.expertGuideDesc}</p>
-                      <ul className="mt-3 text-sm text-gray-500 space-y-1">
-                        <li>• {t.officialCertification}</li>
-                        <li>• {t.historicalKnowledge}</li>
-                        <li>• {t.multilingual}</li>
-                      </ul>
-                    </div>
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 text-center hover:shadow-xl transition-shadow">
+              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Globe className="w-7 h-7 text-blue-500" />
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">24/7</div>
+              <p className="text-sm text-gray-600">{t.supportAvailable}</p>
+            </div>
+          </div>
 
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                      <Star className="w-8 h-8 text-yellow-500 mb-4" />
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{t.allInclusive}</h3>
-                      <p className="text-gray-600 mb-3">{t.allInclusiveDesc}</p>
-                      <ul className="mt-3 text-sm text-gray-500 space-y-1">
-                        <li>• {t.premiumTransport}</li>
-                        <li>• {t.typicalMeals}</li>
-                        <li>• {t.siteEntries}</li>
-                      </ul>
-                    </div>
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">{t.packageDescription}</h2>
+                <p className="text-lg leading-relaxed text-gray-700 mb-8">
+                  {getTranslatedText(transport.description, language)}
+                </p>
 
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                      <Shield className="w-8 h-8 text-orange-500 mb-4" />
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{t.travelInsurance}</h3>
-                      <p className="text-gray-600 mb-3">{t.travelInsuranceDesc}</p>
-                      <ul className="mt-3 text-sm text-gray-500 space-y-1">
-                        <li>• {t.medicalInsurance}</li>
-                        <li>• {t.assistance24}</li>
-                        <li>• {t.luggageCoverage}</li>
-                      </ul>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-orange-50 to-white rounded-xl p-5 border border-orange-100">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                        <Users className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900">{t.smallGroup}</h3>
                     </div>
+                    <p className="text-sm text-gray-600 mb-3">{t.smallGroupDesc}</p>
+                    <ul className="space-y-1.5">
+                      <li className="flex items-center gap-2 text-sm text-gray-700">
+                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                        {t.personalizedAttention}
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-gray-700">
+                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                        {t.flexibilityStops}
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-gray-700">
+                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                        {t.familyEnvironment}
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-green-50 to-white rounded-xl p-5 border border-green-100">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                        <Navigation className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900">{t.expertGuide}</h3>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">{t.expertGuideDesc}</p>
+                    <ul className="space-y-1.5">
+                      <li className="flex items-center gap-2 text-sm text-gray-700">
+                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
+                        {t.officialCertification}
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-gray-700">
+                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
+                        {t.historicalKnowledge}
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-gray-700">
+                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
+                        {t.multilingual}
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-5 border border-blue-100">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <Shield className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900">{t.travelInsurance}</h3>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">{t.travelInsuranceDesc}</p>
+                    <ul className="space-y-1.5">
+                      <li className="flex items-center gap-2 text-sm text-gray-700">
+                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+                        {t.medicalInsurance}
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-gray-700">
+                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+                        {t.assistance24}
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-gray-700">
+                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+                        {t.luggageCoverage}
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-yellow-50 to-white rounded-xl p-5 border border-yellow-100">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-yellow-600 rounded-lg flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900">{t.tenMinuteStops}</h3>
+                    </div>
+                    <p className="text-sm text-gray-600">{t.tenMinuteStopsDesc}</p>
                   </div>
                 </div>
+              </div>
 
-                {transport.itinerary && transport.itinerary.length > 0 && (
-                  <div className="bg-white border border-gray-200 rounded-xl p-8 mb-8 shadow-sm">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-8">{t.detailedItinerary}</h2>
-                    <div className="space-y-6">
+              {transport.itinerary && transport.itinerary.length > 0 && (
+                <Card className="border-none shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-3xl md:text-4xl">{t.detailedItinerary}</CardTitle>
+                    <CardDescription className="text-sm md:text-base">Explora cada día de tu aventura</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Accordion type="single" collapsible className="w-full">
                       {transport.itinerary.map((day, index) => (
-                        <div key={index} className="relative">
-                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
+                        <AccordionItem key={index} value={`day-${index}`}>
+                          <AccordionTrigger className="text-base md:text-lg hover:no-underline">
+                            <div className="flex items-center gap-3 md:gap-4">
+                              <div className="bg-gradient-to-br from-orange-500 to-yellow-500 text-white rounded-full w-9 h-9 md:w-10 md:h-10 flex items-center justify-center font-bold text-sm shadow-lg flex-shrink-0">
                                 {day.day.toString()}
                               </div>
-                              <h3 className="text-xl font-bold text-gray-900">
-                                {getTranslatedText(day.title, language)}
-                              </h3>
+                              <span className="font-bold text-left">{getTranslatedText(day.title, language)}</span>
                             </div>
-                            <p className="text-gray-700 mb-4 leading-relaxed">
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-4 md:pt-6 pb-3 md:pb-4">
+                            <p className="text-gray-700 mb-4 md:mb-6 leading-relaxed text-sm md:text-base">
                               {getTranslatedText(day.description, language)}
                             </p>
                             {day.route && day.route.length > 0 && (
-                              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                                <h4 className="font-semibold text-gray-900 mb-3">{t.dayStops}:</h4>
-                                <div className="space-y-2">
+                              <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-4 md:p-6">
+                                <h4 className="font-semibold text-gray-900 mb-3 md:mb-4 flex items-center gap-2 text-sm md:text-base">
+                                  <MapPin className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
+                                  {t.dayStops}
+                                </h4>
+                                <div className="space-y-3 md:space-y-4">
                                   {day.route.map((stop, stopIndex) => (
-                                    <div key={stopIndex} className="flex items-start gap-3 text-sm">
-                                      <MapPin className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                                      <div>
-                                        <span className="font-semibold text-gray-800">{stop.location}</span>
-                                        {stop.stopTime && (
-                                          <span className="text-green-600 ml-2">({stop.stopTime})</span>
-                                        )}
+                                    <div key={stopIndex} className="flex items-start gap-3 md:gap-4">
+                                      <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-xs md:text-sm flex-shrink-0 mt-1">
+                                        {stopIndex + 1}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-1">
+                                          <span className="font-semibold text-gray-800 text-sm md:text-base">
+                                            {stop.location}
+                                          </span>
+                                          {stop.stopTime && (
+                                            <span className="text-xs md:text-sm bg-green-100 text-green-700 px-2 md:px-3 py-1 rounded-full font-medium">
+                                              {stop.stopTime}
+                                            </span>
+                                          )}
+                                        </div>
                                         {stop.description && (
-                                          <p className="text-gray-600 mt-1">
+                                          <p className="text-gray-600 leading-relaxed text-sm md:text-base">
                                             {getTranslatedText(stop.description, language)}
                                           </p>
                                         )}
@@ -1204,228 +1370,271 @@ export default function TransportPage({ params }: Props) {
                                 </div>
                               </div>
                             )}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card className="border-none shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-3xl md:text-4xl">{t.roadRoute}</CardTitle>
+                  <CardDescription className="text-sm md:text-base">
+                    Visualiza tu ruta de viaje completa
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="map" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-4 md:mb-6">
+                      <TabsTrigger value="map" className="text-sm md:text-base">
+                        Mapa Interactivo
+                      </TabsTrigger>
+                      <TabsTrigger value="info" className="text-sm md:text-base">
+                        Información de Ruta
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="map" className="space-y-4">
+                      <div className="rounded-xl overflow-hidden">
+                        <GoogleMapComponent
+                          origin={transport.origin}
+                          destination={transport.destination}
+                          intermediateStops={transport.intermediateStops}
+                        />
+                      </div>
+                      <p className="text-xs md:text-sm text-gray-600 text-center">
+                        {t.interactiveRouteMap}: {transport.origin.name} a {transport.destination.name}
+                        {transport.durationInHours && ` • ${transport.durationInHours.toString()} ${t.travelHours}`}
+                      </p>
+                    </TabsContent>
+                    <TabsContent value="info" className="space-y-4 md:space-y-6">
+                      <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                        <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-5 md:p-6">
+                          <div className="flex items-center gap-3 mb-3 md:mb-4">
+                            <div className="w-9 h-9 md:w-10 md:h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <MapPin className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                            </div>
+                            <h3 className="font-bold text-base md:text-lg">{t.origin}</h3>
                           </div>
+                          <p className="text-gray-800 font-semibold mb-2 text-sm md:text-base">
+                            {transport.origin.name}
+                          </p>
+                          <p className="text-xs md:text-sm text-gray-600">
+                            {t.coordinates}: {originCoords}
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              <div className="lg:col-span-1">
-                <div className="bg-white border border-gray-200 rounded-xl p-6 sticky top-8 shadow-sm">
-                  <div className="text-center mb-6">
-                    <div className="text-4xl font-bold text-gray-900 mb-2">S/ {displayPrice.toLocaleString()}</div>
-                    <div className="text-gray-600 mb-1">{t.perPerson}</div>
-                    <div className="text-sm text-green-600 font-semibold">{t.specialPriceForForeigners}</div>
-                    <div className="flex justify-center items-center gap-1 mt-3">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 fill-current text-yellow-500" />
-                      ))}
-                      <span className="ml-2 text-gray-600">({(transport.rating || 4.8).toString()})</span>
-                    </div>
-                  </div>
+                        <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl p-5 md:p-6">
+                          <div className="flex items-center gap-3 mb-3 md:mb-4">
+                            <div className="w-9 h-9 md:w-10 md:h-10 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <MapPin className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                            </div>
+                            <h3 className="font-bold text-base md:text-lg">{t.destination}</h3>
+                          </div>
+                          <p className="text-gray-800 font-semibold mb-2 text-sm md:text-base">
+                            {transport.destination.name}
+                          </p>
+                          <p className="text-xs md:text-sm text-gray-600">
+                            {t.coordinates}: {destinationCoords}
+                          </p>
+                        </div>
+                      </div>
 
-                  <div className="mb-6">
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t.departureDate}</label>
+                      {transport.durationInHours && (
+                        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 rounded-xl p-5 md:p-6">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Clock className="w-5 h-5 md:w-6 md:h-6 text-yellow-600" />
+                            <h3 className="font-bold text-base md:text-lg">{t.duration}</h3>
+                          </div>
+                          <p className="text-xl md:text-2xl font-bold text-gray-900">
+                            {transport.durationInHours.toString()} {t.hours}
+                          </p>
+                        </div>
+                      )}
+
+                      {transport.intermediateStops && transport.intermediateStops.length > 0 && (
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-5 md:p-6">
+                          <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 flex items-center gap-2">
+                            <MapPin className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
+                            {t.intermediateStops}
+                          </h3>
+                          <ul className="space-y-2 md:space-y-3">
+                            {transport.intermediateStops.map((stop, index) => (
+                              <li key={index} className="flex items-center gap-3">
+                                <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs md:text-sm flex-shrink-0">
+                                  {index + 1}
+                                </div>
+                                <span className="text-gray-800 font-medium text-sm md:text-base">{stop.name}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+
+              {/* Terms and conditions */}
+              {transport.termsAndConditions && (
+                <Card className="border-none shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-2xl md:text-3xl">{t.termsConditions}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm md:text-base text-gray-700 leading-relaxed">
+                      {getTranslatedText(transport.termsAndConditions, language)}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <div className="lg:col-span-1">
+              <div className="sticky top-24 bg-white rounded-2xl p-6 shadow-xl border border-gray-100">
+                <div className="text-center pb-6 border-b-2 border-gray-100">
+                  <div className="inline-flex items-baseline gap-2 mb-2">
+                    <span className="text-5xl font-bold text-orange-500">${displayPrice.toLocaleString()}</span>
+                    <span className="text-gray-600">/ {t.person}</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1 mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-current text-yellow-500" />
+                    ))}
+                    <span className="ml-1 text-sm text-gray-600 font-medium">
+                      {(transport.rating || 4.8).toString()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-green-600 font-semibold">{t.specialPriceForForeigners}</p>
+                </div>
+
+                <div className="py-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">{t.departureDate}</label>
                     <input
                       type="date"
                       min={new Date().toISOString().split("T")[0]}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
                     />
                   </div>
 
-                  <div className="mb-6">
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t.numberOfTravelers}</label>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">{t.numberOfTravelers}</label>
                     <select
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                       value={selectedTravelers}
                       onChange={(e) => setSelectedTravelers(Number(e.target.value))}
                     >
-                      <option value="1">1 {t.person}</option>
-                      <option value="2">2 {t.people}</option>
-                      <option value="3">3 {t.people}</option>
-                      <option value="4">4 {t.people}</option>
-                      <option value="5">5 {t.people}</option>
-                      <option value="6">6 {t.people}</option>
-                      <option value="7">7 {t.people}</option>
-                      <option value="8">8 {t.people}</option>
-                      <option value="9">9 {t.people}</option>
-                      <option value="10">10 {t.people}</option>
+                      {[...Array(10)].map((_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {i + 1} {i === 0 ? t.person : t.people}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
-                  {transport.availableDays && transport.availableDays.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-2">{t.availableDays}</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {transport.availableDays.map((day, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium border border-gray-200"
-                          >
-                            {translateDay(day)}
-                          </span>
-                        ))}
-                      </div>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 font-medium">Total:</span>
+                      <span className="text-2xl font-bold text-orange-500">
+                        ${(displayPrice * selectedTravelers).toLocaleString()}
+                      </span>
                     </div>
-                  )}
+                  </div>
+                </div>
 
+                <div className="space-y-3 pb-6 border-b-2 border-gray-100">
                   <button
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-semibold transition-colors mb-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-4 px-6 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={handleReserveNow}
                     disabled={isBooking || !selectedDate}
                   >
-                    <Calendar className="w-5 h-5" />
+                    <ShoppingCart className="w-5 h-5" />
                     {isBooking ? (language === "es" ? "Procesando..." : "Processing...") : t.reserveNow}
                   </button>
 
-                  <Link
-                    href="/checkout"
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 px-4 rounded-lg font-semibold transition-colors mb-4 flex items-center justify-center gap-2"
+                  <button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-4 px-6 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    onClick={() =>
+                      window.open(
+                        `https://wa.me/51996407040?text=Hola, Vengo de la pagina web inca travel peru estoy interesado en el tour: ${getTranslatedText(transport.title, language)}`,
+                        "_blank",
+                      )
+                    }
                   >
-                    <ShoppingCart className="w-5 h-5" />
-                    {language === "es" ? "Ver Carrito" : "View Cart"}
-                  </Link>
+                    <MessageCircle className="w-5 h-5" />
+                    WhatsApp
+                  </button>
 
-                  <div className="space-y-3">
-                    <button
-                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                      onClick={() =>
-                        window.open(
-                          `https://wa.me/51987654321?text=Hola, estoy interesado en el tour: ${getTranslatedText(transport.title, language)}`,
-                          "_blank",
-                        )
-                      }
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                      {t.consultWhatsApp}
-                    </button>
-
-                    <button
-                      className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors border border-gray-200"
-                      onClick={() => window.open("tel:+51987654321", "_self")}
-                    >
-                      <Phone className="w-5 h-5" />
-                      {t.callNow}: +51 987 654 321
-                    </button>
-                  </div>
-
-                  {(transport.departureTime || transport.arrivalTime) && (
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                      <h3 className="font-semibold text-gray-900 mb-3">{t.schedules}</h3>
-                      <div className="space-y-2 text-sm">
-                        {transport.departureTime && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">{t.departure}:</span>
-                            <span className="font-semibold">{transport.departureTime}</span>
-                          </div>
-                        )}
-                        {transport.arrivalTime && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">{t.arrival}:</span>
-                            <span className="font-semibold">{transport.arrivalTime}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-6 pt-6 border-t border-gray-200">
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div className="text-xs">
-                        <Shield className="w-6 h-6 text-green-600 mx-auto mb-1" />
-                        <span className="text-gray-600">{t.securePayment}</span>
-                      </div>
-                      <div className="text-xs">
-                        <Award className="w-6 h-6 text-yellow-500 mx-auto mb-1" />
-                        <span className="text-gray-600">{t.certified}</span>
-                      </div>
-                    </div>
-                  </div>
+                  <button
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2"
+                    onClick={() => window.open("tel:+51996407040", "_self")}
+                  >
+                    <Phone className="w-5 h-5" />
+                    +51 996 407 040
+                  </button>
                 </div>
-              </div>
-            </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-8 mb-8 shadow-sm">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">{t.roadRoute}</h2>
-              <div className="grid md:grid-cols-2 gap-8 mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">{t.routeInfo}</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-5 h-5 text-orange-500" />
-                      <div>
-                        <span className="font-semibold">{t.origin}:</span> {transport.origin.name}
-                        <div className="text-sm text-gray-600">
-                          {t.coordinates}: {originCoords}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-5 h-5 text-green-600" />
-                      <div>
-                        <span className="font-semibold">{t.destination}:</span> {transport.destination.name}
-                        <div className="text-sm text-gray-600">
-                          {t.coordinates}: {destinationCoords}
-                        </div>
-                      </div>
-                    </div>
-                    {transport.durationInHours && (
-                      <div className="flex items-center gap-3">
-                        <Clock className="w-5 h-5 text-yellow-500" />
-                        <div>
-                          <span className="font-semibold">{t.duration}:</span> {transport.durationInHours.toString()}{" "}
-                          {t.hours}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">{t.intermediateStops}</h3>
-                  {transport.intermediateStops && transport.intermediateStops.length > 0 ? (
-                    <ul className="space-y-2">
-                      {transport.intermediateStops.map((stop, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                          <span>{stop.name}</span>
-                        </li>
+                {transport.availableDays && transport.availableDays.length > 0 && (
+                  <div className="pt-6 pb-6 border-b-2 border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">{t.availableDays}</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {transport.availableDays.map((day, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-xs font-semibold"
+                        >
+                          {translateDay(day)}
+                        </span>
                       ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-600">{t.directTrip}</p>
-                  )}
+                    </div>
+                  </div>
+                )}
+
+                {(transport.departureTime || transport.arrivalTime) && (
+                  <div className="pt-6 pb-6 border-b-2 border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">{t.schedules}</h3>
+                    <div className="space-y-2">
+                      {transport.departureTime && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">{t.departure}:</span>
+                          <span className="font-bold text-gray-900">{transport.departureTime}</span>
+                        </div>
+                      )}
+                      {transport.arrivalTime && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">{t.arrival}:</span>
+                          <span className="font-bold text-gray-900">{transport.arrivalTime}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-6">
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                        <Shield className="w-6 h-6 text-green-600" />
+                      </div>
+                      <span className="text-xs text-gray-600 font-semibold">{t.securePayment}</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-2">
+                        <Award className="w-6 h-6 text-yellow-500" />
+                      </div>
+                      <span className="text-xs text-gray-600 font-semibold">{t.certified}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="rounded-lg overflow-hidden">
-                <GoogleMapComponent
-                  origin={transport.origin}
-                  destination={transport.destination}
-                  intermediateStops={transport.intermediateStops}
-                />
-              </div>
-              <div className="mt-4 text-sm text-gray-600 text-center">
-                {t.interactiveRouteMap}: {transport.origin.name} a {transport.destination.name}
-                {transport.durationInHours && ` • ${transport.durationInHours.toString()} ${t.travelHours}`}
               </div>
             </div>
-
-            {transport.termsAndConditions && (
-              <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">{t.termsConditions}</h2>
-                <div className="prose prose-gray max-w-none">
-                  <p className="text-gray-700 leading-relaxed">
-                    {getTranslatedText(transport.termsAndConditions, language)}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }

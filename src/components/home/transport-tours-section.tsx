@@ -1,7 +1,7 @@
 "use client"
 
 import { useLanguage } from "@/contexts/LanguageContext"
-import type { TourTransport } from "@/types/tour"
+import type { TourTransport } from "@/types/tour-transport"
 import TransportCard from "@/components/transport-card"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useRef, useState, useEffect } from "react"
@@ -213,26 +213,40 @@ export function TransportToursSection() {
           <div className="flex justify-center items-center gap-4 mt-6">
             <motion.button
               onClick={() => scroll("left")}
-              className={`w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-gray-200/50 flex items-center justify-center transition-all duration-300 group hover:bg-white hover:shadow-xl ${
-                !canScrollLeft ? "opacity-40 cursor-not-allowed" : "hover:border-amber-300"
+              className={`w-12 h-12 rounded-full bg-gradient-to-br from-white to-gray-50 shadow-xl border-2 flex items-center justify-center transition-all duration-300 group ${
+                !canScrollLeft
+                  ? "opacity-40 cursor-not-allowed border-gray-200"
+                  : "border-amber-300 hover:border-amber-400 hover:shadow-2xl hover:from-amber-50 hover:to-orange-50"
               }`}
               disabled={!canScrollLeft}
-              whileHover={{ scale: canScrollLeft ? 1.1 : 1 }}
-              whileTap={{ scale: canScrollLeft ? 0.95 : 1 }}
+              whileHover={{ scale: canScrollLeft ? 1.15 : 1 }}
+              whileTap={{ scale: canScrollLeft ? 0.9 : 1 }}
             >
-              <ChevronLeft className="w-4 h-4 text-gray-600 group-hover:text-amber-600 transition-colors duration-300" />
+              <ChevronLeft
+                className={`w-5 h-5 transition-all duration-300 ${
+                  canScrollLeft ? "text-amber-600 group-hover:text-orange-600" : "text-gray-400"
+                }`}
+                strokeWidth={3}
+              />
             </motion.button>
 
             <motion.button
               onClick={() => scroll("right")}
-              className={`w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-gray-200/50 flex items-center justify-center transition-all duration-300 group hover:bg-white hover:shadow-xl ${
-                !canScrollRight ? "opacity-40 cursor-not-allowed" : "hover:border-amber-300"
+              className={`w-12 h-12 rounded-full bg-gradient-to-br from-white to-gray-50 shadow-xl border-2 flex items-center justify-center transition-all duration-300 group ${
+                !canScrollRight
+                  ? "opacity-40 cursor-not-allowed border-gray-200"
+                  : "border-amber-300 hover:border-amber-400 hover:shadow-2xl hover:from-amber-50 hover:to-orange-50"
               }`}
               disabled={!canScrollRight}
-              whileHover={{ scale: canScrollRight ? 1.1 : 1 }}
-              whileTap={{ scale: canScrollRight ? 0.95 : 1 }}
+              whileHover={{ scale: canScrollRight ? 1.15 : 1 }}
+              whileTap={{ scale: canScrollRight ? 0.9 : 1 }}
             >
-              <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-amber-600 transition-colors duration-300" />
+              <ChevronRight
+                className={`w-5 h-5 transition-all duration-300 ${
+                  canScrollRight ? "text-amber-600 group-hover:text-orange-600" : "text-gray-400"
+                }`}
+                strokeWidth={3}
+              />
             </motion.button>
           </div>
         </div>

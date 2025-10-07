@@ -44,6 +44,7 @@ export interface CreateTourTransportDto {
   durationInHours?: number
   duration?: string
   price: number
+  oldPrice?: number
   rating?: number
   vehicleId?: string
   routeCode?: string
@@ -53,6 +54,8 @@ export interface CreateTourTransportDto {
   itinerary?: ItineraryDay[]
   imageUrl?: string
   imageId?: string
+  serviceType?: "basic" | "privatePremium"
+  servicePrice?: number
 }
 
 export type UpdateTourTransportDto = CreateTourTransportDto
@@ -71,6 +74,7 @@ export interface TourTransport {
   durationInHours: number
   duration: string
   price: number
+  oldPrice?: number
   rating?: number
   vehicleId?: string
   routeCode: string
@@ -80,6 +84,8 @@ export interface TourTransport {
   imageUrl?: string
   imageId?: string
   isFeatured: boolean
+  serviceType: "basic" | "privatePremium"
+  servicePrice?: number
   createdAt: string
   updatedAt: string
   __v?: number

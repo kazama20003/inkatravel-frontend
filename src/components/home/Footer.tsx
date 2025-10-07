@@ -63,7 +63,7 @@ export default function Footer() {
           viewport={{ once: true }}
         >
           <h2 className="text-4xl md:text-5xl font-light mb-6 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-600 bg-clip-text text-transparent">
-            <span className="text-xl text-white">→</span> Inka Travel Peru <span className="text-xl text-white">←</span>
+            <span className="text-xl text-white">→</span> Inca Travel Peru <span className="text-xl text-white">←</span>
           </h2>
           <p className="text-gray-300 text-lg mb-8 max-w-2xl mx-auto leading-relaxed">{t("footer.aboutDescription")}</p>
 

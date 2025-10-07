@@ -85,7 +85,7 @@ export default function HeroSection() {
               <div className="relative w-20 h-20 rounded-full overflow-hidden ring-4 ring-peru-gold/50 shadow-2xl">
                 <Image
                   src="https://res.cloudinary.com/dwvikvjrq/image/upload/v1758308769/ChatGPT_Image_1_jul_2025__15_21_51-removebg-preview_1_zi4adi.png"
-                  alt="Inka Travel Peru Logo"
+                  alt="Inca Travel Peru Logo"
                   fill
                   className="object-cover"
                   priority
@@ -93,7 +93,7 @@ export default function HeroSection() {
               </div>
               <div className="flex flex-col text-left">
                 <span className="brand-text text-white text-3xl font-bold leading-tight tracking-wider">
-                  INKA TRAVEL
+                  INCA TRAVEL
                 </span>
                 <span className="text-peru-gold text-lg font-semibold -mt-1 tracking-widest">PERU</span>
               </div>
