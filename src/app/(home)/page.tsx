@@ -6,6 +6,7 @@ import ExperienceSection from "@/components/home/experience-section"
 import ServicesSection from "@/components/home/services-section"
 import TestimonialsSection from "@/components/home/testimonials-section"
 import ToursSection from "@/components/home/tours-section"
+import VehiclesSection from "@/components/home/vehicles-section"
 
 export default function HomePage() {
   return (
@@ -13,8 +14,9 @@ export default function HomePage() {
         <div className="min-h-screen w-full">
         <HeroSection />
         <TransportToursSection />
-        <CompanySection />
+        <VehiclesSection />
         <ToursSection />
+        <CompanySection />
         <ExperienceSection />
         <ServicesSection />
         <TestimonialsSection />

@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 import Image from "next/image"
 import { useLanguage } from "@/contexts/LanguageContext"
+import Link from "next/link"
 
 export default function HeroSection() {
   const { language } = useLanguage()
@@ -127,17 +128,16 @@ export default function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
             >
+              <Link href="/transport">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-peru-orange to-peru-gold hover:from-peru-gold hover:to-peru-orange text-white font-bold px-12 py-6 rounded-2xl text-xl shadow-2xl transition-all duration-500 hover:scale-110 hover:shadow-peru-orange/50 border-2 border-white/20 backdrop-blur-sm"
-                onClick={() => {
-                  const element = document.getElementById("tour-content")
-                  element?.scrollIntoView({ behavior: "smooth" })
-                }}
+                
               >
                 {t.button}
                 <ArrowRight className="w-6 h-6 ml-3 transition-transform group-hover:translate-x-1" />
               </Button>
+              </Link>
             </motion.div>
           </motion.div>
         </div>
