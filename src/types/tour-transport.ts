@@ -14,12 +14,16 @@ export interface GeoLocation {
   lng: number
 }
 
+export interface IntermediateStop extends GeoLocation {
+  stopTime?: string // Ejemplo: "10:30 AM"
+}
+
 export interface RouteStop {
   location: GeoLocation
   description: TranslatedText
   imageUrl?: string
   imageId?: string
-  stopTime?: string
+  stopTime?: string // Ejemplo: "10:30 AM"
 }
 
 export interface ItineraryDay {
@@ -37,25 +41,25 @@ export interface CreateTourTransportDto {
   termsAndConditions: TranslatedText
   origin: GeoLocation
   destination: GeoLocation
-  intermediateStops?: GeoLocation[]
+  intermediateStops: IntermediateStop[] // Required array
   availableDays: string[]
-  departureTime?: string
-  arrivalTime?: string
-  durationInHours?: number
-  duration?: string
+  departureTime: string // Required
+  arrivalTime: string // Required
+  durationInHours: number // Required
+  duration: string // Required
   price: number
-  oldPrice?: number
-  rating?: number
-  vehicleId?: string
-  routeCode?: string
+  oldPrice: number // Required
+  rating: number // Required
+  vehicleId: string // Required
+  routeCode: string // Required
   isActive?: boolean
   isFeatured?: boolean
-  slug?: string
-  itinerary?: ItineraryDay[]
-  imageUrl?: string
-  imageId?: string
-  serviceType?: "basic" | "privatePremium"
-  servicePrice?: number
+  slug: string // Required
+  itinerary: ItineraryDay[] // Required array
+  imageUrl: string // Required
+  imageId: string // Required
+  serviceType: "basic" | "privatePremium" // Required
+  servicePrice: number // Required
 }
 
 export type UpdateTourTransportDto = CreateTourTransportDto
@@ -67,7 +71,7 @@ export interface TourTransport {
   termsAndConditions: TranslatedText
   origin: GeoLocation
   destination: GeoLocation
-  intermediateStops?: GeoLocation[]
+  intermediateStops?: IntermediateStop[]
   availableDays: string[]
   departureTime: string
   arrivalTime: string

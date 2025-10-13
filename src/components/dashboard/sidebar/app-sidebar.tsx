@@ -136,6 +136,21 @@ const data = {
         },
       ],
     },
+    {
+      title: "Ofertas Especiales",
+      url: "/dashboard/offer",
+      icon: Plane,
+      items: [
+        {
+          title: "Todas las Ofertas",
+          url: "/dashboard/offer",
+        },
+        {
+          title: "Crear Oferta",
+          url: "/dashboard/offer/new",
+        },
+      ],
+    }
   ],
   navSecondary: [
     {

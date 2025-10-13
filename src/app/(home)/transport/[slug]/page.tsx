@@ -28,13 +28,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-
-declare global {
-  interface Window {
-    google: typeof google
-  }
-}
-
 interface TranslatedText {
   es?: string
   en?: string
@@ -136,7 +129,7 @@ const translations = {
     officialCertification: "Certificación oficial",
     historicalKnowledge: "Conocimiento histórico",
     multilingual: "Multilingüe",
-    tenMinuteStops: "10-Minuten-Stopps",
+    tenMinuteStops: "Paradas de 10 minutos",
     tenMinuteStopsDesc: "Paradas de 10 minutos dependiendo de los turistas",
     travelInsurance: "Seguro de Viaje",
     travelInsuranceDesc: "Cobertura completa durante todo el recorrido",
@@ -489,6 +482,7 @@ const GoogleMapComponent = ({
   const [routeCalculated, setRouteCalculated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false)
+  const [isRouteInfoExpanded, setIsRouteInfoExpanded] = useState(false)
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([])
   const mapRef = useRef<google.maps.Map | null>(null)
 
@@ -499,7 +493,7 @@ const GoogleMapComponent = ({
 
   const mapContainerStyle = {
     width: "100%",
-    height: "400px",
+    height: "700px",
   }
 
   const mapOptions = {
@@ -531,7 +525,8 @@ const GoogleMapComponent = ({
   }
 
   const createMarkers = () => {
-    if (!mapRef.current || !window.google?.maps?.marker?.AdvancedMarkerElement) {
+    // Check if google is available in the global scope
+    if (!window.google?.maps?.marker?.AdvancedMarkerElement || !mapRef.current) {
       console.log("[v0] Map or AdvancedMarkerElement not available yet")
       return
     }
@@ -609,7 +604,8 @@ const GoogleMapComponent = ({
   }
 
   const createWaypoints = (): Array<{ location: { lat: number; lng: number }; stopover: boolean }> => {
-    if (!isGoogleMapsLoaded || !window.google?.maps) return []
+    // Check if google is available in the global scope
+    if (!window.google?.maps || !isGoogleMapsLoaded) return []
 
     const waypoints: Array<{ location: { lat: number; lng: number }; stopover: boolean }> = []
     if (intermediateStops && intermediateStops.length > 0) {
@@ -625,7 +621,8 @@ const GoogleMapComponent = ({
   }
 
   const createDirectionsOptions = () => {
-    if (!isGoogleMapsLoaded || !window.google?.maps) return null
+    // Check if google is available in the global scope
+    if (!window.google?.maps || !isGoogleMapsLoaded) return null
 
     return {
       origin: new window.google.maps.LatLng(origin.lat, origin.lng),
@@ -693,7 +690,7 @@ const GoogleMapComponent = ({
   const directionsOptions = createDirectionsOptions()
 
   return (
-    <div className="w-full h-96 rounded-xl overflow-hidden relative border border-gray-200">
+    <div className="w-full h-[500px] md:h-[700px] rounded-xl overflow-hidden relative border border-gray-200">
       <LoadScript
         googleMapsApiKey={apiKey}
         libraries={GOOGLE_MAPS_LIBRARIES}
@@ -730,58 +727,91 @@ const GoogleMapComponent = ({
         </GoogleMap>
       </LoadScript>
 
-      <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
-        <div className="flex items-center gap-2 mb-3">
-          <MapPin className="w-5 h-5 text-orange-500" />
-          <span className="font-bold text-gray-800">{t.roadRoute}</span>
-          {routeCalculated && (
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full border border-green-200">
-              {t.roadRouteCalculated}
-            </span>
-          )}
-          {mapError && (
-            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full border border-yellow-200">
-              {t.showingLocations}
-            </span>
-          )}
-        </div>
+      <div className="absolute bottom-4 right-4 z-20">
+        {/* Collapsed state - compact button */}
+        {!isRouteInfoExpanded && (
+          <button
+            onClick={() => setIsRouteInfoExpanded(true)}
+            className="bg-white/95 backdrop-blur-sm rounded-lg p-3 border border-gray-200 shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            aria-label="Show route information"
+          >
+            <div className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-orange-500" />
+              <div className="text-left">
+                <div className="text-xs font-semibold text-gray-900">{t.roadRoute}</div>
+                {routeDistance && <div className="text-xs text-orange-500 font-bold">{routeDistance}</div>}
+              </div>
+              <ChevronLeft className="w-4 h-4 text-gray-400" />
+            </div>
+          </button>
+        )}
 
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="font-semibold text-gray-700">{t.origin}:</span>
+        {/* Expanded state - full info panel */}
+        {isRouteInfoExpanded && (
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 border border-gray-200 shadow-xl max-w-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-orange-500" />
+                <span className="font-bold text-gray-800 text-sm">{t.roadRoute}</span>
+              </div>
+              <button
+                onClick={() => setIsRouteInfoExpanded(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Hide route information"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
-            <p className="text-gray-600 text-xs ml-5">{origin.name}</p>
-          </div>
 
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              <span className="font-semibold text-gray-700">{t.destination}:</span>
-            </div>
-            <p className="text-gray-600 text-xs ml-5">{destination.name}</p>
-          </div>
-        </div>
+            {routeCalculated && (
+              <span className="inline-block text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full border border-green-200 mb-3">
+                {t.roadRouteCalculated}
+              </span>
+            )}
+            {mapError && (
+              <span className="inline-block text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full border border-yellow-200 mb-3">
+                {t.showingLocations}
+              </span>
+            )}
 
-        <div className="mt-3 pt-3 border-t border-gray-200">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-600">{t.roadDistance}:</span>
-            <span className="font-bold text-orange-500">{routeDistance || t.calculating}</span>
+            <div className="space-y-2 text-sm mb-3">
+              <div className="flex items-start gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full mt-0.5 flex-shrink-0"></div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-gray-700 text-xs">{t.origin}:</span>
+                  <p className="text-gray-600 text-xs truncate">{origin.name}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <div className="w-3 h-3 bg-orange-500 rounded-full mt-0.5 flex-shrink-0"></div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-gray-700 text-xs">{t.destination}:</span>
+                  <p className="text-gray-600 text-xs truncate">{destination.name}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-gray-200 space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-600">{t.roadDistance}:</span>
+                <span className="font-bold text-orange-500">{routeDistance || t.calculating}</span>
+              </div>
+              {routeDuration && (
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-600">{t.estimatedTime}:</span>
+                  <span className="font-bold text-green-600">{routeDuration}</span>
+                </div>
+              )}
+              {intermediateStops && intermediateStops.length > 0 && (
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-600">{t.intermediateStops}:</span>
+                  <span className="font-bold text-yellow-600">{intermediateStops.length}</span>
+                </div>
+              )}
+            </div>
           </div>
-          {routeDuration && (
-            <div className="flex justify-between items-center text-sm mt-1">
-              <span className="text-gray-600">{t.estimatedTime}:</span>
-              <span className="font-bold text-green-600">{routeDuration}</span>
-            </div>
-          )}
-          {intermediateStops && intermediateStops.length > 0 && (
-            <div className="flex justify-between items-center text-sm mt-1">
-              <span className="text-gray-600">{t.intermediateStops}:</span>
-              <span className="font-bold text-yellow-600">{intermediateStops.length}</span>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       <div className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
@@ -789,7 +819,7 @@ const GoogleMapComponent = ({
       </div>
 
       {mapError && (
-        <div className="absolute top-4 left-4 bg-yellow-100 border border-yellow-300 text-yellow-800 px-3 py-2 rounded-lg text-sm">
+        <div className="absolute top-4 left-4 bg-yellow-100 border border-yellow-300 text-yellow-800 px-3 py-2 rounded-lg text-sm max-w-xs">
           {mapError}
         </div>
       )}
@@ -990,22 +1020,6 @@ export default function TransportPage({ params }: Props) {
     loadTransport()
   }, [params, language])
 
-  // No longer needed as carouselApi is removed
-  // useEffect(() => {
-  //   if (!carouselApi) return
-
-  //   const onSelect = () => {
-  //     setCurrentSlide(carouselApi.selectedScrollSnap())
-  //   }
-
-  //   carouselApi.on("select", onSelect)
-  //   onSelect()
-
-  //   return () => {
-  //     carouselApi.off("select", onSelect)
-  //   }
-  // }, [carouselApi])
-
   const galleryImages: { url: string; title: string; description: string }[] = []
   if (transport) {
     if (transport.imageUrl) {
@@ -1027,7 +1041,6 @@ export default function TransportPage({ params }: Props) {
       })
     }
 
-    // Si no hay imágenes, agregar placeholders
     if (galleryImages.length === 0) {
       galleryImages.push({
         url: `/placeholder.svg?height=800&width=1600&query=${encodeURIComponent(getTranslatedText(transport.title, language))}`,
@@ -1095,11 +1108,11 @@ export default function TransportPage({ params }: Props) {
 
       console.log("[v0] Cart created successfully:", response.data)
 
-      toast.success(language === "es" ? "¡Agregado alcarrito exitosamente!" : "Successfully added to cart!", {
+      toast.success(language === "es" ? "¡Agregado alCarrito exitosamente!" : "Successfully added to cart!", {
         description:
           language === "es"
-            ? `${selectedTravelers} ${selectedTravelers === 1 ? "persona" : "personas"} - $${(displayPrice * selectedTravelers).toLocaleString()}`
-            : `${selectedTravelers} ${selectedTravelers === 1 ? "person" : "people"} - $${(displayPrice * selectedTravelers).toLocaleString()}`,
+            ? `${selectedTravelers} ${selectedTravelers === 1 ? "persona" : "personas"} - $${(displayPrice * selectedTravelers).toLocaleString()} USD`
+            : `${selectedTravelers} ${selectedTravelers === 1 ? "person" : "people"} - $${(displayPrice * selectedTravelers).toLocaleString()} USD`,
         duration: 5000,
         action: {
           label: language === "es" ? "Ver Carrito" : "View Cart",
@@ -1179,7 +1192,7 @@ export default function TransportPage({ params }: Props) {
             <div className="text-center">
               <div className="text-sm font-semibold text-gray-600 mb-1">Desde</div>
               <div className="text-4xl md:text-5xl font-bold text-orange-500">${displayPrice.toLocaleString()}</div>
-              <div className="text-xs font-medium text-gray-500 mt-1">{t.perPerson}</div>
+              <div className="text-xs font-medium text-gray-500 mt-1">{t.perPerson} USD</div>
             </div>
           </div>
         </div>
@@ -1345,7 +1358,7 @@ export default function TransportPage({ params }: Props) {
                                 <div className="space-y-3 md:space-y-4">
                                   {day.route.map((stop, stopIndex) => (
                                     <div key={stopIndex} className="flex items-start gap-3 md:gap-4">
-                                      <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-xs md:text-sm flex-shrink-0 mt-1">
+                                      <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-xs md:text-sm mt-1">
                                         {stopIndex + 1}
                                       </div>
                                       <div className="flex-1 min-w-0">
@@ -1476,7 +1489,6 @@ export default function TransportPage({ params }: Props) {
                 </CardContent>
               </Card>
 
-              {/* Terms and conditions */}
               {transport.termsAndConditions && (
                 <Card className="border-none shadow-lg">
                   <CardHeader>
@@ -1496,7 +1508,7 @@ export default function TransportPage({ params }: Props) {
                 <div className="text-center pb-6 border-b-2 border-gray-100">
                   <div className="inline-flex items-baseline gap-2 mb-2">
                     <span className="text-5xl font-bold text-orange-500">${displayPrice.toLocaleString()}</span>
-                    <span className="text-gray-600">/ {t.person}</span>
+                    <span className="text-gray-600">USD / {t.person}</span>
                   </div>
                   <div className="flex items-center justify-center gap-1 mb-2">
                     {[...Array(5)].map((_, i) => (
@@ -1540,7 +1552,7 @@ export default function TransportPage({ params }: Props) {
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 font-medium">Total:</span>
                       <span className="text-2xl font-bold text-orange-500">
-                        ${(displayPrice * selectedTravelers).toLocaleString()}
+                        ${(displayPrice * selectedTravelers).toLocaleString()} USD
                       </span>
                     </div>
                   </div>
