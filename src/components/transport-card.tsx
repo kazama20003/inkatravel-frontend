@@ -339,7 +339,7 @@ export function TransportCard({ tour, index }: TransportCardProps) {
         description: getTitle(),
       })
 
-      router.push("/cart")
+      router.push("/checkout")
     } catch (error) {
       console.error("[v0] Error adding to cart:", error)
 

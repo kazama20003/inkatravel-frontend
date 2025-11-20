@@ -11,7 +11,7 @@
   "scope": "/",
   "lang": "es-PE",
   "dir": "ltr",
-  "categories": ["travel", "tourism", "transportation"],
+  "categories": ["travel", "tourism", "transportation","inca"],
   "icons": [
     {
       "src": "/ico.png",
