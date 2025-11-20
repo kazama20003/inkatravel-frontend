@@ -339,7 +339,7 @@ export function TransportCard({ tour, index }: TransportCardProps) {
         description: getTitle(),
       })
 
-      router.push("/booking")
+      router.push("/cart")
     } catch (error) {
       console.error("[v0] Error adding to cart:", error)
 
@@ -370,6 +370,7 @@ export function TransportCard({ tour, index }: TransportCardProps) {
             src={
               tour.imageUrl ||
               "/placeholder.svg?height=700&width=400&query=Peru transport tourism luxury scenic mountain landscape" ||
+              "/placeholder.svg" ||
               "/placeholder.svg" ||
               "/placeholder.svg" ||
               "/placeholder.svg"
