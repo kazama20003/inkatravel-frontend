@@ -322,7 +322,7 @@ export default function CheckoutPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center pt-32">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
           <p className="text-foreground/70">Cargando carrito...</p>
@@ -333,7 +333,7 @@ export default function CheckoutPage() {
 
   if (error || !cart || !cart.items || cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4 pt-32">
         <div className="text-center max-w-sm">
           <ShoppingCart className="w-16 h-16 mx-auto mb-6 text-foreground/50" />
           <h1 className="text-2xl font-bold mb-3">Carrito Vacío</h1>
@@ -348,21 +348,18 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 py-6 flex items-center gap-4">
+      <div className="max-w-6xl mx-auto px-4 py-8 pt-32">
+        {/* Back button and title */}
+        <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => router.back()}
             className="flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-2xl font-bold">Checkout</h1>
+          <h1 className="text-3xl font-bold">Checkout</h1>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Section */}
           <div className="lg:col-span-2">
@@ -376,14 +373,14 @@ export default function CheckoutPage() {
                       {cart.items.map((item) => {
                         const displayData = getItemDisplayData(item)
                         return (
-                          <div key={item._id} className="border border-border rounded-lg overflow-hidden">
+                          <div key={item._id} className="bg-card border border-border overflow-hidden rounded-sm">
                             <div className="p-4 flex gap-4">
                               <Image
                                 src={displayData.imageUrl || "/placeholder.svg?height=120&width=160"}
                                 alt={displayData.title}
                                 width={160}
                                 height={120}
-                                className="w-40 h-28 object-cover rounded"
+                                className="w-40 h-28 object-cover"
                               />
 
                               <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -401,19 +398,19 @@ export default function CheckoutPage() {
                                       value={item.startDate.split("T")[0]}
                                       onChange={(e) => updateDate(item._id, e.target.value)}
                                       min={getMinDate()}
-                                      className="text-sm h-8"
+                                      className="text-sm h-8 rounded-sm"
                                     />
                                   </div>
 
                                   <div className="flex items-end gap-2">
                                     <label className="text-xs text-foreground/60 block">Personas</label>
-                                    <div className="flex items-center border border-border rounded bg-muted">
+                                    <div className="flex items-center border border-border bg-muted rounded-sm">
                                       <Button
                                         size="sm"
                                         variant="ghost"
                                         onClick={() => updateQuantity(item._id, item.people - 1)}
                                         disabled={item.people <= 1}
-                                        className="h-8 w-8 p-0"
+                                        className="h-8 w-8 p-0 rounded-none"
                                       >
                                         <Minus className="w-3 h-3" />
                                       </Button>
@@ -422,7 +419,7 @@ export default function CheckoutPage() {
                                         size="sm"
                                         variant="ghost"
                                         onClick={() => updateQuantity(item._id, item.people + 1)}
-                                        className="h-8 w-8 p-0"
+                                        className="h-8 w-8 p-0 rounded-none"
                                       >
                                         <Plus className="w-3 h-3" />
                                       </Button>
@@ -437,7 +434,7 @@ export default function CheckoutPage() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => removeItem(item._id)}
-                                  className="text-foreground/50 hover:text-destructive"
+                                  className="text-foreground/50 hover:text-destructive rounded-none"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -462,11 +459,11 @@ export default function CheckoutPage() {
                       value={orderNotes}
                       onChange={(e) => setOrderNotes(e.target.value)}
                       placeholder="Restricciones alimentarias, solicitudes especiales..."
-                      className="min-h-24 resize-none text-sm"
+                      className="min-h-24 resize-none text-sm rounded-sm"
                     />
                   </div>
 
-                  <Button onClick={handleNext} className="w-full">
+                  <Button onClick={handleNext} className="w-full rounded-sm">
                     Continuar con Información
                   </Button>
                 </motion.div>
@@ -485,7 +482,7 @@ export default function CheckoutPage() {
                           value={customerInfo.firstName}
                           onChange={(e) => setCustomerInfo({ ...customerInfo, firstName: e.target.value })}
                           placeholder="Tu nombre"
-                          className="h-10"
+                          className="h-10 rounded-sm"
                         />
                       </div>
                       <div>
@@ -494,7 +491,7 @@ export default function CheckoutPage() {
                           value={customerInfo.lastName}
                           onChange={(e) => setCustomerInfo({ ...customerInfo, lastName: e.target.value })}
                           placeholder="Tu apellido"
-                          className="h-10"
+                          className="h-10 rounded-sm"
                         />
                       </div>
                     </div>
@@ -506,7 +503,7 @@ export default function CheckoutPage() {
                         value={customerInfo.email}
                         onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
                         placeholder="tu@email.com"
-                        className="h-10"
+                        className="h-10 rounded-sm"
                       />
                     </div>
 
@@ -516,7 +513,7 @@ export default function CheckoutPage() {
                         value={customerInfo.phone}
                         onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
                         placeholder="+51 999 999 999"
-                        className="h-10"
+                        className="h-10 rounded-sm"
                       />
                     </div>
 
@@ -527,7 +524,7 @@ export default function CheckoutPage() {
                           value={customerInfo.identityType}
                           onValueChange={(value) => setCustomerInfo({ ...customerInfo, identityType: value })}
                         >
-                          <SelectTrigger className="h-10">
+                          <SelectTrigger className="h-10 rounded-sm">
                             <SelectValue placeholder="Seleccionar..." />
                           </SelectTrigger>
                           <SelectContent>
@@ -544,7 +541,7 @@ export default function CheckoutPage() {
                           value={customerInfo.identityCode}
                           onChange={(e) => setCustomerInfo({ ...customerInfo, identityCode: e.target.value })}
                           placeholder="12345678"
-                          className="h-10"
+                          className="h-10 rounded-sm"
                         />
                       </div>
                     </div>
@@ -565,7 +562,7 @@ export default function CheckoutPage() {
                           value={customerInfo.city}
                           onChange={(e) => setCustomerInfo({ ...customerInfo, city: e.target.value })}
                           placeholder="Lima"
-                          className="h-10"
+                          className="h-10 rounded-sm"
                         />
                       </div>
                       <div>
@@ -574,17 +571,17 @@ export default function CheckoutPage() {
                           value={customerInfo.state}
                           onChange={(e) => setCustomerInfo({ ...customerInfo, state: e.target.value })}
                           placeholder="Lima"
-                          className="h-10"
+                          className="h-10 rounded-sm"
                         />
                       </div>
                     </div>
                   </div>
 
                   <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => setCurrentStep(1)} className="flex-1">
+                    <Button variant="outline" onClick={() => setCurrentStep(1)} className="flex-1 rounded-sm">
                       Atrás
                     </Button>
-                    <Button onClick={handleNext} disabled={isProcessingPayment} className="flex-1">
+                    <Button onClick={handleNext} disabled={isProcessingPayment} className="flex-1 rounded-sm">
                       {isProcessingPayment ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -605,7 +602,7 @@ export default function CheckoutPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-card border border-border rounded-lg p-6 sticky top-24 h-fit"
+              className="bg-card border border-border rounded-sm p-6 sticky top-40 h-fit"
             >
               <h3 className="font-bold text-foreground mb-5">Resumen del Pedido</h3>
 
@@ -631,7 +628,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <div className="text-xs text-foreground/60 p-3 bg-muted rounded">
+              <div className="text-xs text-foreground/60 p-3 bg-muted rounded-sm">
                 Pago seguro con encriptación bancaria
               </div>
             </motion.div>
@@ -653,7 +650,7 @@ export default function CheckoutPage() {
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
-              className="bg-card border border-border rounded-lg shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
+              className="bg-card border border-border rounded-sm shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
@@ -666,7 +663,7 @@ export default function CheckoutPage() {
                 </button>
               </div>
 
-              <div className="bg-muted rounded-lg p-4 mb-6">
+              <div className="bg-muted rounded-sm p-4 mb-6">
                 <p className="text-xs text-foreground/70 mb-1">Total a pagar</p>
                 <p className="text-3xl font-bold">S/ {cart?.totalPrice.toFixed(2)}</p>
               </div>
