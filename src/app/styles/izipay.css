@@ -452,38 +452,18 @@ div.kr-popin-modal-footer {
   z-index: 0;
 }
 
-/* Izipay Payment Form Styles */
-.kr-embedded {
-  width: 100%;
+/* Asegurar que el contenido esté por encima del fondo */
+.kr-embedded > * {
+  position: relative;
+  z-index: 1;
 }
 
-.kr-pan,
-.kr-expiry,
-.kr-security-code {
-  margin-bottom: 1rem;
+/* Efectos de brillo en los botones */
+.kr-popin-button,
+.kr-embedded .kr-payment-button {
+  background-size: 200% 200% !important;
+  animation: gradientShift 3s ease infinite !important;
 }
-
-.kr-payment-button {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: var(--color-primary, #000);
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.kr-payment-button:hover {
-  background-color: var(--color-primary-hover, #333);
-}
-
-.kr-form-error {
-  color: var(--color-destructive, #dc2626);
-  margin-top: 0.5rem;
-}
-
 
 @keyframes gradientShift {
   0% {

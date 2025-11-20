@@ -250,9 +250,12 @@ export default function CheckoutPage() {
         city: customerInfo.city || undefined,
       }
 
+      // Convert PEN to USD (÷3.6) for izipay payment
+      const amountInUSD = Number((cart.totalPrice / 3.6).toFixed(2))
+
       const payload: CreatePaymentDto = {
-        amount: cart.totalPrice,
-        currency: "PEN",
+        amount: amountInUSD,
+        currency: "USD",
         orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         formAction: "PAID",
         contextMode: "TEST",
@@ -439,10 +442,8 @@ export default function CheckoutPage() {
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                                 <div className="text-right">
-                                  <p className="text-lg font-bold">S/ {item.total.toFixed(2)}</p>
-                                  <p className="text-xs text-foreground/60">
-                                    S/ {item.pricePerPerson.toFixed(2)}/pers.
-                                  </p>
+                                  <p className="text-lg font-bold">$ {item.total.toFixed(2)}</p>
+                                  <p className="text-xs text-foreground/60">$ {item.pricePerPerson.toFixed(2)}/pers.</p>
                                 </div>
                               </div>
                             </div>
@@ -611,7 +612,7 @@ export default function CheckoutPage() {
                   <div key={item._id} className="text-sm">
                     <p className="font-semibold text-foreground line-clamp-2">{item.productTitle}</p>
                     <p className="text-foreground/70 text-xs mt-1">
-                      {item.people} × S/ {item.pricePerPerson.toFixed(2)}
+                      {item.people} × $ {item.pricePerPerson.toFixed(2)}
                     </p>
                   </div>
                 ))}
@@ -620,11 +621,11 @@ export default function CheckoutPage() {
               <div className="space-y-2 mb-5">
                 <div className="flex justify-between text-sm">
                   <span className="text-foreground/70">Subtotal</span>
-                  <span className="font-semibold">S/ {cart.totalPrice.toFixed(2)}</span>
+                  <span className="font-semibold">$ {cart.totalPrice.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold text-foreground pt-2 border-t border-border">
                   <span>Total</span>
-                  <span>S/ {cart.totalPrice.toFixed(2)}</span>
+                  <span>$ {cart.totalPrice.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -665,7 +666,7 @@ export default function CheckoutPage() {
 
               <div className="bg-muted rounded-sm p-4 mb-6">
                 <p className="text-xs text-foreground/70 mb-1">Total a pagar</p>
-                <p className="text-3xl font-bold">S/ {cart?.totalPrice.toFixed(2)}</p>
+                <p className="text-3xl font-bold">$ {cart?.totalPrice.toFixed(2)}</p>
               </div>
 
               {!formToken ? (
