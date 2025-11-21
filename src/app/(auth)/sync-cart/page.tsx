@@ -66,7 +66,7 @@ export default function SyncCartPage() {
         setStatus("error")
         setMessage("Error al sincronizar el carrito")
 
-        const redirect = searchParams.get("redirect") || "/checkout"
+        const redirect = searchParams.get("redirect") || "/"
 
         setTimeout(() => {
           router.push(redirect)
