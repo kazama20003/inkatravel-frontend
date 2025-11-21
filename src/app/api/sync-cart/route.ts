@@ -4,11 +4,12 @@ import { getPendingCart, clearPendingCart } from "@/lib/pending-cart"
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] Starting cart sync")
+    console.log("[v0] Starting cart sync with token")
 
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
 
     if (!token) {
+      console.log("[v0] No token provided")
       return NextResponse.json({ error: "No token provided" }, { status: 401 })
     }
 
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     })
 
     clearPendingCart()
-    console.log("[v0] Cart synced successfully")
+    console.log("[v0] Cart synced successfully, pending items cleared")
 
     return NextResponse.json({ success: true, synced: pendingItems.length })
   } catch (error) {

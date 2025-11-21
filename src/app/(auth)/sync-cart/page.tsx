@@ -24,7 +24,7 @@ export default function SyncCartPage() {
           return
         }
 
-        console.log("[v0] Starting cart sync with token")
+        console.log("[v0] Starting cart sync with token from cookies")
 
         const response = await fetch("/api/sync-cart", {
           method: "POST",
@@ -45,15 +45,17 @@ export default function SyncCartPage() {
         setMessage("Carrito sincronizado correctamente")
 
         const redirect = searchParams.get("redirect") || "/checkout"
+
         setTimeout(() => {
           router.push(redirect)
-        }, 1000)
+        }, 1500)
       } catch (error) {
         console.error("[v0] Error syncing cart:", error)
         setStatus("error")
         setMessage("Error al sincronizar el carrito")
 
         const redirect = searchParams.get("redirect") || "/checkout"
+
         setTimeout(() => {
           router.push(redirect)
         }, 2000)
