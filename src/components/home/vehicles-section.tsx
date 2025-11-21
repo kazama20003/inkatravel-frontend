@@ -82,13 +82,15 @@ export default function VehiclesSection() {
       name: t.suv.name,
       capacity: t.suv.capacity,
       service: t.suv.service,
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1760397864/Imagen_de_WhatsApp_2025-10-09_a_las_14.29.00_cdc00a58_brxbbo.jpg",
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1760397864/Imagen_de_WhatsApp_2025-10-09_a_las_14.29.00_cdc00a58_brxbbo.jpg",
     },
     {
       name: t.van.name,
       capacity: t.van.capacity,
       service: t.van.service,
-      image: "https://res.cloudinary.com/dwvikvjrq/image/upload/v1760397974/Used-2023-Mercedes-Benz-Sprinter-2500-Cargo-High-Roof-Extended-w170-WB-Extended-Van-3D-1739977823_byhnm2.jpg",
+      image:
+        "https://res.cloudinary.com/dwvikvjrq/image/upload/v1760397974/Used-2023-Mercedes-Benz-Sprinter-2500-Cargo-High-Roof-Extended-w170-WB-Extended-Van-3D-1739977823_byhnm2.jpg",
     },
   ]
 
@@ -123,15 +125,17 @@ export default function VehiclesSection() {
                 className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
               />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-black/50" />
 
               <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-                <div className="inline-block px-4 py-1 mb-4 bg-peru-gold/20 backdrop-blur-sm border border-peru-gold/30">
-                  <span className="text-xs font-light tracking-widest uppercase text-peru-gold">{vehicle.service}</span>
+                <div className="inline-block px-4 py-1 mb-4 bg-peru-orange/20 border border-peru-orange/40 backdrop-blur-sm">
+                  <span className="text-xs font-light tracking-widest uppercase text-peru-orange">
+                    {vehicle.service}
+                  </span>
                 </div>
                 <h3 className="text-2xl font-light mb-3 tracking-wide">{vehicle.name}</h3>
                 <div className="flex items-center gap-3 opacity-90">
-                  <Users className="w-5 h-5 text-peru-gold" />
+                  <Users className="w-5 h-5 text-peru-orange" />
                   <span className="text-sm font-light tracking-wide">{vehicle.capacity}</span>
                 </div>
               </div>
