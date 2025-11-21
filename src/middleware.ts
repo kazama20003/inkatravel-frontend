@@ -16,6 +16,9 @@ export function middleware(request: NextRequest) {
   const isUserRoute = pathname.startsWith("/users")
   const isAuthRoute = ["/login", "/register", "/login-success"].includes(pathname)
 
+  const protectedRoutes = ["/dashboard", "/users", "/checkout"]
+  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
+
   // Obtener la cookie "token"
   const token = request.cookies.get("token")?.value
 
@@ -65,8 +68,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(`${origin}/login`)
     }
   } else {
-    // Si no hay token y quiere entrar a dashboard o users, redirigir
-    if (isDashboardRoute || isUserRoute) {
+    if (isProtectedRoute) {
       return NextResponse.redirect(`${origin}/login`)
     }
   }
