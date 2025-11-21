@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { api } from "@/lib/axiosInstance"
 import type { CartResponse, Cart } from "@/types/cart"
+import { isAxiosError } from "axios"
 
 interface CartItem {
   id: string
@@ -71,9 +72,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setBackendItems([])
       }
     } catch (error) {
-      console.error("[v0] Error loading cart from backend:", error)
-      setItems([])
-      setBackendItems([])
+      if (isAxiosError(error) && error.response?.status === 401) {
+        // User is not authenticated - show empty cart instead of redirecting
+        console.log("[v0] User not authenticated, showing empty cart")
+        setItems([])
+        setBackendItems([])
+      } else {
+        // Log other errors but don't crash
+        console.error("[v0] Error loading cart from backend:", error)
+        setItems([])
+        setBackendItems([])
+      }
     } finally {
       setIsLoading(false)
     }
