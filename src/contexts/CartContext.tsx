@@ -25,6 +25,7 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
+const LOCAL_STORAGE_KEY = "cart_items_local"
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
@@ -32,6 +33,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
+    const savedItems = localStorage.getItem(LOCAL_STORAGE_KEY)
+    if (savedItems) {
+      try {
+        setItems(JSON.parse(savedItems))
+      } catch (error) {
+        console.error("[v0] Error parsing localStorage cart:", error)
+      }
+    }
+
     loadCartFromBackend()
 
     const handleCartUpdate = () => {
@@ -41,6 +51,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     window.addEventListener("cartUpdated", handleCartUpdate)
     return () => window.removeEventListener("cartUpdated", handleCartUpdate)
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items))
+  }, [items])
 
   const loadCartFromBackend = async () => {
     try {
@@ -62,9 +76,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       )
 
       if (response.status === 401) {
-        console.log("[v0] User not authenticated, showing empty cart")
-        setItems([])
-        setBackendItems([])
+        console.log("[v0] User not authenticated, keeping local cart")
         return
       }
 
@@ -99,8 +111,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("[v0] Error loading cart from backend:", error)
-      setItems([])
-      setBackendItems([])
     } finally {
       setIsLoading(false)
     }
