@@ -3,9 +3,10 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Cookies from "js-cookie"
 import { motion } from "framer-motion"
-import { getPendingCart, type PendingCartItem } from "@/lib/pending-cart"
+import { getPendingCart, clearPendingCart } from "@/lib/pending-cart"
+import { Suspense } from "react"
 
-export default function SyncCartPage() {
+function SyncCartContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<"syncing" | "success" | "error">("syncing")
@@ -26,11 +27,17 @@ export default function SyncCartPage() {
         }
 
         const pendingItems = getPendingCart()
-        console.log("[v0] Pending items from localStorage:", pendingItems)
 
-        console.log("[v0] Starting cart sync with token from cookies")
+        if (!pendingItems || pendingItems.length === 0) {
+          setStatus("success")
+          setMessage("Tu carrito está vacío")
+          setTimeout(() => {
+            router.push(searchParams.get("redirect") || "/checkout")
+          }, 1000)
+          return
+        }
 
-        const totalPrice = pendingItems.reduce((sum: number, item: PendingCartItem) => sum + (item.total || 0), 0)
+        const totalPrice = pendingItems.reduce((sum: number, item) => sum + (item.total || 0), 0)
 
         const response = await fetch("/api/sync-cart", {
           method: "POST",
@@ -40,36 +47,37 @@ export default function SyncCartPage() {
           },
           body: JSON.stringify({
             items: pendingItems,
-            totalPrice, // Agregar totalPrice requerido por el backend
+            totalPrice,
           }),
         })
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
-          console.error("[v0] Error response from API:", errorData)
           throw new Error(errorData?.error || "Failed to sync cart")
         }
 
         const data = await response.json()
-        console.log("[v0] Sync response:", data)
 
-        setStatus("success")
-        setMessage("Carrito sincronizado correctamente")
+        if (data.success) {
+          setStatus("success")
+          setMessage("Carrito sincronizado correctamente")
+          clearPendingCart()
 
-        const redirect = searchParams.get("redirect") || "/checkout"
+          const redirect = searchParams.get("redirect") || "/checkout"
 
-        setTimeout(() => {
-          router.push(redirect)
-        }, 1500)
+          setTimeout(() => {
+            router.push(redirect)
+          }, 1500)
+        } else {
+          throw new Error("Sync failed")
+        }
       } catch (error) {
         console.error("[v0] Error syncing cart:", error)
         setStatus("error")
         setMessage("Error al sincronizar el carrito")
 
-        const redirect = searchParams.get("redirect") || "/"
-
         setTimeout(() => {
-          router.push(redirect)
+          router.push(searchParams.get("redirect") || "/")
         }, 2000)
       }
     }
@@ -144,5 +152,13 @@ export default function SyncCartPage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function SyncCartPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Cargando...</div>}>
+      <SyncCartContent />
+    </Suspense>
   )
 }

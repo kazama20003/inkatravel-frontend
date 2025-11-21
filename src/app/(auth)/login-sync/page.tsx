@@ -1,55 +1,164 @@
 "use client"
-
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { api } from "@/lib/axiosInstance"
+import Cookies from "js-cookie"
+import { motion } from "framer-motion"
 import { getPendingCart, clearPendingCart } from "@/lib/pending-cart"
-import { Loader2 } from "lucide-react"
+import { Suspense } from "react"
 
-export default function LoginSyncPage() {
+function SyncCartContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [status, setStatus] = useState<"syncing" | "success" | "error">("syncing")
+  const [message, setMessage] = useState("Sincronizando tu carrito...")
 
   useEffect(() => {
-    const syncPendingCart = async () => {
+    const syncCart = async () => {
       try {
-        const pendingItems = getPendingCart()
+        const token = Cookies.get("token")
 
-        if (pendingItems.length > 0) {
-          console.log("[v0] Syncing pending cart items:", pendingItems)
-
-          const totalPrice = pendingItems.reduce((sum, item) => sum + item.total, 0)
-
-          // Add pending items to backend cart
-          await api.post("/cart", {
-            items: pendingItems,
-            totalPrice,
-          })
-
-          console.log("[v0] Pending cart synced successfully")
-          clearPendingCart()
+        if (!token) {
+          setStatus("error")
+          setMessage("Error: no hay sesión activa")
+          setTimeout(() => {
+            router.push("/login")
+          }, 2000)
+          return
         }
 
-        // Redirect to checkout or redirect param
-        const redirect = searchParams.get("redirect") || "/checkout"
-        router.push(redirect)
+        const pendingItems = getPendingCart()
+
+        if (!pendingItems || pendingItems.length === 0) {
+          setStatus("success")
+          setMessage("Tu carrito está vacío")
+          setTimeout(() => {
+            router.push(searchParams.get("redirect") || "/checkout")
+          }, 1000)
+          return
+        }
+
+        const totalPrice = pendingItems.reduce((sum: number, item) => sum + (item.total || 0), 0)
+
+        const response = await fetch("/api/sync-cart", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            items: pendingItems,
+            totalPrice,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData?.error || "Failed to sync cart")
+        }
+
+        const data = await response.json()
+
+        if (data.success) {
+          setStatus("success")
+          setMessage("Carrito sincronizado correctamente")
+          clearPendingCart()
+
+          const redirect = searchParams.get("redirect") || "/checkout"
+
+          setTimeout(() => {
+            router.push(redirect)
+          }, 1500)
+        } else {
+          throw new Error("Sync failed")
+        }
       } catch (error) {
-        console.error("[v0] Error syncing pending cart:", error)
-        // Still redirect to checkout even if sync fails
-        const redirect = searchParams.get("redirect") || "/checkout"
-        router.push(redirect)
+        console.error("[v0] Error syncing cart:", error)
+        setStatus("error")
+        setMessage("Error al sincronizar el carrito")
+
+        setTimeout(() => {
+          router.push(searchParams.get("redirect") || "/")
+        }, 2000)
       }
     }
 
-    syncPendingCart()
+    syncCart()
   }, [router, searchParams])
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-peru-orange" />
-        <p className="text-foreground/60">Sincronizando tu reserva...</p>
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="text-center max-w-md mx-auto px-6">
+        <motion.div
+          className="flex items-center justify-center mb-8"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="w-16 h-16 rounded-full border-2 border-dotted border-peru-orange flex items-center justify-center mr-3">
+            <span className="text-2xl brand-text text-peru-orange">P</span>
+          </div>
+          <span className="text-3xl brand-text text-peru-dark">PERU TRAVEL</span>
+        </motion.div>
+
+        <motion.div
+          className="mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          {status === "syncing" && (
+            <div className="w-16 h-16 border-4 border-peru-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          )}
+
+          {status === "success" && (
+            <motion.div
+              className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
+            >
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </motion.div>
+          )}
+
+          {status === "error" && (
+            <motion.div
+              className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
+            >
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </motion.div>
+          )}
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.4 }}>
+          <h1
+            className={`text-2xl brand-text mb-4 ${
+              status === "success" ? "text-green-600" : status === "error" ? "text-red-600" : "text-peru-dark"
+            }`}
+          >
+            {status === "syncing" && "Sincronizando"}
+            {status === "success" && "¡Sincronizado!"}
+            {status === "error" && "Error"}
+          </h1>
+
+          <p className={`body-text ${status === "error" ? "text-red-600" : "text-peru-dark/70"}`}>{message}</p>
+        </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function SyncCartPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Cargando...</div>}>
+      <SyncCartContent />
+    </Suspense>
   )
 }

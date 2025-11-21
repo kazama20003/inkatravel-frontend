@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useLanguage } from "@/contexts/LanguageContext"
 import type { TourTransport } from "@/types/tour-transport"
 import { Card } from "@/components/ui/card"
@@ -10,12 +9,10 @@ import { Star, Clock, MapPin, Users, Calendar, Eye, ShoppingCart } from "lucide-
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
-import { api } from "@/lib/axiosInstance"
-import { CartItemType } from "@/types/cart"
 import { useState } from "react"
 import { toast } from "sonner"
 import Cookies from "js-cookie"
-import { savePendingCart, getPendingCart } from "@/lib/pending-cart"
+import { addToPendingCart } from "@/lib/pending-cart"
 
 interface TransportCardProps {
   tour: TourTransport
@@ -75,14 +72,6 @@ export function TransportCard({ tour, index }: TransportCardProps) {
     fr: "• TOURS PÉROU • AVENTURE • CULTURE • NATURE • HISTOIRE • GASTRONOMIE ",
     de: "• PERU TOUREN • ABENTEUER • KULTUR • NATUR • GESCHICHTE • GASTRONOMIE ",
     it: "• TOUR PERÙ • AVVENTURA • CULTURA • NATURA • STORIA • GASTRONOMIA ",
-  }
-
-  const addedToCartTexts: Record<LanguageKey, string> = {
-    es: "Agregado al carrito",
-    en: "Added to cart",
-    fr: "Ajouté au panier",
-    de: "Zum Warenkorb hinzugefügt",
-    it: "Aggiunto al carrello",
   }
 
   const loginRequiredTexts: Record<LanguageKey, string> = {
@@ -193,6 +182,7 @@ export function TransportCard({ tour, index }: TransportCardProps) {
     },
   }
 
+  // ... existing helper functions ...
   const getTitle = () => {
     if (typeof tour.title === "string") return tour.title
     if (tour.title && typeof tour.title === "object") {
@@ -258,11 +248,9 @@ export function TransportCard({ tour, index }: TransportCardProps) {
   }
 
   const getFinalPrice = () => {
-    // For premium service, add service price to base price
     if (tour.serviceType === "privatePremium" && tour.servicePrice) {
       return tour.price + tour.servicePrice
     }
-    // For basic service, just return the base price
     return tour.price
   }
 
@@ -304,7 +292,6 @@ export function TransportCard({ tour, index }: TransportCardProps) {
 
   const handleReserveClick = async (e: React.MouseEvent) => {
     e.stopPropagation()
-
     setIsAddingToCart(true)
 
     try {
@@ -317,7 +304,7 @@ export function TransportCard({ tour, index }: TransportCardProps) {
       const total = pricePerPerson * people
 
       const cartItem = {
-        productType: CartItemType.Transport,
+        productType: "transport",
         productId: tour._id,
         startDate,
         people,
@@ -331,34 +318,16 @@ export function TransportCard({ tour, index }: TransportCardProps) {
       const token = Cookies.get("token")
 
       if (!token) {
-        console.log("[v0] User not logged in, saving to pending cart")
-        const pendingItems = getPendingCart()
-        savePendingCart([...pendingItems, cartItem])
-
+        // Not logged in - save to localStorage
+        addToPendingCart(cartItem)
         toast.info(loginRequiredTexts[language as LanguageKey])
-
         router.push("/login?redirect=/checkout")
         return
       }
 
-      const cartData = {
-        items: [cartItem],
-        totalPrice: total,
-      }
-
-      console.log("[v0] Adding to cart:", cartData)
-
-      await api.post("/cart", cartData)
-
-      toast.success(addedToCartTexts[language as LanguageKey], {
-        description: getTitle(),
-      })
-
-      router.push("/checkout")
-    } catch (error) {
-      console.error("[v0] Error adding to cart:", error)
-
-      toast.error("Error al reservar. Por favor intenta de nuevo.")
+      // Logged in - redirect to sync-cart
+      addToPendingCart(cartItem)
+      router.push("/sync-cart?redirect=/checkout")
     } finally {
       setIsAddingToCart(false)
     }
@@ -385,10 +354,6 @@ export function TransportCard({ tour, index }: TransportCardProps) {
             src={
               tour.imageUrl ||
               "/placeholder.svg?height=700&width=400&query=Peru transport tourism luxury scenic mountain landscape" ||
-              "/placeholder.svg" ||
-              "/placeholder.svg" ||
-              "/placeholder.svg" ||
-              "/placeholder.svg" ||
               "/placeholder.svg"
             }
             alt={getTitle()}
