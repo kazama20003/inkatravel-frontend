@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Cookies from "js-cookie"
 import { motion } from "framer-motion"
+import { getPendingCart } from "@/lib/pending-cart"
 
 export default function SyncCartPage() {
   const router = useRouter()
@@ -24,6 +25,9 @@ export default function SyncCartPage() {
           return
         }
 
+        const pendingItems = getPendingCart()
+        console.log("[v0] Pending items from localStorage:", pendingItems)
+
         console.log("[v0] Starting cart sync with token from cookies")
 
         const response = await fetch("/api/sync-cart", {
@@ -32,6 +36,9 @@ export default function SyncCartPage() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            items: pendingItems,
+          }),
         })
 
         if (!response.ok) {

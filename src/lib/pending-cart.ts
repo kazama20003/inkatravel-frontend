@@ -18,7 +18,10 @@ export function getPendingCart(): PendingCartItem[] {
 
   try {
     const saved = localStorage.getItem(PENDING_CART_KEY)
-    return saved ? JSON.parse(saved) : []
+    console.log("[v0] Reading from localStorage - key:", PENDING_CART_KEY, "value:", saved)
+    const items = saved ? JSON.parse(saved) : []
+    console.log("[v0] Parsed items:", items, "length:", items.length)
+    return items
   } catch (error) {
     console.error("[v0] Error reading pending cart:", error)
     return []
@@ -47,7 +50,7 @@ export function clearPendingCart(): void {
 
   try {
     localStorage.removeItem(PENDING_CART_KEY)
-    console.log("[v0] Cleared pending cart")
+    console.log("[v0] Cleared pending cart - key removed:", PENDING_CART_KEY)
   } catch (error) {
     console.error("[v0] Error clearing pending cart:", error)
   }
