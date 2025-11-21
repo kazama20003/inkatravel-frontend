@@ -1,46 +1,56 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
-import { api } from "@/lib/axiosInstance"
+import { createContext, useContext, useState, type ReactNode } from "react"
+
+interface CartItem {
+  id: string
+  name: string
+  price: number
+  quantity: number
+}
 
 interface CartContextType {
   cartCount: number
-  loading: boolean
+  items: CartItem[]
+  addItem: (item: CartItem) => void
+  removeItem: (id: string) => void
+  clearCart: () => void
 }
 
-const CartContext = createContext<CartContextType>({ cartCount: 0, loading: true })
+const CartContext = createContext<CartContextType | undefined>(undefined)
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cartCount, setCartCount] = useState(0)
-  const [loading, setLoading] = useState(true)
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([])
 
-  const fetchCartCount = useCallback(async () => {
-    try {
-      const response = await api.get("/cart")
-      if (response.data.data && response.data.data.length > 0) {
-        const cart = response.data.data[0]
-        setCartCount(cart.items?.length || 0)
-      } else {
-        setCartCount(0)
+  const cartCount = items.reduce((total, item) => total + item.quantity, 0)
+
+  const addItem = (item: CartItem) => {
+    setItems((prevItems) => {
+      const existingItem = prevItems.find((i) => i.id === item.id)
+      if (existingItem) {
+        return prevItems.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i))
       }
-    } catch {
-      setCartCount(0)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+      return [...prevItems, item]
+    })
+  }
 
-  useEffect(() => {
-    fetchCartCount()
-    // Recargar carrito cada 5 segundos para sincronizar
-    const interval = setInterval(fetchCartCount, 5000)
-    return () => clearInterval(interval)
-  }, [fetchCartCount])
+  const removeItem = (id: string) => {
+    setItems((prevItems) => prevItems.filter((item) => item.id !== id))
+  }
 
-  return <CartContext.Provider value={{ cartCount, loading }}>{children}</CartContext.Provider>
+  const clearCart = () => {
+    setItems([])
+  }
+
+  return (
+    <CartContext.Provider value={{ cartCount, items, addItem, removeItem, clearCart }}>{children}</CartContext.Provider>
+  )
 }
 
 export function useCart() {
-  return useContext(CartContext)
+  const context = useContext(CartContext)
+  if (!context) {
+    throw new Error("useCart must be used within CartProvider")
+  }
+  return context
 }

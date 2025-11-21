@@ -1,7 +1,8 @@
 "use client"
+
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Menu, X, Search, ChevronDown, MessageCircle, LogIn, User, ShoppingCart } from "lucide-react"
+import { Menu, X, Search, ChevronDown, LogIn, User, ShoppingCart, LogOut } from "lucide-react"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
@@ -15,6 +16,9 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLanguageOpen, setIsLanguageOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
 
   const pathname = usePathname()
   const router = useRouter()
@@ -33,6 +37,31 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("token="))
+        ?.split("=")[1]
+
+      if (token) {
+        setIsAuthenticated(true)
+        // Optionally decode JWT to get email
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]))
+          setUserEmail(payload.email)
+        } catch (e) {
+          console.error("Error decoding token:", e)
+        }
+      } else {
+        setIsAuthenticated(false)
+        setUserEmail(null)
+      }
+    }
+
+    checkAuth()
+  }, [pathname])
+
   const handleMenuEnter = (index: number) => {
     setActiveMenu(index)
   }
@@ -45,8 +74,13 @@ export default function Header() {
     setIsMobileMenuOpen(!isMobileMenuOpen)
   }
 
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false)
+
+  const handleLogout = () => {
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;"
+    setIsAuthenticated(false)
+    setUserEmail(null)
+    setIsUserMenuOpen(false)
+    router.refresh()
   }
 
   const showNotification = (message: string, type: "success" | "error" | "info" = "info") => {
@@ -420,15 +454,75 @@ export default function Header() {
                   </AnimatePresence>
                 </div>
 
-                <Link href="/users">
-                  <motion.button
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="hidden md:flex items-center justify-center p-2 rounded-lg text-foreground hover:bg-peru-orange/10 transition-colors"
-                  >
-                    <User className="w-4 h-4" />
-                  </motion.button>
-                </Link>
+                {isAuthenticated ? (
+                  <div className="relative hidden md:block">
+                    <motion.button
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                      className="flex items-center justify-center p-2 rounded-lg text-foreground hover:bg-peru-orange/10 transition-colors"
+                    >
+                      <User className="w-4 h-4" />
+                    </motion.button>
+
+                    <AnimatePresence>
+                      {isUserMenuOpen && (
+                        <>
+                          <div className="fixed inset-0 z-[60]" onClick={() => setIsUserMenuOpen(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: -8, scale: 0.94 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -8, scale: 0.94 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                            className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-lg border border-peru-orange/20 min-w-48 z-[70] overflow-hidden backdrop-blur-sm"
+                          >
+                            <div className="px-4 py-3 border-b border-peru-orange/10">
+                              <p className="text-sm font-semibold text-foreground">{userEmail}</p>
+                            </div>
+                            <Link href="/users" onClick={() => setIsUserMenuOpen(false)}>
+                              <motion.button
+                                whileHover={{ backgroundColor: "rgba(230, 126, 34, 0.08)", x: 4 }}
+                                whileTap={{ scale: 0.97 }}
+                                className="flex items-center gap-3 px-4 py-3 w-full text-left text-sm text-foreground hover:text-peru-orange transition-all border-b border-peru-orange/10"
+                              >
+                                <User className="w-4 h-4" />
+                                {language === "es" ? "Mi Perfil" : language === "en" ? "My Profile" : "Mon Profil"}
+                              </motion.button>
+                            </Link>
+                            <motion.button
+                              whileHover={{ backgroundColor: "rgba(230, 126, 34, 0.08)" }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={handleLogout}
+                              className="flex items-center gap-3 px-4 py-3 w-full text-left text-sm text-destructive hover:bg-destructive/10 transition-all"
+                            >
+                              <LogOut className="w-4 h-4" />
+                              {language === "es" ? "Cerrar Sesión" : language === "en" ? "Logout" : "Déconnexion"}
+                            </motion.button>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <Link href="/login">
+                    <motion.button
+                      whileHover={{ scale: 1.05, boxShadow: "0 8px 16px rgba(230, 126, 34, 0.25)" }}
+                      whileTap={{ scale: 0.95 }}
+                      className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg bg-peru-orange text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-300 border border-peru-orange/30"
+                    >
+                      <LogIn className="w-4 h-4" />
+                      {language === "es"
+                        ? "Iniciar Sesión"
+                        : language === "en"
+                          ? "Login"
+                          : language === "fr"
+                            ? "Connexion"
+                            : language === "de"
+                              ? "Anmelden"
+                              : "Accedi"}
+                    </motion.button>
+                  </Link>
+                )}
 
                 <Link href="/checkout">
                   <motion.button
@@ -446,25 +540,6 @@ export default function Header() {
                         {cartCount}
                       </motion.span>
                     )}
-                  </motion.button>
-                </Link>
-
-                <Link href="/login">
-                  <motion.button
-                    whileHover={{ scale: 1.05, boxShadow: "0 8px 16px rgba(230, 126, 34, 0.25)" }}
-                    whileTap={{ scale: 0.95 }}
-                    className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg bg-peru-orange text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-300 border border-peru-orange/30"
-                  >
-                    <LogIn className="w-4 h-4" />
-                    {language === "es"
-                      ? "Iniciar Sesión"
-                      : language === "en"
-                        ? "Login"
-                        : language === "fr"
-                          ? "Connexion"
-                          : language === "de"
-                            ? "Anmelden"
-                            : "Accedi"}
                   </motion.button>
                 </Link>
 
@@ -503,99 +578,30 @@ export default function Header() {
                     {navItems[activeMenu].submenu?.map((sub, j) => (
                       <motion.div
                         key={j}
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: -4 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: j * 0.08, type: "spring", stiffness: 400 }}
-                        whileHover={{ y: -2 }}
+                        transition={{ delay: j * 0.08 }}
                       >
-                        <Link href={activeMenu === 1 ? "/destinations" : "#"}>
-                          <motion.div
-                            className="p-4 rounded-xl border border-peru-orange/15 hover:border-peru-orange/40 bg-white/40 hover:bg-gradient-to-br hover:from-peru-light/60 hover:to-peru-gold/20 transition-all duration-300 cursor-pointer group"
-                            whileHover={{ scale: 1.02 }}
-                            transition={{ type: "spring", stiffness: 400 }}
-                          >
-                            <h3 className="font-bold text-sm text-peru-dark group-hover:text-peru-orange transition-colors mb-1">
-                              {sub.title}
-                            </h3>
-                            <p className="text-xs text-foreground/60 group-hover:text-foreground/80 transition-colors mb-3">
-                              {sub.description}
-                            </p>
-                            <div className="space-y-1">
-                              {sub.countries.map((country, k) => (
-                                <div
-                                  key={k}
-                                  className="text-xs text-foreground/50 group-hover:text-peru-orange transition-colors"
-                                >
-                                  • {country}
-                                </div>
-                              ))}
-                            </div>
-                          </motion.div>
-                        </Link>
+                        <div className="group">
+                          <h3 className="font-bold text-sm text-peru-dark mb-3 group-hover:text-peru-orange transition-colors">
+                            {sub.title}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mb-3">{sub.description}</p>
+                          <div className="space-y-2">
+                            {sub.countries?.map((country, k) => (
+                              <motion.button
+                                key={k}
+                                whileHover={{ x: 4 }}
+                                className="text-sm text-foreground hover:text-peru-orange transition-colors block"
+                              >
+                                {country}
+                              </motion.button>
+                            ))}
+                          </div>
+                        </div>
                       </motion.div>
                     ))}
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {isMobileMenuOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="border-t border-peru-orange/10 bg-gradient-to-b from-white to-peru-light/50"
-              >
-                <div className="px-6 py-4 space-y-2">
-                  {navItems.map((item, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <Link href={item.href}>
-                        <motion.button
-                          whileHover={{ x: 4, backgroundColor: "rgba(230, 126, 34, 0.08)" }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={closeMobileMenu}
-                          className="w-full text-left px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:text-peru-orange transition-all"
-                        >
-                          {item.label}
-                        </motion.button>
-                      </Link>
-                    </motion.div>
-                  ))}
-
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="space-y-3 pt-4 border-t border-peru-orange/20"
-                  >
-                    <Link href="/login">
-                      <motion.button
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-peru-orange text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all border border-peru-orange/40"
-                      >
-                        <LogIn className="w-4 h-4" />
-                        Iniciar Sesión
-                      </motion.button>
-                    </Link>
-
-                    <motion.button
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-peru-green text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all border border-peru-green/40"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      WhatsApp
-                    </motion.button>
-                  </motion.div>
                 </div>
               </motion.div>
             )}
