@@ -1,9 +1,8 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { api } from "@/lib/axiosInstance"
+import Cookies from "js-cookie"
 import type { CartResponse, Cart } from "@/types/cart"
-import { isAxiosError } from "axios"
 
 interface CartItem {
   id: string
@@ -46,10 +45,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const loadCartFromBackend = async () => {
     try {
       setIsLoading(true)
-      const response = await api.get<CartResponse>("/cart")
+      const token = Cookies.get("token")
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      }
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
 
-      if (response.data?.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
-        const cart = response.data.data[0]
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || "https://e0912ca3e512.ngrok-free.app/api"}/cart`,
+        {
+          method: "GET",
+          headers,
+        },
+      )
+
+      if (response.status === 401) {
+        console.log("[v0] User not authenticated, showing empty cart")
+        setItems([])
+        setBackendItems([])
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
+      const data: CartResponse = await response.json()
+
+      if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+        const cart = data.data[0]
         if (cart.items && Array.isArray(cart.items)) {
           setBackendItems(cart.items)
 
@@ -72,17 +98,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setBackendItems([])
       }
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 401) {
-        // User is not authenticated - show empty cart instead of redirecting
-        console.log("[v0] User not authenticated, showing empty cart")
-        setItems([])
-        setBackendItems([])
-      } else {
-        // Log other errors but don't crash
-        console.error("[v0] Error loading cart from backend:", error)
-        setItems([])
-        setBackendItems([])
-      }
+      console.error("[v0] Error loading cart from backend:", error)
+      setItems([])
+      setBackendItems([])
     } finally {
       setIsLoading(false)
     }
