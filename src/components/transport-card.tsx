@@ -14,6 +14,8 @@ import { api } from "@/lib/axiosInstance"
 import { CartItemType } from "@/types/cart"
 import { useState } from "react"
 import { toast } from "sonner"
+import Cookies from "js-cookie"
+import { savePendingCart, getPendingCart } from "@/lib/pending-cart"
 
 interface TransportCardProps {
   tour: TourTransport
@@ -84,11 +86,11 @@ export function TransportCard({ tour, index }: TransportCardProps) {
   }
 
   const loginRequiredTexts: Record<LanguageKey, string> = {
-    es: "Debes iniciar sesión para agregar al carrito",
-    en: "You must log in to add to cart",
-    fr: "Vous devez vous connecter pour ajouter au panier",
-    de: "Sie müssen sich anmelden, um zum Warenkorb hinzuzufügen",
-    it: "Devi accedere per aggiungere al carrello",
+    es: "Iniciando sesión para completar tu reserva...",
+    en: "Logging in to complete your booking...",
+    fr: "Connexion pour terminer votre réservation...",
+    de: "Anmelden, um Ihre Buchung abzuschließen...",
+    it: "Accesso per completare la prenotazione...",
   }
 
   const serviceTypeTexts: Record<LanguageKey, Record<string, string>> = {
@@ -314,20 +316,33 @@ export function TransportCard({ tour, index }: TransportCardProps) {
       const pricePerPerson = getFinalPrice()
       const total = pricePerPerson * people
 
+      const cartItem = {
+        productType: CartItemType.Transport,
+        productId: tour._id,
+        startDate,
+        people,
+        pricePerPerson,
+        total,
+        productTitle: getTitle(),
+        productImageUrl: tour.imageUrl,
+        productSlug: tour.slug,
+      }
+
+      const token = Cookies.get("token")
+
+      if (!token) {
+        console.log("[v0] User not logged in, saving to pending cart")
+        const pendingItems = getPendingCart()
+        savePendingCart([...pendingItems, cartItem])
+
+        toast.info(loginRequiredTexts[language as LanguageKey])
+
+        router.push("/login?redirect=/checkout")
+        return
+      }
+
       const cartData = {
-        items: [
-          {
-            productType: CartItemType.Transport,
-            productId: tour._id,
-            startDate,
-            people,
-            pricePerPerson,
-            total,
-            productTitle: getTitle(),
-            productImageUrl: tour.imageUrl,
-            productSlug: tour.slug,
-          },
-        ],
+        items: [cartItem],
         totalPrice: total,
       }
 
@@ -343,7 +358,7 @@ export function TransportCard({ tour, index }: TransportCardProps) {
     } catch (error) {
       console.error("[v0] Error adding to cart:", error)
 
-      toast.error(loginRequiredTexts[language as LanguageKey])
+      toast.error("Error al reservar. Por favor intenta de nuevo.")
     } finally {
       setIsAddingToCart(false)
     }
@@ -370,6 +385,7 @@ export function TransportCard({ tour, index }: TransportCardProps) {
             src={
               tour.imageUrl ||
               "/placeholder.svg?height=700&width=400&query=Peru transport tourism luxury scenic mountain landscape" ||
+              "/placeholder.svg" ||
               "/placeholder.svg" ||
               "/placeholder.svg" ||
               "/placeholder.svg" ||
