@@ -19,6 +19,7 @@ export default function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<number | null>(null)
 
   const pathname = usePathname()
   const router = useRouter()
@@ -46,7 +47,6 @@ export default function Header() {
 
       if (token) {
         setIsAuthenticated(true)
-        // Optionally decode JWT to get email
         try {
           const payload = JSON.parse(atob(token.split(".")[1]))
           setUserEmail(payload.email)
@@ -72,8 +72,8 @@ export default function Header() {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
+    setActiveMobileSubmenu(null)
   }
-
 
   const handleLogout = () => {
     document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;"
@@ -355,6 +355,7 @@ export default function Header() {
                 </Link>
               </motion.div>
 
+              {/* Desktop Navigation */}
               <nav className="hidden lg:flex items-center gap-0.5">
                 {navItems.map((item, i) => (
                   <div key={i} className="relative" onMouseEnter={() => handleMenuEnter(i)}>
@@ -552,6 +553,7 @@ export default function Header() {
                   <Search className="w-4 h-4" />
                 </motion.button>
 
+                {/* Mobile Menu Button */}
                 <motion.button
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.95 }}
@@ -564,6 +566,7 @@ export default function Header() {
             </div>
           </div>
 
+          {/* Desktop Submenu */}
           <AnimatePresence>
             {activeMenu !== null && navItems[activeMenu].submenu && (
               <motion.div
@@ -607,6 +610,265 @@ export default function Header() {
             )}
           </AnimatePresence>
         </motion.div>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/20 z-[40] top-20"
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="absolute top-full left-0 right-0 mt-3 mx-auto w-[95%] max-w-7xl bg-white rounded-2xl border border-peru-orange/10 shadow-xl z-[50] max-h-[80vh] overflow-y-auto backdrop-blur-xl"
+              >
+                <div className="p-4">
+                  {/* Mobile Navigation Items */}
+                  <div className="space-y-1">
+                    {navItems.map((item, i) => (
+                      <div key={i}>
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                        >
+                          {item.submenu ? (
+                            <motion.button
+                              onClick={() => setActiveMobileSubmenu(activeMobileSubmenu === i ? null : i)}
+                              className={clsx(
+                                "w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all",
+                                isActivePage(item.href)
+                                  ? "text-peru-orange bg-peru-orange/10"
+                                  : "text-foreground hover:bg-peru-orange/5",
+                              )}
+                              whileHover={{ x: 4 }}
+                            >
+                              <span>{item.label}</span>
+                              <motion.div
+                                animate={{ rotate: activeMobileSubmenu === i ? 180 : 0 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <ChevronDown size={16} />
+                              </motion.div>
+                            </motion.button>
+                          ) : (
+                            <Link href={item.href}>
+                              <motion.div
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className={clsx(
+                                  "w-full flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all",
+                                  isActivePage(item.href)
+                                    ? "text-peru-orange bg-peru-orange/10"
+                                    : "text-foreground hover:bg-peru-orange/5",
+                                )}
+                                whileHover={{ x: 4 }}
+                              >
+                                {item.label}
+                              </motion.div>
+                            </Link>
+                          )}
+                        </motion.div>
+
+                        {/* Mobile Submenu */}
+                        <AnimatePresence>
+                          {item.submenu && activeMobileSubmenu === i && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                              className="bg-peru-orange/5 rounded-lg mt-1 overflow-hidden"
+                            >
+                              <div className="p-3 space-y-3">
+                                {item.submenu?.map((sub, j) => (
+                                  <motion.div
+                                    key={j}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: j * 0.05 }}
+                                    className="pl-3 border-l-2 border-peru-orange/30"
+                                  >
+                                    <h4 className="font-semibold text-xs text-peru-dark mb-2">{sub.title}</h4>
+                                    <p className="text-xs text-muted-foreground mb-2">{sub.description}</p>
+                                    <div className="space-y-1.5">
+                                      {sub.countries?.map((country, k) => (
+                                        <motion.button
+                                          key={k}
+                                          whileHover={{ x: 2 }}
+                                          className="text-xs text-foreground hover:text-peru-orange transition-colors block text-left"
+                                        >
+                                          • {country}
+                                        </motion.button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Mobile Language Selector */}
+                  <div className="mt-4 pt-4 border-t border-peru-orange/10">
+                    <motion.button
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: navItems.length * 0.05 }}
+                      onClick={() => setActiveMobileSubmenu(activeMobileSubmenu === -1 ? null : -1)}
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-peru-orange/5 transition-all"
+                      whileHover={{ x: 4 }}
+                    >
+                      <span>🌐 {getCurrentLanguageCode()}</span>
+                      <motion.div
+                        animate={{ rotate: activeMobileSubmenu === -1 ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ChevronDown size={16} />
+                      </motion.div>
+                    </motion.button>
+
+                    <AnimatePresence>
+                      {activeMobileSubmenu === -1 && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                          className="bg-peru-orange/5 rounded-lg mt-2 overflow-hidden"
+                        >
+                          <div className="p-2 space-y-1">
+                            {languages.map((lang, idx) => (
+                              <motion.button
+                                key={lang.code}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleLanguageChange(lang.code)
+                                  setActiveMobileSubmenu(null)
+                                  setIsMobileMenuOpen(false)
+                                }}
+                                className={clsx(
+                                  "flex items-center gap-2 px-4 py-2 rounded text-xs font-medium transition-all w-full",
+                                  getCurrentLanguageCode() === lang.code
+                                    ? "bg-peru-orange/20 text-peru-orange"
+                                    : "text-foreground hover:bg-peru-orange/10",
+                                )}
+                                whileHover={{ x: 2 }}
+                              >
+                                <div className="w-4 h-3 relative rounded-sm overflow-hidden border border-peru-orange/20 flex-shrink-0">
+                                  <Image
+                                    src={lang.flag || "/placeholder.svg"}
+                                    alt={`${lang.name} flag`}
+                                    fill
+                                    className="object-cover"
+                                    sizes="16px"
+                                  />
+                                </div>
+                                <span>{lang.name}</span>
+                              </motion.button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Mobile Auth Buttons */}
+                  <div className="mt-4 pt-4 border-t border-peru-orange/10 space-y-2">
+                    {isAuthenticated ? (
+                      <>
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: (navItems.length + 1) * 0.05 }}
+                          className="px-4 py-2 text-xs text-muted-foreground"
+                        >
+                          {userEmail}
+                        </motion.div>
+                        <Link href="/users" onClick={() => setIsMobileMenuOpen(false)}>
+                          <motion.button
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: (navItems.length + 2) * 0.05 }}
+                            className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-peru-orange/5 transition-all"
+                            whileHover={{ x: 4 }}
+                          >
+                            <User className="w-4 h-4" />
+                            {language === "es" ? "Mi Perfil" : "My Profile"}
+                          </motion.button>
+                        </Link>
+                        <motion.button
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: (navItems.length + 3) * 0.05 }}
+                          onClick={() => {
+                            handleLogout()
+                            setIsMobileMenuOpen(false)
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-all"
+                          whileHover={{ x: 4 }}
+                        >
+                          <LogOut className="w-4 h-4" />
+                          {language === "es" ? "Cerrar Sesión" : "Logout"}
+                        </motion.button>
+                      </>
+                    ) : (
+                      <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                        <motion.button
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: (navItems.length + 1) * 0.05 }}
+                          className="w-full flex items-center gap-2 px-4 py-3 rounded-lg bg-peru-orange text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <LogIn className="w-4 h-4" />
+                          {language === "es" ? "Iniciar Sesión" : "Login"}
+                        </motion.button>
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Mobile Cart Link */}
+                  <Link href="/checkout" onClick={() => setIsMobileMenuOpen(false)}>
+                    <motion.button
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: (navItems.length + 4) * 0.05 }}
+                      className="w-full flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-peru-orange/5 transition-all mt-2 relative"
+                      whileHover={{ x: 4 }}
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      {language === "es" ? "Carrito" : "Cart"}
+                      {cartCount > 0 && (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="ml-auto bg-peru-orange text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+                        >
+                          {cartCount}
+                        </motion.span>
+                      )}
+                    </motion.button>
+                  </Link>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </motion.header>
     </>
   )
