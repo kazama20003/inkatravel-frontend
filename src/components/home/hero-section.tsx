@@ -1,7 +1,6 @@
 "use client"
-import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, MessageCircle } from "lucide-react"
 import Image from "next/image"
 import { useLanguage } from "@/contexts/LanguageContext"
 import Link from "next/link"
@@ -14,30 +13,53 @@ export default function HeroSection() {
       creator: "Expertos en",
       title: "TRANSPORTES\nY TURISMO",
       button: "Reservar",
+      acceptPayment: "Aceptamos todas las tarjetas",
+      whatsappContact: "WhatsApp Directo",
     },
     en: {
       creator: "Creator of",
       title: "TRANSPORT\n& TOURISM",
       button: "Book Now",
+      acceptPayment: "We accept all cards",
+      whatsappContact: "Direct WhatsApp",
     },
     fr: {
       creator: "Créateur de",
       title: "TRANSPORT\nET TOURISME",
       button: "Réserver",
+      acceptPayment: "Nous acceptons toutes les cartes",
+      whatsappContact: "WhatsApp Direct",
     },
     de: {
       creator: "Schöpfer von",
       title: "TRANSPORT\nUND TOURISMUS",
       button: "Buchen",
+      acceptPayment: "Wir akzeptieren alle Karten",
+      whatsappContact: "Direkter WhatsApp",
     },
     it: {
       creator: "Creatore di",
       title: "TRASPORTI\nE TURISMO",
       button: "Prenota",
+      acceptPayment: "Accettiamo tutte le carte",
+      whatsappContact: "WhatsApp Diretto",
     },
   }
 
   const t = translations[language] || translations.es
+
+  // Payment methods
+  const paymentMethods = [
+    { name: "Visa", url: "https://img.icons8.com/color/96/000000/visa.png" },
+    { name: "Mastercard", url: "https://img.icons8.com/color/96/000000/mastercard.png" },
+    { name: "American Express", url: "https://img.icons8.com/color/96/000000/amex.png" },
+  ]
+
+  // WhatsApp numbers
+  const whatsappNumbers = [
+    { number: "+51996407040", flag: "🇵🇪" },
+    { number: "+51959748730", flag: "🇵🇪" },
+  ]
 
   return (
     <>
@@ -64,8 +86,7 @@ export default function HeroSection() {
               priority
             />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
-          <div className="absolute inset-0 bg-gradient-to-r from-peru-dark/30 via-transparent to-peru-orange/20" />
+          <div className="absolute inset-0 bg-black/50" />
         </div>
 
         {/* Centered Content */}
@@ -113,7 +134,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="brand-text text-4xl md:text-6xl lg:text-7xl font-bold text-amber-500 mb-12 leading-none tracking-wider drop-shadow-2xl"
+              className="brand-text text-4xl md:text-6xl lg:text-7xl font-bold text-peru-orange mb-12 leading-none tracking-wider drop-shadow-2xl"
               style={{
                 textShadow: "0 4px 20px rgba(0,0,0,0.8)",
               }}
@@ -129,15 +150,71 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.6 }}
             >
               <Link href="/transport">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-peru-orange to-peru-gold hover:from-peru-gold hover:to-peru-orange text-white font-bold px-12 py-6 rounded-2xl text-xl shadow-2xl transition-all duration-500 hover:scale-110 hover:shadow-peru-orange/50 border-2 border-white/20 backdrop-blur-sm"
-                
-              >
-                {t.button}
-                <ArrowRight className="w-6 h-6 ml-3 transition-transform group-hover:translate-x-1" />
-              </Button>
+                <motion.button
+                  whileHover={{ scale: 1.05, boxShadow: "0 8px 16px rgba(230, 126, 34, 0.25)" }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-peru-orange text-white font-bold px-12 py-6 rounded-2xl text-xl shadow-md hover:shadow-lg transition-all duration-300 border border-peru-orange/30 inline-flex items-center gap-3"
+                >
+                  {t.button}
+                  <ArrowRight className="w-6 h-6 transition-transform" />
+                </motion.button>
               </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              className="mt-16 flex flex-col items-center gap-4"
+            >
+              <p className="text-white/70 text-sm tracking-wide">{t.acceptPayment}</p>
+              <div className="flex items-center justify-center gap-8 flex-wrap">
+                {paymentMethods.map((method) => (
+                  <motion.div
+                    key={method.name}
+                    whileHover={{ scale: 1.1, opacity: 1 }}
+                    className="opacity-75 hover:opacity-100 transition-opacity"
+                  >
+                    <Image
+                      src={method.url || "/placeholder.svg"}
+                      alt={method.name}
+                      width={40}
+                      height={40}
+                      className="drop-shadow-lg"
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1 }}
+              className="mt-12 flex flex-col items-center gap-3"
+            >
+              <p className="text-white/60 text-xs uppercase tracking-widest">{t.whatsappContact}</p>
+              <div className="flex items-center justify-center gap-6 flex-wrap">
+                {whatsappNumbers.map((contact) => (
+                  <a
+                    key={contact.number}
+                    href={`https://wa.me/${contact.number.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:border-peru-green/50 transition-all duration-300 group-hover:bg-peru-green/10"
+                    >
+                      <MessageCircle className="w-4 h-4 text-peru-green" />
+                      <span className="text-white/80 text-sm font-medium">
+                        {contact.flag} {contact.number}
+                      </span>
+                    </motion.div>
+                  </a>
+                ))}
+              </div>
             </motion.div>
           </motion.div>
         </div>
@@ -157,7 +234,7 @@ export default function HeroSection() {
             <motion.div
               animate={{ y: [0, 16, 0] }}
               transition={{ duration: 2.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-              className="w-1.5 h-4 bg-gradient-to-b from-peru-gold to-peru-orange rounded-full mt-2 shadow-sm"
+              className="w-1.5 h-4 bg-peru-orange rounded-full mt-2 shadow-sm"
             />
           </motion.div>
         </motion.div>

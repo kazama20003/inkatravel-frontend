@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import type React from "react"
 import { Toaster } from "@/components/ui/sonner"
 import { LanguageProvider } from "@/contexts/LanguageContext"
+import { CartProvider } from "@/contexts/CartContext"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,7 +20,7 @@ const bebasNeue = Bebas_Neue({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://incatravelperu.com"),
+  metadataBase: new URL("https://cabanacondecuscobybus.com"),
   title: {
     default: "Inca Travel Peru - Agencia de Turismo | Tours Cusco, Cabanaconde, Arequipa",
     template: "%s | Inca Travel Peru - Agencia de Turismo",
@@ -78,9 +79,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "@InkaTravelPeru",
-    creator: "@InkaTravelPeru",
-    title: "Inka Travel Peru - Agencia de Turismo | Tours Cusco, Cabanaconde",
+    site: "@IncaTravelPeru",
+    creator: "@IncaTravelPeru",
+    title: "Inca Travel Peru - Agencia de Turismo | Tours Cusco, Cabanaconde",
     description: "Tours a Cusco, Cabanaconde, Arequipa, Machu Picchu. Transporte seguro y paquetes turísticos en Perú.",
     images: ["/twitter.png"],
   },
@@ -120,8 +121,8 @@ export const metadata: Metadata = {
     "geo.placename": "Arequipa, Peru",
     "geo.position": "-16.3988;-71.5369",
     ICBM: "-16.3988, -71.5369",
-    "DC.title": "Inka Travel Peru - Agencia de Turismo en Arequipa",
-    "DC.creator": "Inka Travel Peru",
+    "DC.title": "Inca Travel Peru - Agencia de Turismo en Arequipa",
+    "DC.creator": "Inca Travel Peru",
     "DC.subject": "Tours Arequipa, Turismo, Cabanaconde, Cusco, Perú",
     "DC.description": "Agencia de turismo con sede en Arequipa especializada en tours por Perú.",
     rating: "general",
@@ -234,7 +235,8 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <LanguageProvider>
+       <CartProvider>
+         <LanguageProvider>
           <main className="relative">{children}</main>
           <Toaster
             position="top-right"
@@ -249,6 +251,7 @@ export default function RootLayout({
             }}
           />
         </LanguageProvider>
+       </CartProvider>
       </body>
     </html>
   )
