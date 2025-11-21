@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Cookies from "js-cookie"
 import { motion } from "framer-motion"
-import { getPendingCart } from "@/lib/pending-cart"
+import { getPendingCart, type PendingCartItem } from "@/lib/pending-cart"
 
 export default function SyncCartPage() {
   const router = useRouter()
@@ -30,6 +30,8 @@ export default function SyncCartPage() {
 
         console.log("[v0] Starting cart sync with token from cookies")
 
+        const totalPrice = pendingItems.reduce((sum: number, item: PendingCartItem) => sum + (item.total || 0), 0)
+
         const response = await fetch("/api/sync-cart", {
           method: "POST",
           headers: {
@@ -38,11 +40,14 @@ export default function SyncCartPage() {
           },
           body: JSON.stringify({
             items: pendingItems,
+            totalPrice, // Agregar totalPrice requerido por el backend
           }),
         })
 
         if (!response.ok) {
-          throw new Error("Failed to sync cart")
+          const errorData = await response.json().catch(() => ({}))
+          console.error("[v0] Error response from API:", errorData)
+          throw new Error(errorData?.error || "Failed to sync cart")
         }
 
         const data = await response.json()
