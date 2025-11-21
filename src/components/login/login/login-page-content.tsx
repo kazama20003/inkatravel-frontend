@@ -1,18 +1,32 @@
 "use client"
-
-import React from "react"
-import { useRouter } from "next/navigation"
+import type React from "react"
+import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
+import Link from "next/link"
+import { Eye, EyeOff, ArrowLeft } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { api } from "@/lib/axiosInstance"
 
-const LoginPageContent = () => {
-  const [formData,] = React.useState({
+export default function LoginPageContent() {
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState({
     email: "",
     password: "",
     rememberMe: false,
   })
-  const [isLoading, setIsLoading] = React.useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const urlError = searchParams.get("error")
+    if (urlError) {
+      toast.error("Error de autenticación", {
+        description: decodeURIComponent(urlError),
+      })
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,20 +44,25 @@ const LoginPageContent = () => {
 
       console.log("Respuesta del login:", response.data)
 
+      // Verificar si la respuesta tiene el token
       if (response.data && response.data.access_token) {
-        const maxAge = formData.rememberMe ? 2592000 : 86400
+        // Store token in cookies
+        const maxAge = formData.rememberMe ? 2592000 : 86400 // 30 días o 1 día
         document.cookie = `token=${response.data.access_token}; path=/; max-age=${maxAge}; secure; samesite=strict`
 
+        // Mostrar notificación de éxito
         toast.success("¡Bienvenido de vuelta!", {
           description: `Hola ${response.data.user?.fullName || response.data.user?.email || ""}`,
         })
 
         console.log("Access token guardado, sincronizando carrito...")
 
+        // Redirigir a sync-cart para sincronizar items pendientes
         setTimeout(() => {
           router.push("/sync-cart?redirect=/checkout")
         }, 1000)
       } else if (response.data && response.data.token) {
+        // En caso de que el backend use 'token' en lugar de 'access_token'
         const maxAge = formData.rememberMe ? 2592000 : 86400
         document.cookie = `token=${response.data.token}; path=/; max-age=${maxAge}; secure; samesite=strict`
 
@@ -61,28 +80,220 @@ const LoginPageContent = () => {
         })
       }
     } catch (error: unknown) {
-      console.error("Error en el proceso de login:", error)
-      toast.error("Error en el proceso de login", {
-        description: "Hubo un problema al intentar iniciar sesión",
-      })
+      console.error("Error completo de login:", error)
+
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: {
+            data?: { message?: string; error?: string }
+            status?: number
+          }
+        }
+
+        console.error("Respuesta de error:", axiosError.response)
+
+        if (axiosError.response?.status === 401) {
+          toast.error("Credenciales incorrectas", {
+            description: "Verifica tu email y contraseña e intenta nuevamente",
+          })
+        } else if (axiosError.response?.status === 400) {
+          toast.error("Datos inválidos", {
+            description: axiosError.response?.data?.message || "Verifica los datos ingresados",
+          })
+        } else if (axiosError.response?.status === 429) {
+          toast.error("Demasiados intentos", {
+            description: "Has excedido el límite de intentos. Intenta más tarde",
+          })
+        } else if (axiosError.response?.data?.message) {
+          toast.error("Error de autenticación", {
+            description: axiosError.response.data.message,
+          })
+        } else if (axiosError.response?.data?.error) {
+          toast.error("Error de autenticación", {
+            description: axiosError.response.data.error,
+          })
+        } else {
+          toast.error("Error del servidor", {
+            description: "Hubo un problema con el servidor. Intenta nuevamente",
+          })
+        }
+      } else {
+        toast.error("Error de conexión", {
+          description: "Verifica tu conexión a internet e intenta nuevamente",
+        })
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
-  // ... existing code here ...
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }))
+  }
 
   return (
-    <div>
-      {/* ... existing JSX code here ... */}
-      <form onSubmit={handleSubmit}>
-        {/* ... existing form fields here ... */}
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
-        </button>
-      </form>
+    <div className="min-h-screen bg-white flex">
+      {/* Left Side - Form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 md:px-12 lg:px-16 xl:px-24">
+        {/* Header */}
+        <motion.div
+          className="mb-8 md:mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {/* Back Button */}
+          <Link
+            href="/"
+            className="inline-flex items-center text-peru-dark hover:text-peru-orange transition-colors mb-8 group"
+          >
+            <ArrowLeft size={20} className="mr-2 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-xl brand-text text-peru-orange">P</span>
+          </Link>
+
+          {/* Logo */}
+          <div className="flex items-center mb-6">
+            <div className="w-12 h-12 rounded-full border-2 border-dotted border-peru-orange flex items-center justify-center mr-3">
+              <span className="text-xl brand-text text-peru-orange">P</span>
+            </div>
+            <span className="text-2xl brand-text text-peru-dark">PERU TRAVEL</span>
+          </div>
+
+          <h1 className="text-3xl md:text-4xl lg:text-5xl text-peru-dark brand-text mb-4">INICIAR SESIÓN</h1>
+          <p className="text-peru-dark/70 body-text text-lg">Accede a tu cuenta para continuar tu aventura por Perú</p>
+        </motion.div>
+
+        {/* Form */}
+        <motion.form
+          onSubmit={handleSubmit}
+          className="space-y-6 max-w-md"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          {/* Email Field */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-peru-dark mb-2 body-text">
+              Correo electrónico
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:border-peru-orange focus:ring-2 focus:ring-peru-orange/20 outline-none transition-all body-text"
+              placeholder="tu@email.com"
+            />
+          </div>
+
+          {/* Password Field */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-peru-dark mb-2 body-text">
+              Contraseña
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-md focus:border-peru-orange focus:ring-2 focus:ring-peru-orange/20 outline-none transition-all body-text"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-peru-orange transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Remember Me & Forgot Password */}
+          <div className="flex items-center justify-between">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="rememberMe"
+                checked={formData.rememberMe}
+                onChange={handleInputChange}
+                className="w-4 h-4 text-peru-orange border-gray-300 rounded focus:ring-peru-orange"
+              />
+              <span className="ml-2 text-sm text-peru-dark body-text">Recordarme</span>
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-sm text-peru-orange hover:text-peru-dark transition-colors body-text"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+
+          {/* Submit Button */}
+          <motion.button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-peru-orange text-white py-3 px-6 rounded-md hover:bg-peru-orange/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors brand-text text-lg"
+            whileHover={{ scale: isLoading ? 1 : 1.02 }}
+            whileTap={{ scale: isLoading ? 1 : 0.98 }}
+          >
+            {isLoading ? "INICIANDO SESIÓN..." : "INICIAR SESIÓN"}
+          </motion.button>
+
+          {/* Sign Up Link */}
+          <p className="text-center text-peru-dark/70 body-text">
+            ¿No tienes una cuenta?{" "}
+            <Link href="/register" className="text-peru-orange hover:text-peru-dark transition-colors font-medium">
+              Regístrate aquí
+            </Link>
+          </p>
+        </motion.form>
+      </div>
+
+      {/* Right Side - Image */}
+      <motion.div
+        className="hidden lg:block lg:w-1/2 relative overflow-hidden"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('https://res.cloudinary.com/dwvikvjrq/image/upload/v1748624876/banner_waz5ov.jpg')",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-peru-dark/80 via-peru-dark/20 to-transparent" />
+
+        {/* Content Overlay */}
+        <div className="absolute bottom-0 left-0 p-12 text-white">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <h2 className="text-4xl brand-text text-peru-gold mb-4">BIENVENIDO DE VUELTA</h2>
+            <p className="text-lg body-text text-white/90 max-w-md">
+              Continúa explorando las maravillas de Perú. Tu próxima aventura te está esperando.
+            </p>
+            <div className="mt-8 flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-full border-2 border-dotted border-peru-gold flex items-center justify-center">
+                <span className="text-peru-gold brand-text">→</span>
+              </div>
+              <span className="text-peru-gold body-text">Descubre Perú</span>
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
     </div>
   )
 }
-
-export default LoginPageContent
