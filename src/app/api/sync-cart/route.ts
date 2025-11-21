@@ -13,7 +13,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No token provided" }, { status: 401 })
     }
 
-    // Read pending items from localStorage (client-side call will provide them)
     const body = await request.json().catch(() => ({ items: [] }))
     const pendingItems = (body.items as CartItem[]) || []
 
@@ -28,8 +27,10 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Total price calculated:", totalPrice)
 
-    // Call the cart endpoint
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/cart`, {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+    console.log("[v0] Calling backend at:", backendUrl)
+
+    const response = await fetch(`${backendUrl}/cart`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -42,22 +43,24 @@ export async function POST(request: NextRequest) {
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error("[v0] Backend returned error:", response.status, errorData)
-      throw new Error(`Backend error: ${response.status}`)
+      const errorData = await response.json().catch(() => ({ error: "No error details" }))
+      console.error("[v0] Backend returned error:", response.status, response.statusText, errorData)
+      throw new Error(`Backend error: ${response.status} ${response.statusText}`)
     }
 
     const responseData = await response.json()
     console.log("[v0] Cart synced successfully:", responseData)
 
-    // Clear pending cart after successful sync
     clearPendingCart()
 
     const syncResponse: SyncCartResponse = { success: true, synced: pendingItems.length, data: responseData }
     return NextResponse.json(syncResponse)
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    const errorMessage = error instanceof Error ? error.message : String(error)
     console.error("[v0] Error syncing cart:", errorMessage)
-    return NextResponse.json({ success: false, error: "Failed to sync cart" }, { status: 500 })
+    if (error instanceof Error) {
+      console.error("[v0] Stack trace:", error.stack)
+    }
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }
