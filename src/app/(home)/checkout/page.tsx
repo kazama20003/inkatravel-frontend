@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { ShoppingCart, ArrowLeft, Trash2, Plus, Minus, Loader2, X } from "lucide-react"
@@ -12,40 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CountrySelect } from "@/components/login/country-select"
 import { toast } from "sonner"
 import { api } from "@/lib/axiosInstance"
-import { isAxiosError } from "axios"
 import Image from "next/image"
 import "../../styles/izipay.css"
 import type { Cart, CartItem, CartResponse } from "@/types/cart"
-
-interface CustomerInfoDto {
-  email: string
-  firstName: string
-  lastName: string
-  phoneNumber?: string
-  identityType?: string
-  identityCode?: string
-  address?: string
-  country?: string
-  city?: string
-  state?: string
-  zipCode?: string
-  nationality?: string
-  fullName?: string
-}
-
-interface CreatePaymentDto {
-  amount: number
-  currency: string
-  orderId: string
-  formAction: "PAID"
-  contextMode?: "TEST" | "PRODUCTION"
-  customer: CustomerInfoDto
-}
-
-interface FormTokenResponse {
-  formToken: string
-  publicKey: string
-}
+import { isAxiosError } from "axios"
 
 interface UserData {
   email: string
@@ -61,6 +31,11 @@ interface UserData {
   zipCode?: string
 }
 
+interface PaymentResponse {
+  formToken: string
+  publicKey: string
+}
+
 export default function CheckoutPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
@@ -68,7 +43,6 @@ export default function CheckoutPage() {
   const [cart, setCart] = useState<Cart | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const [formToken, setFormToken] = useState<string | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
@@ -83,276 +57,180 @@ export default function CheckoutPage() {
   })
   const [orderNotes, setOrderNotes] = useState("")
 
-  const loadCart = useCallback(async () => {
+  useEffect(() => {
+    fetchCart()
+  }, [])
+
+  const fetchCart = async () => {
     try {
       setLoading(true)
-      setError(null)
       const response = await api.get<CartResponse>("/cart")
-
-      if (response.data.data && response.data.data.length > 0) {
-        const cartData = response.data.data[0]
-        setCart(cartData)
-        if (!cartData.items || cartData.items.length === 0) {
-          setError("Tu carrito está vacío")
-        }
-      } else {
-        setError("Tu carrito está vacío")
-      }
-    } catch (error: unknown) {
-      if (error && typeof error === "object" && "response" in error) {
-        const axiosError = error as { response?: { status?: number } }
-        if (axiosError.response?.status === 401) {
-          toast.error("Debes iniciar sesión")
-          router.push("/login")
-          return
-        }
-      }
-      setError("Error al cargar el carrito")
+      const cartData = Array.isArray(response.data.data) && response.data.data.length > 0 ? response.data.data[0] : null
+      setCart(cartData)
+      setError(null)
+    } catch (_err) {
+      const message = isAxiosError(_err) ? _err.response?.data?.message : "Error loading cart"
+      setError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
-  }, [router])
+  }
 
-  useEffect(() => {
-    loadCart()
-  }, [loadCart])
+  const getMinDate = () => {
+    const date = new Date()
+    date.setDate(date.getDate() + 1)
+    return date.toISOString().split("T")[0]
+  }
 
-  useEffect(() => {
-    if (showPaymentModal && formToken) {
-      const scriptId = "izipay-script"
-      if (document.getElementById(scriptId)) {
+  const updateQuantity = (itemId: string, quantity: number) => {
+    if (!cart) return
+    setCart({
+      ...cart,
+      items: cart.items.map((item) =>
+        item._id === itemId ? { ...item, people: quantity, total: quantity * item.pricePerPerson } : item,
+      ),
+      totalPrice: cart.items.reduce(
+        (sum, item) => sum + (item._id === itemId ? quantity * item.pricePerPerson : item.total),
+        0,
+      ),
+    })
+  }
+
+  const updateDate = (itemId: string, date: string) => {
+    if (!cart) return
+    setCart({
+      ...cart,
+      items: cart.items.map((item) => (item._id === itemId ? { ...item, startDate: date } : item)),
+    })
+  }
+
+  const removeItem = (itemId: string) => {
+    if (!cart) return
+    const newItems = cart.items.filter((item) => item._id !== itemId)
+    const newTotal = newItems.reduce((sum, item) => sum + item.total, 0)
+    setCart({
+      ...cart,
+      items: newItems,
+      totalPrice: newTotal,
+    })
+  }
+
+  const getItemDisplayData = (item: CartItem) => {
+    return {
+      title: item.productTitle || "Servicio",
+      location: item.productSlug || "",
+      imageUrl: item.productImageUrl,
+    }
+  }
+
+  const handleNext = async () => {
+    if (currentStep === 1) {
+      if (cart?.items.length === 0) {
+        toast.error("Tu carrito está vacío")
         return
       }
-
-      const script = document.createElement("script")
-      script.id = scriptId
-      script.src = "https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
-      script.setAttribute("kr-public-key", process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY || "")
-      script.setAttribute("kr-post-url-success", process.env.NEXT_PUBLIC_IZIPAY_SUCCESS_URL || "")
-      script.setAttribute("kr-post-url-refused", process.env.NEXT_PUBLIC_IZIPAY_REFUSED_URL || "")
-      document.body.appendChild(script)
-
-      return () => {
-        const existingScript = document.getElementById(scriptId)
-        if (existingScript) {
-          document.body.removeChild(existingScript)
-        }
-      }
-    }
-  }, [showPaymentModal, formToken])
-
-  const cartItemToDto = (item: CartItem) => {
-    let productId: string
-    if (typeof item.productId === "string") {
-      productId = item.productId
-    } else if (item.productId && typeof item.productId === "object" && "_id" in item.productId) {
-      productId = (item.productId as { _id: string })._id
-    } else {
-      productId = ""
-    }
-
-    return {
-      productType: item.productType,
-      productId: productId,
-      startDate: item.startDate,
-      people: item.people,
-      pricePerPerson: item.pricePerPerson,
-      total: item.total,
-      notes: item.notes,
-      productTitle: item.productTitle,
-      productImageUrl: item.productImageUrl,
-      productSlug: item.productSlug,
-    }
-  }
-
-  const updateQuantity = async (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1 || !cart) return
-
-    const updatedItems = cart.items.map((item) => {
-      if (item._id === itemId) {
-        return {
-          ...item,
-          people: newQuantity,
-          total: newQuantity * item.pricePerPerson,
-        }
-      }
-      return item
-    })
-
-    const newTotalPrice = updatedItems.reduce((sum, item) => sum + item.total, 0)
-    setCart({ ...cart, items: updatedItems, totalPrice: newTotalPrice })
-
-    try {
-      await api.patch("/cart", {
-        items: updatedItems.map(cartItemToDto),
-        totalPrice: newTotalPrice,
-      })
-      toast.success("Cantidad actualizada")
-    } catch {
-      await loadCart()
-      toast.error("Error al actualizar")
-    }
-  }
-
-  const removeItem = async (itemId: string) => {
-    if (!cart) return
-
-    const updatedItems = cart.items.filter((item) => item._id !== itemId)
-    const newTotalPrice = updatedItems.reduce((sum, item) => sum + item.total, 0)
-    setCart({ ...cart, items: updatedItems, totalPrice: newTotalPrice })
-
-    try {
-      await api.delete(`/cart/items/${itemId}`)
-      toast.success("Tour eliminado")
-    } catch {
-      await loadCart()
-      toast.error("Error al eliminar")
-    }
-  }
-
-  const updateDate = async (itemId: string, newDate: string) => {
-    if (!cart) return
-
-    const updatedItems = cart.items.map((item) =>
-      item._id === itemId ? { ...item, startDate: `${newDate}T00:00:00.000Z` } : item,
-    )
-
-    setCart({ ...cart, items: updatedItems })
-
-    try {
-      await api.patch("/cart", {
-        items: updatedItems.map(cartItemToDto),
-        totalPrice: cart.totalPrice,
-      })
-      toast.success("Fecha actualizada")
-    } catch {
-      await loadCart()
-      toast.error("Error al actualizar")
-    }
-  }
-
-  const generatePaymentToken = async () => {
-    if (!cart) return
-
-    setIsProcessingPayment(true)
-    setError(null)
-
-    try {
-      const customerData: CustomerInfoDto = {
-        email: customerInfo.email,
-        firstName: customerInfo.firstName,
-        lastName: customerInfo.lastName,
-        phoneNumber: customerInfo.phone || undefined,
-        identityType: customerInfo.identityType || undefined,
-        identityCode: customerInfo.identityCode || undefined,
-        address: customerInfo.address || undefined,
-        country: customerInfo.country || undefined,
-        city: customerInfo.city || undefined,
-      }
-
-      // Convert PEN to USD (÷3.6) for izipay payment
-      const amountInUSD = Number((cart.totalPrice / 3.6).toFixed(2))
-
-      const payload: CreatePaymentDto = {
-        amount: amountInUSD,
-        currency: "USD",
-        orderId: `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        formAction: "PAID",
-        contextMode: "TEST",
-        customer: customerData,
-      }
-
-      const response = await api.post<FormTokenResponse>("/payments/formtoken", payload)
-
-      if (!response.data.formToken) {
-        throw new Error("No se recibió el token de pago")
-      }
-
-      setFormToken(response.data.formToken)
-      setShowPaymentModal(true)
-    } catch (error: unknown) {
-      let errorMessage = "Error en el pago"
-      if (isAxiosError(error) && error.response?.data) {
-        const responseData = error.response.data as Record<string, unknown>
-        if (responseData.message) {
-          errorMessage = Array.isArray(responseData.message)
-            ? responseData.message.join(", ")
-            : String(responseData.message)
-        }
-      }
-      setError(errorMessage)
-      toast.error(errorMessage)
-    } finally {
-      setIsProcessingPayment(false)
-    }
-  }
-
-  const validateStep = (step: number): boolean => {
-    if (step === 1) {
-      return cart !== null && cart.items.length > 0
-    }
-    if (step === 2) {
-      return (
-        customerInfo.firstName.trim() !== "" &&
-        customerInfo.lastName.trim() !== "" &&
-        customerInfo.email.trim() !== "" &&
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.email)
-      )
-    }
-    return true
-  }
-
-  const handleNext = () => {
-    if (!validateStep(currentStep)) {
-      toast.error("Por favor completa todos los campos")
+      setCurrentStep(2)
       return
     }
+
     if (currentStep === 2) {
-      generatePaymentToken()
-    } else {
-      setCurrentStep(currentStep + 1)
+      if (!customerInfo.email) {
+        toast.error("Por favor completa tu email")
+        return
+      }
+      setCurrentStep(3)
+      return
+    }
+
+    if (currentStep === 3) {
+      try {
+        setIsProcessingPayment(true)
+
+        const paymentData = {
+          amount: cart?.totalPrice || 0,
+          currency: "PEN",
+          email: customerInfo.email,
+          firstName: customerInfo.firstName,
+          lastName: customerInfo.lastName,
+          phone: customerInfo.phone,
+          billingAddress: {
+            zip: customerInfo.zipCode,
+            country: customerInfo.country,
+            city: customerInfo.city,
+            state: customerInfo.state,
+          },
+        }
+
+        const response = await api.post<PaymentResponse>("/payments/create-form-token", paymentData)
+        const { publicKey } = response.data
+
+        type IsotisWindow = Window & {
+          Isotis?: {
+            KRClient: {
+              default: new (
+                config: string,
+              ) => {
+                attachForm: (element: HTMLElement | null) => void
+                showForm: () => void
+              }
+            }
+          }
+        }
+
+        const paymentWindow = window as IsotisWindow
+
+        setShowPaymentModal(true)
+
+        setTimeout(() => {
+          if (paymentWindow.Isotis) {
+            const KRClient = paymentWindow.Isotis.KRClient.default
+            const client = new KRClient(publicKey)
+            client.attachForm(document.getElementById("kr-form"))
+            client.showForm()
+          }
+        }, 500)
+      } catch (_err) {
+        const message = isAxiosError(_err) ? _err.response?.data?.message : "Error al procesar el pago"
+        toast.error(message)
+      } finally {
+        setIsProcessingPayment(false)
+      }
     }
   }
 
-  const getMinDate = () => new Date().toISOString().split("T")[0]
-
-  const getItemDisplayData = (item: CartItem) => ({
-    id: item._id,
-    title: item.productTitle || "Servicio",
-    imageUrl: item.productImageUrl || "/placeholder.svg",
-    location: item.notes?.split(" - ")[1] || "Ubicación no disponible",
-  })
+  const handlePaymentExpired = () => {
+    setShowPaymentModal(false)
+    toast.error("La sesión de pago ha expirado")
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center pt-32">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-foreground/70">Cargando carrito...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-peru-orange" />
+          <p className="text-foreground/60">Cargando carrito...</p>
         </div>
       </div>
     )
   }
 
-  if (error || !cart || !cart.items || cart.items.length === 0) {
+  if (error || !cart) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4 pt-32">
-        <div className="text-center max-w-sm">
-          <ShoppingCart className="w-16 h-16 mx-auto mb-6 text-foreground/50" />
-          <h1 className="text-2xl font-bold mb-3">Carrito Vacío</h1>
-          <p className="text-foreground/70 mb-8">Agrega tours o servicios para continuar</p>
-          <Button onClick={() => router.push("/tours")} className="w-full">
-            Ver Tours
-          </Button>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <ShoppingCart className="w-12 h-12 text-foreground/30 mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Error al cargar el carrito</h2>
+          <p className="text-foreground/60 mb-6">{error}</p>
+          <Button onClick={() => router.back()}>Volver</Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto px-4 py-8 pt-32">
-        {/* Back button and title */}
+    <div className="min-h-screen bg-background py-8 px-4">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => router.back()}
@@ -364,10 +242,8 @@ export default function CheckoutPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Section */}
           <div className="lg:col-span-2">
             <AnimatePresence mode="wait">
-              {/* Step 1: Cart Items */}
               {currentStep === 1 && (
                 <motion.div key="step1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <div className="mb-8">
@@ -392,7 +268,6 @@ export default function CheckoutPage() {
                                   <p className="text-sm text-foreground/60">{displayData.location}</p>
                                 </div>
 
-                                {/* Date and Quantity */}
                                 <div className="flex flex-col sm:flex-row gap-3 mt-3">
                                   <div className="flex-1">
                                     <label className="text-xs text-foreground/60 block mb-1">Fecha</label>
@@ -431,7 +306,6 @@ export default function CheckoutPage() {
                                 </div>
                               </div>
 
-                              {/* Price and Delete */}
                               <div className="flex flex-col items-end justify-between">
                                 <Button
                                   size="sm"
@@ -453,7 +327,6 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Notes */}
                   <div className="mb-6">
                     <Label className="text-sm font-bold mb-2 block">Notas Especiales (Opcional)</Label>
                     <Textarea
@@ -470,7 +343,6 @@ export default function CheckoutPage() {
                 </motion.div>
               )}
 
-              {/* Step 2: Customer Info */}
               {currentStep === 2 && (
                 <motion.div key="step2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <h2 className="text-lg font-bold mb-6">Información Personal</h2>
@@ -595,10 +467,43 @@ export default function CheckoutPage() {
                   </div>
                 </motion.div>
               )}
+
+              {currentStep === 3 && (
+                <motion.div key="step3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <h2 className="text-lg font-bold mb-6">Dirección de Facturación</h2>
+
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <Label className="text-sm font-bold mb-1 block">Código Postal</Label>
+                      <Input
+                        value={customerInfo.zipCode}
+                        onChange={(e) => setCustomerInfo({ ...customerInfo, zipCode: e.target.value })}
+                        placeholder="12345"
+                        className="h-10 rounded-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => setCurrentStep(2)} className="flex-1 rounded-sm">
+                      Atrás
+                    </Button>
+                    <Button onClick={handleNext} disabled={isProcessingPayment} className="flex-1 rounded-sm">
+                      {isProcessingPayment ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        "Finalizar Pago"
+                      )}
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
 
-          {/* Summary Sidebar */}
           <div className="lg:col-span-1">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -637,60 +542,35 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Payment Modal */}
-      <AnimatePresence>
-        {showPaymentModal && (
+      {showPaymentModal && (
+        <AnimatePresence>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowPaymentModal(false)}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           >
             <motion.div
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
-              className="bg-card border border-border rounded-sm shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
+              className="bg-card rounded-sm max-w-md w-full relative"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold">Completar Pago</h2>
-                <button
-                  onClick={() => setShowPaymentModal(false)}
-                  className="text-foreground/70 hover:text-foreground transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+              <button
+                onClick={() => handlePaymentExpired()}
+                className="absolute right-4 top-4 p-2 hover:bg-muted rounded transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-              <div className="bg-muted rounded-sm p-4 mb-6">
-                <p className="text-xs text-foreground/70 mb-1">Total a pagar</p>
-                <p className="text-3xl font-bold">$ {cart?.totalPrice.toFixed(2)}</p>
+              <div className="p-6">
+                <h3 className="text-lg font-bold mb-4">Procesando Pago</h3>
+                <div id="kr-form" className="kr-form"></div>
               </div>
-
-              {!formToken ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin mb-3 text-foreground/50" />
-                  <p className="text-sm text-foreground/60">Preparando formulario de pago...</p>
-                </div>
-              ) : (
-                <div className="kr-embedded" kr-popin="true" kr-form-token={formToken}>
-                  <div className="space-y-3">
-                    <div className="kr-pan"></div>
-                    <div className="flex gap-3">
-                      <div className="kr-expiry flex-1"></div>
-                      <div className="kr-security-code flex-1"></div>
-                    </div>
-                    <button className="kr-payment-button w-full">Pagar Ahora</button>
-                    <div className="kr-form-error text-sm"></div>
-                  </div>
-                </div>
-              )}
             </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>
+      )}
     </div>
   )
 }

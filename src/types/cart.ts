@@ -6,7 +6,7 @@ export enum CartItemType {
 
 // Cart item with denormalized product info, matching backend's CartItemDto
 export interface CartItem {
-  _id: string // This is typically added by the DB, not part of the DTO for creation
+  _id: string
   productType: CartItemType
   productId: string
   startDate: string
@@ -17,22 +17,21 @@ export interface CartItem {
   productTitle?: string
   productImageUrl?: string
   productSlug?: string
-  // Removed 'tour?: Tour' as per backend DTO
 }
 
-// Cart interface (as stored in DB, might include _id and user)
+// Cart interface (as stored in DB)
 export interface Cart {
   _id: string
-  user?: string // ID del usuario (opcional para carritos de invitados)
-  items: CartItem[] // Now uses the updated CartItem
+  user?: string
+  items: CartItem[]
   totalPrice: number
   createdAt: string
   updatedAt: string
 }
 
-// DTO for creating a cart (what frontend sends to backend), matching backend's CreateCartDto
+// DTO for creating a cart
 export interface CreateCartDto {
-  userId?: string // Optional userId as per backend DTO
+  userId?: string
   items: Array<{
     productType: CartItemType
     productId: string
@@ -48,7 +47,7 @@ export interface CreateCartDto {
   totalPrice: number
 }
 
-// DTO for updating a cart (what frontend sends to backend)
+// DTO for updating a cart
 export interface UpdateCartDto {
   items?: Array<{
     productType: CartItemType
@@ -65,7 +64,7 @@ export interface UpdateCartDto {
   totalPrice?: number
 }
 
-// DTO for adding a single item to the cart (if used separately)
+// DTO for adding a single item to the cart
 export interface AddToCartDto {
   productType: CartItemType
   productId: string
@@ -86,18 +85,17 @@ export interface UpdateCartItemDto {
   notes?: string
 }
 
-// Respuesta del API para el carrito - CORREGIDA para reflejar que 'data' es un array de Cart
+// API response for cart operations
 export interface CartResponse {
   success: boolean
-  data: Cart[] // Cambiado a un array de Cart
+  data: Cart[]
   message?: string
   meta?: {
     total: number
-    // Otros campos de meta si existen
   }
 }
 
-// API response for cart operations (e.g., add, remove, update)
+// API response for cart operations (add, remove, update)
 export interface CartOperationResponse {
   success: boolean
   message: string

@@ -1,26 +1,83 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { api } from "@/lib/axiosInstance"
+import type { CartResponse, Cart } from "@/types/cart"
 
 interface CartItem {
   id: string
   name: string
   price: number
   quantity: number
+  productTitle?: string
+  productImageUrl?: string
 }
 
 interface CartContextType {
   cartCount: number
   items: CartItem[]
+  backendItems: Cart["items"]
   addItem: (item: CartItem) => void
   removeItem: (id: string) => void
   clearCart: () => void
+  loadCartFromBackend: () => Promise<void>
+  isLoading: boolean
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
+  const [backendItems, setBackendItems] = useState<Cart["items"]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    loadCartFromBackend()
+
+    const handleCartUpdate = () => {
+      loadCartFromBackend()
+    }
+
+    window.addEventListener("cartUpdated", handleCartUpdate)
+    return () => window.removeEventListener("cartUpdated", handleCartUpdate)
+  }, [])
+
+  const loadCartFromBackend = async () => {
+    try {
+      setIsLoading(true)
+      const response = await api.get<CartResponse>("/cart")
+
+      if (response.data?.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
+        const cart = response.data.data[0]
+        if (cart.items && Array.isArray(cart.items)) {
+          setBackendItems(cart.items)
+
+          const convertedItems: CartItem[] = cart.items.map((item) => ({
+            id: item._id,
+            name: item.productTitle || "Product",
+            price: item.pricePerPerson,
+            quantity: item.people,
+            productTitle: item.productTitle,
+            productImageUrl: item.productImageUrl,
+          }))
+
+          setItems(convertedItems)
+        } else {
+          setItems([])
+          setBackendItems([])
+        }
+      } else {
+        setItems([])
+        setBackendItems([])
+      }
+    } catch (error) {
+      console.error("[v0] Error loading cart from backend:", error)
+      setItems([])
+      setBackendItems([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const cartCount = items.reduce((total, item) => total + item.quantity, 0)
 
@@ -40,10 +97,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setItems([])
+    setBackendItems([])
   }
 
   return (
-    <CartContext.Provider value={{ cartCount, items, addItem, removeItem, clearCart }}>{children}</CartContext.Provider>
+    <CartContext.Provider
+      value={{ cartCount, items, backendItems, addItem, removeItem, clearCart, loadCartFromBackend, isLoading }}
+    >
+      {children}
+    </CartContext.Provider>
   )
 }
 
