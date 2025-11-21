@@ -4,7 +4,6 @@ import type { Metadata } from "next"
 import type React from "react"
 import { Toaster } from "@/components/ui/sonner"
 import { LanguageProvider } from "@/contexts/LanguageContext"
-import { CartProvider } from "@/contexts/CartContext"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -235,7 +234,6 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} antialiased`}>
-       <CartProvider>
          <LanguageProvider>
           <main className="relative">{children}</main>
           <Toaster
@@ -251,7 +249,6 @@ export default function RootLayout({
             }}
           />
         </LanguageProvider>
-       </CartProvider>
       </body>
     </html>
   )
